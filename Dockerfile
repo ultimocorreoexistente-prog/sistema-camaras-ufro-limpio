@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 WORKDIR /app
-COPY . .
-RUN pip install flask --no-cache-dir
+RUN pip install flask
+COPY minimal.py .
 EXPOSE 8000
-CMD ["python", "simple_app.py"]
+CMD ["python", "minimal.py"]
