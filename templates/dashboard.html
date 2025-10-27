@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema de Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Dashboard de Control</h1>
+    
+    <!-- Tarjetas de Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Cámaras</h5>
+                    <h2 class="mb-0">{{ total_camaras }}</h2>
+                    <small>{{ camaras_activas }} activas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Fallas Pendientes</h5>
+                    <h2 class="mb-0">{{ fallas_pendientes }}</h2>
+                    <small>Requieren asignación</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">En Proceso</h5>
+                    <h2 class="mb-0">{{ fallas_en_proceso }}</h2>
+                    <small>Técnicos trabajando</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Mantenimientos (Mes)</h5>
+                    <h2 class="mb-0">{{ mantenimientos_mes }}</h2>
+                    <small>Realizados en el mes</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Fallas por Estado</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartFallasEstado"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Distribución por Campus</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartCampus"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Últimas Fallas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Últimas Fallas Reportadas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Equipo</th>
+                                    <th>Descripción</th>
+                                    <th>Prioridad</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Reporte</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for falla in ultimas_fallas %}
+                                <tr>
+                                    <td>{{ falla.id }}</td>
+                                    <td>{{ falla.equipo_tipo }} #{{ falla.equipo_id }}</td>
+                                    <td>{{ falla.descripcion[:50] }}...</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if falla.prioridad == 'Crítica' else 'warning' if falla.prioridad == 'Alta' else 'info' }}">
+                                            {{ falla.prioridad }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'secondary' if falla.estado == 'Pendiente' else 'primary' if falla.estado == 'Asignada' else 'info' if falla.estado == 'En Proceso' else 'success' }}">
+                                            {{ falla.estado }}
+                                        </span>
+                                    </td>
+                                    <td>{{ falla.fecha_reporte.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('fallas_detalle', id=falla.id) }}" class="btn btn-sm btn-primary">Ver</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Gráfico Fallas por Estado
+    const ctx1 = document.getElementById('chartFallasEstado').getContext('2d');
+    new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pendiente', 'Asignada', 'En Proceso', 'Reparada', 'Cerrada'],
+            datasets: [{
+                data: [{{ fallas_pendientes }}, {{ fallas_asignadas }}, {{ fallas_en_proceso }}, 0, 0],
+                backgroundColor: ['#6c757d', '#0d6efd', '#0dcaf0', '#198754', '#20c997']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Gráfico Distribución por Campus
+    const ctx2 = document.getElementById('chartCampus').getContext('2d');
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: ['Andrés Bello', 'Pucón', 'Angol', 'Medicina'],
+            datasets: [{
+                label: 'Cámaras',
+                data: [250, 100, 74, 50],
+                backgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

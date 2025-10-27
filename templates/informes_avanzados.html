@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Informes Avanzados - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Informes y Reportes Avanzados</h1>
+    <div class="card mb-4">
+        <div class="card-header"><h5>Distribución de Cámaras por Campus</h5></div>
+        <div class="card-body">
+            <table class="table">
+                <thead><tr><th>Campus</th><th>Total Cámaras</th></tr></thead>
+                <tbody>
+                    {% for campus, total in stats_por_campus %}
+                    <tr><td>{{ campus }}</td><td>{{ total }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><h5>Fallas por Tipo</h5></div>
+        <div class="card-body">
+            <table class="table">
+                <thead><tr><th>Tipo de Falla</th><th>Total</th></tr></thead>
+                <tbody>
+                    {% for tipo, total in fallas_por_tipo %}
+                    <tr><td>{{ tipo }}</td><td>{{ total }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="text-center">
+        <button class="btn btn-success" onclick="window.print()">
+            <i class="bi bi-printer"></i> Imprimir Informe
+        </button>
+    </div>
+</div>
+{% endblock %}

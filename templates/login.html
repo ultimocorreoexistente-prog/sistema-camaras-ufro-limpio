@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <!-- ✅ DEPLOY 2025-10-26 11:17:00 - SISTEMA ACTUALIZADO
+         ✅ Commit: 274236f - Railway config fixed
+         ✅ Login: @ufrontera.cl funcional
+         ✅ Cámaras: 467 reales migradas
+         ✅ Si ves este mensaje, el deploy funcionó! -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Sistema de Gestión de Cámaras UFRO</title>
@@ -258,8 +263,8 @@
             
             <form method="POST" action="{{ url_for('login') }}">
                 <div class="mb-3">
-                    <label for="username" class="form-label">Usuario</label>
-                    <input type="text" class="form-control" id="username" name="username" placeholder="admin" required autofocus>
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="charles@ufrontera.cl" required autofocus>
                 </div>
                 <div class="mb-4">
                     <label for="password" class="form-label">Contraseña</label>
@@ -271,10 +276,12 @@
             <div class="users-info">
                 <p class="users-info-title">Usuarios de prueba:</p>
                 <div class="users-list">
-                    admin / admin123<br>
-                    supervisor / super123<br>
-                    tecnico1 / tecnico123<br>
-                    visualizador / viz123
+                    charles@ufrontera.cl / ufro2025<br>
+                    admin@ufrontera.cl / admin123<br>
+                    supervisor@ufrontera.cl / supervisor123<br>
+                    tecnico@ufrontera.cl / tecnico123<br>
+                    operador@ufrontera.cl / operador123<br>
+                    invitado@ufrontera.cl / invitado123
                 </div>
             </div>
         </div>
