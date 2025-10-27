@@ -889,12 +889,9 @@
 # ==============================================================================
 # PROJECT SPECIFIC
 # ==============================================================================
-# Sistema Cámaras UFRO
-instance/
-planillas/
-uploads/
-__pycache__/
-*.pyc
-*.db
-.env
+# Add your project-specific ignores here
+# workspace/
+# data/
+# uploads/
+# downloads/
 
