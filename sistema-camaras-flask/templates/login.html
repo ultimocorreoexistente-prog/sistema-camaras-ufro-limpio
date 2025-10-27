@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema de Gestión de Cámaras UFRO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #4fc3f7 0%, #29b6f6 50%, #81d4fa 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Elementos decorativos de fondo */
+        .decoration {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+        
+        .star1 {
+            width: 30px;
+            height: 30px;
+            top: 15%;
+            right: 15%;
+            opacity: 0.6;
+        }
+        
+        .star2 {
+            width: 20px;
+            height: 20px;
+            bottom: 20%;
+            right: 10%;
+            opacity: 0.4;
+        }
+        
+        .container-login {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3rem;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Logo UFRO (izquierda) */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo-ufro {
+            width: 200px;
+            height: 200px;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        }
+        
+        .logo-ufro svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Panel de Login (centro) */
+        .login-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            padding: 3rem 2.5rem;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .login-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+            text-align: center;
+        }
+        
+        .login-subtitle {
+            font-size: 1rem;
+            color: #7f8c8d;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .form-control {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn-login {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.875rem;
+            font-size: 1.05rem;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+        }
+        
+        .btn-login:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        
+        .users-info {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+        }
+        
+        .users-info-title {
+            font-size: 0.875rem;
+            color: #7f8c8d;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .users-list {
+            font-size: 0.8rem;
+            color: #95a5a6;
+            line-height: 1.6;
+        }
+        
+        /* Icono de cámaras (derecha) */
+        .camera-icon-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .camera-icon {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border: 6px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .camera-icon svg {
+            width: 120px;
+            height: 120px;
+            fill: white;
+        }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .logo-container,
+            .camera-icon-container {
+                display: none;
+            }
+            
+            .container-login {
+                padding: 1rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .login-card {
+                padding: 2rem 1.5rem;
+            }
+            
+            .login-title {
+                font-size: 1.5rem;
+            }
+        }
+        
+        .alert {
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Elementos decorativos -->
+    <div class="star star1"></div>
+    <div class="star star2"></div>
+    
+    <div class="container-login">
+        <!-- Logo UFRO (izquierda) -->
+        <div class="logo-container">
+            <div class="logo-ufro">
+                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Logo UFRO simplificado -->
+                    <circle cx="100" cy="100" r="90" fill="#003d7a" stroke="#003d7a" stroke-width="2"/>
+                    <path d="M100,30 L120,60 L150,60 L130,80 L140,110 L100,90 L60,110 L70,80 L50,60 L80,60 Z" fill="white"/>
+                    <text x="100" y="155" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">UFRO</text>
+                    <text x="100" y="175" font-family="Arial, sans-serif" font-size="10" fill="white" text-anchor="middle">LA FRONTERA</text>
+                </svg>
+            </div>
+        </div>
+        
+        <!-- Panel de Login (centro) -->
+        <div class="login-card">
+            <h2 class="login-title">Sistema de Cámaras UFRO</h2>
+            <p class="login-subtitle">Iniciar Sesión</p>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Usuario</label>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="admin" required autofocus>
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn-login">Ingresar</button>
+            </form>
+            
+            <div class="users-info">
+                <p class="users-info-title">Usuarios de prueba:</p>
+                <div class="users-list">
+                    admin / admin123<br>
+                    supervisor / super123<br>
+                    tecnico1 / tecnico123<br>
+                    visualizador / viz123
+                </div>
+            </div>
+        </div>
+        
+        <!-- Icono de cámaras (derecha) -->
+        <div class="camera-icon-container">
+            <div class="camera-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Icono de cámaras de seguridad -->
+                    <g>
+                        <!-- Cámara central -->
+                        <circle cx="12" cy="12" r="4" fill="white"/>
+                        <circle cx="12" cy="12" r="2" fill="#95a5a6"/>
+                        <!-- Señales de transmisión -->
+                        <path d="M 6 8 Q 4 10 4 12 Q 4 14 6 16" stroke="white" stroke-width="1" fill="none"/>
+                        <path d="M 18 8 Q 20 10 20 12 Q 20 14 18 16" stroke="white" stroke-width="1" fill="none"/>
+                        <path d="M 8 6 Q 10 4 12 4 Q 14 4 16 6" stroke="white" stroke-width="1" fill="none"/>
+                        <path d="M 8 18 Q 10 20 12 20 Q 14 20 16 18" stroke="white" stroke-width="1" fill="none"/>
+                        <!-- Cámaras pequeñas alrededor -->
+                        <circle cx="6" cy="6" r="1.5" fill="white"/>
+                        <circle cx="18" cy="6" r="1.5" fill="white"/>
+                        <circle cx="6" cy="18" r="1.5" fill="white"/>
+                        <circle cx="18" cy="18" r="1.5" fill="white"/>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

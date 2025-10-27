@@ -1,0 +1,62 @@
+/* Estilos para impresión */
+@media print {
+    /* Ocultar elementos no necesarios */
+    .navbar,
+    .btn,
+    footer,
+    .no-print {
+        display: none !important;
+    }
+    
+    /* Ajustes generales */
+    body {
+        background: white;
+        color: black;
+        font-size: 12pt;
+    }
+    
+    /* Ajustar contenedor */
+    .container,
+    .container-fluid {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+    }
+    
+    /* Tablas */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        page-break-inside: auto;
+    }
+    
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    
+    thead {
+        display: table-header-group;
+    }
+    
+    /* Cards */
+    .card {
+        border: 1px solid #ddd;
+        box-shadow: none;
+        page-break-inside: avoid;
+    }
+    
+    /* Saltos de página */
+    .page-break {
+        page-break-after: always;
+    }
+    
+    h1, h2, h3 {
+        page-break-after: avoid;
+    }
+    
+    /* Enlaces */
+    a[href]:after {
+        content: none;
+    }
+}

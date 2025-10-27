@@ -1,0 +1,159 @@
+/* Estilos personalizados del Sistema de Cámaras UFRO */
+
+:root {
+    --color-pendiente: #6c757d;
+    --color-asignada: #0d6efd;
+    --color-en-proceso: #0dcaf0;
+    --color-reparada: #198754;
+    --color-cerrada: #20c997;
+    --color-cancelada: #dc3545;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Navbar */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Cards */
+.card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+}
+
+.card-header {
+    border-bottom: 2px solid rgba(0,0,0,0.1);
+    font-weight: 600;
+}
+
+/* Tablas */
+.table-responsive {
+    border-radius: 8px;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f1f3f5;
+}
+
+/* Estados de fallas */
+.badge.bg-pendiente { background-color: var(--color-pendiente) !important; }
+.badge.bg-asignada { background-color: var(--color-asignada) !important; }
+.badge.bg-en-proceso { background-color: var(--color-en-proceso) !important; }
+.badge.bg-reparada { background-color: var(--color-reparada) !important; }
+.badge.bg-cerrada { background-color: var(--color-cerrada) !important; }
+.badge.bg-cancelada { background-color: var(--color-cancelada) !important; }
+
+/* Botones */
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Formularios */
+.form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: 6px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn-group-sm .btn {
+        font-size: 0.75rem;
+    }
+    
+    h1 {
+        font-size: 1.75rem;
+    }
+}
+
+/* Mapa Leaflet */
+#map {
+    height: 600px;
+    border-radius: 8px;
+}
+
+/* Timeline de fallas */
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline-item {
+    padding-left: 40px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: -20px;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.timeline-item:last-child::before {
+    display: none;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #0d6efd;
+}
+
+/* Indicadores de capacidad */
+.capacity-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.capacity-bar {
+    flex: 1;
+    height: 20px;
+    background-color: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.capacity-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #198754 0%, #ffc107 70%, #dc3545 100%);
+    transition: width 0.3s ease;
+}
