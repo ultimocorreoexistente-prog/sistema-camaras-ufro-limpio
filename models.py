@@ -24,7 +24,7 @@ class Usuario(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
 
 class Ubicacion(db.Model):
-    __tablename__ = 'ubicacion'
+    __tablename__ = 'ubicaciones'
     id = db.Column(db.Integer, primary_key=True)
     campus = db.Column(db.String(100), nullable=False)
     edificio = db.Column(db.String(200), nullable=False)
@@ -35,13 +35,13 @@ class Ubicacion(db.Model):
     activo = db.Column(db.Boolean, default=True)
 
 class Gabinete(db.Model):
-    __tablename__ = 'gabinete'
+    __tablename__ = 'gabinetes'
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(50), unique=True, nullable=False)
     nombre = db.Column(db.String(200))
     tipo_ubicacion_general = db.Column(db.String(50))  # Interior/Exterior/Subterraneo
     tipo_ubicacion_detallada = db.Column(db.String(200))
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicacion.id'))
+    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
     capacidad = db.Column(db.Integer)
     tiene_ups = db.Column(db.Boolean, default=False)
     tiene_switch = db.Column(db.Boolean, default=False)
@@ -59,7 +59,7 @@ class Gabinete(db.Model):
     ubicacion = db.relationship('Ubicacion', backref='gabinetes')
 
 class Switch(db.Model):
-    __tablename__ = 'switch'
+    __tablename__ = 'switches'
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(50), unique=True, nullable=False)
     nombre = db.Column(db.String(200))
@@ -67,7 +67,7 @@ class Switch(db.Model):
     modelo = db.Column(db.String(100))
     marca = db.Column(db.String(100))
     numero_serie = db.Column(db.String(100))
-    gabinete_id = db.Column(db.Integer, db.ForeignKey('gabinete.id'))
+    gabinete_id = db.Column(db.Integer, db.ForeignKey('gabinetes.id'))
     puertos_totales = db.Column(db.Integer)
     puertos_usados = db.Column(db.Integer, default=0)
     puertos_disponibles = db.Column(db.Integer)
@@ -86,7 +86,7 @@ class Switch(db.Model):
 class Puerto_Switch(db.Model):
     __tablename__ = 'puerto_switch'
     id = db.Column(db.Integer, primary_key=True)
-    switch_id = db.Column(db.Integer, db.ForeignKey('switch.id'), nullable=False)
+    switch_id = db.Column(db.Integer, db.ForeignKey('switches.id'), nullable=False)
     numero_puerto = db.Column(db.Integer, nullable=False)
     camara_id = db.Column(db.Integer, db.ForeignKey('camaras.id'))
     ip_dispositivo = db.Column(db.String(45))
@@ -96,7 +96,7 @@ class Puerto_Switch(db.Model):
     puerto_nvr = db.Column(db.String(20))
     
     switch = db.relationship('Switch', backref='puertos')
-    camara = db.relationship('Camaras', foreign_keys='Puerto_Switch.camara_id', backref='puerto_asignado')
+    camara = db.relationship('Camara', foreign_keys='Puerto_Switch.camara_id', backref='puerto_asignado')
 
 class UPS(db.Model):
     __tablename__ = 'ups'
@@ -106,8 +106,8 @@ class UPS(db.Model):
     marca = db.Column(db.String(100))
     capacidad_va = db.Column(db.Integer)
     numero_baterias = db.Column(db.Integer)
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicacion.id'))
-    gabinete_id = db.Column(db.Integer, db.ForeignKey('gabinete.id'))
+    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
+    gabinete_id = db.Column(db.Integer, db.ForeignKey('gabinetes.id'))
     equipos_que_alimenta = db.Column(db.Text)
     estado = db.Column(db.String(20), default='Activo')
     fecha_alta = db.Column(db.Date)
@@ -132,8 +132,8 @@ class NVR_DVR(db.Model):
     canales_totales = db.Column(db.Integer)
     canales_usados = db.Column(db.Integer, default=0)
     ip = db.Column(db.String(45))
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicacion.id'))
-    gabinete_id = db.Column(db.Integer, db.ForeignKey('gabinete.id'))
+    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
+    gabinete_id = db.Column(db.Integer, db.ForeignKey('gabinetes.id'))
     estado = db.Column(db.String(20), default='Activo')
     fecha_alta = db.Column(db.Date)
     fecha_baja = db.Column(db.Date)
@@ -153,8 +153,8 @@ class Fuente_Poder(db.Model):
     voltaje = db.Column(db.String(20))
     amperaje = db.Column(db.String(20))
     equipos_que_alimenta = db.Column(db.Text)
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicacion.id'))
-    gabinete_id = db.Column(db.Integer, db.ForeignKey('gabinete.id'))
+    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
+    gabinete_id = db.Column(db.Integer, db.ForeignKey('gabinetes.id'))
     estado = db.Column(db.String(20), default='Activo')
     fecha_alta = db.Column(db.Date)
     fecha_baja = db.Column(db.Date)
@@ -173,9 +173,9 @@ class Camara(db.Model):
     modelo = db.Column(db.String(100))
     fabricante = db.Column(db.String(100))
     tipo_camara = db.Column(db.String(20))  # Domo/PTZ/Bullet
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicacion.id'))
-    gabinete_id = db.Column(db.Integer, db.ForeignKey('gabinete.id'))
-    switch_id = db.Column(db.Integer, db.ForeignKey('switch.id'))
+    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
+    gabinete_id = db.Column(db.Integer, db.ForeignKey('gabinetes.id'))
+    switch_id = db.Column(db.Integer, db.ForeignKey('switches.id'))
     puerto_switch_id = db.Column(db.Integer, db.ForeignKey('puerto_switch.id'))
     nvr_id = db.Column(db.Integer, db.ForeignKey('nvr_dvr.id'))
     puerto_nvr = db.Column(db.String(20))
@@ -207,7 +207,7 @@ class Catalogo_Tipo_Falla(db.Model):
     tiempo_estimado_resolucion = db.Column(db.Integer)  # en horas
 
 class Falla(db.Model):
-    __tablename__ = 'falla'
+    __tablename__ = 'fallas'
     id = db.Column(db.Integer, primary_key=True)
     equipo_tipo = db.Column(db.String(50), nullable=False)  # Camara/Gabinete/Switch/UPS/NVR/Fuente
     equipo_id = db.Column(db.Integer, nullable=False)
@@ -233,7 +233,7 @@ class Falla(db.Model):
     tecnico_asignado = db.relationship('Usuario', foreign_keys=[tecnico_asignado_id], backref='fallas_asignadas')
 
 class Mantenimiento(db.Model):
-    __tablename__ = 'mantenimiento'
+    __tablename__ = 'mantenimientos'
     id = db.Column(db.Integer, primary_key=True)
     equipo_tipo = db.Column(db.String(50), nullable=False)
     equipo_id = db.Column(db.Integer, nullable=False)

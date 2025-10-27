@@ -294,6 +294,573 @@ def gabinetes_mantencion(id):
                          fuentes=fuentes,
                          mantenimientos=mantenimientos)
 
+# ========== SWITCHES ==========
+@app.route('/switches')
+@login_required
+def switches_list():
+    campus = request.args.get('campus', '')
+    estado = request.args.get('estado', '')
+    busqueda = request.args.get('busqueda', '')
+    
+    query = Switch.query.join(Ubicacion)
+    
+    if campus:
+        query = query.filter(Ubicacion.campus == campus)
+    if estado:
+        query = query.filter(Switch.estado == estado)
+    if busqueda:
+        query = query.filter(or_(
+            Switch.codigo.like(f'%{busqueda}%'),
+            Switch.nombre.like(f'%{busqueda}%'),
+            Switch.ip.like(f'%{busqueda}%')
+        ))
+    
+    switches = query.all()
+    ubicaciones = Ubicacion.query.all()
+    campus_list = db.session.query(Ubicacion.campus).distinct().all()
+    
+    return render_template('switches_list.html', 
+                         switches=switches, 
+                         ubicaciones=ubicaciones,
+                         campus_list=[c[0] for c in campus_list])
+
+@app.route('/switches/new', methods=['GET', 'POST'])
+@login_required
+@role_required('admin', 'supervisor')
+def switches_new():
+    if request.method == 'POST':
+        switch = Switch(
+            codigo=request.form.get('codigo'),
+            nombre=request.form.get('nombre'),
+            ip=request.form.get('ip'),
+            modelo=request.form.get('modelo'),
+            fabricante=request.form.get('fabricante'),
+            tipo_switch=request.form.get('tipo_switch'),
+            ubicacion_id=request.form.get('ubicacion_id'),
+            gabinete_id=request.form.get('gabinete_id') or None,
+            estado=request.form.get('estado', 'Activo'),
+            fecha_alta=datetime.strptime(request.form.get('fecha_alta'), '%Y-%m-%d').date() if request.form.get('fecha_alta') else None,
+            observaciones=request.form.get('observaciones')
+        )
+        db.session.add(switch)
+        db.session.commit()
+        flash('Switch creado exitosamente', 'success')
+        return redirect(url_for('switches_list'))
+    
+    ubicaciones = Ubicacion.query.filter_by(activo=True).all()
+    gabinetes = Gabinete.query.filter_by(estado='Activo').all()
+    
+    return render_template('switches_form.html', 
+                         ubicaciones=ubicaciones,
+                         gabinetes=gabinetes,
+                         switch=None)
+
+@app.route('/switches/<int:id>')
+@login_required
+def switches_detail(id):
+    switch = Switch.query.get_or_404(id)
+    fallas = Falla.query.filter_by(equipo_tipo='Switch', equipo_id=id).order_by(Falla.fecha_reporte.desc()).all()
+    mantenimientos = Mantenimiento.query.filter_by(equipo_tipo='Switch', equipo_id=id).order_by(Mantenimiento.fecha.desc()).all()
+    puertos = Puerto_Switch.query.filter_by(switch_id=id).all()
+    
+    return render_template('switches_detalle.html', 
+                         switch=switch,
+                         fallas=fallas,
+                         mantenimientos=mantenimientos,
+                         puertos=puertos)
+
+@app.route('/switches/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@role_required('admin', 'supervisor')
+def switches_edit(id):
+    switch = Switch.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        estado_anterior = switch.estado
+        
+        switch.codigo = request.form.get('codigo')
+        switch.nombre = request.form.get('nombre')
+        switch.ip = request.form.get('ip')
+        switch.modelo = request.form.get('modelo')
+        switch.fabricante = request.form.get('fabricante')
+        switch.tipo_switch = request.form.get('tipo_switch')
+        switch.ubicacion_id = request.form.get('ubicacion_id')
+        switch.gabinete_id = request.form.get('gabinete_id') or None
+        switch.estado = request.form.get('estado')
+        switch.observaciones = request.form.get('observaciones')
+        
+        # Registrar cambio de estado
+        if estado_anterior != switch.estado:
+            historial = Historial_Estado_Equipo(
+                equipo_tipo='Switch',
+                equipo_id=id,
+                estado_anterior=estado_anterior,
+                estado_nuevo=switch.estado,
+                motivo=request.form.get('motivo_cambio', ''),
+                usuario_id=current_user.id
+            )
+            db.session.add(historial)
+        
+        db.session.commit()
+        flash('Switch actualizado exitosamente', 'success')
+        return redirect(url_for('switches_detail', id=id))
+    
+    ubicaciones = Ubicacion.query.filter_by(activo=True).all()
+    gabinetes = Gabinete.query.filter_by(estado='Activo').all()
+    
+    return render_template('switches_form.html', 
+                         switch=switch,
+                         ubicaciones=ubicaciones,
+                         gabinetes=gabinetes)
+
+@app.route('/switches/<int:id>', methods=['DELETE'])
+@login_required
+@role_required('admin')
+def switches_delete(id):
+    switch = Switch.query.get_or_404(id)
+    
+    # Verificar si tiene fallas activas
+    fallas_activas = Falla.query.filter_by(
+        equipo_tipo='Switch',
+        equipo_id=id
+    ).filter(Falla.estado.in_(['Pendiente', 'Asignada', 'En Proceso'])).count()
+    
+    if fallas_activas > 0:
+        flash(f'No se puede eliminar el switch. Tiene {fallas_activas} falla(s) activa(s)', 'danger')
+        return redirect(url_for('switches_detail', id=id))
+    
+    db.session.delete(switch)
+    db.session.commit()
+    flash('Switch eliminado exitosamente', 'success')
+    return redirect(url_for('switches_list'))
+
+# ========== UPS ==========
+@app.route('/ups')
+@login_required
+def ups_list():
+    campus = request.args.get('campus', '')
+    estado = request.args.get('estado', '')
+    busqueda = request.args.get('busqueda', '')
+    
+    query = UPS.query.join(Ubicacion)
+    
+    if campus:
+        query = query.filter(Ubicacion.campus == campus)
+    if estado:
+        query = query.filter(UPS.estado == estado)
+    if busqueda:
+        query = query.filter(or_(
+            UPS.codigo.like(f'%{busqueda}%'),
+            UPS.nombre.like(f'%{busqueda}%')
+        ))
+    
+    ups_list = query.all()
+    ubicaciones = Ubicacion.query.all()
+    campus_list = db.session.query(Ubicacion.campus).distinct().all()
+    
+    return render_template('ups_list.html', 
+                         ups_list=ups_list, 
+                         ubicaciones=ubicaciones,
+                         campus_list=[c[0] for c in campus_list])
+
+@app.route('/ups/new', methods=['GET', 'POST'])
+@login_required
+@role_required('admin', 'supervisor')
+def ups_new():
+    if request.method == 'POST':
+        ups = UPS(
+            codigo=request.form.get('codigo'),
+            nombre=request.form.get('nombre'),
+            modelo=request.form.get('modelo'),
+            fabricante=request.form.get('fabricante'),
+            capacidad_va=int(request.form.get('capacidad_va')) if request.form.get('capacidad_va') else None,
+            tipo_bateria=request.form.get('tipo_bateria'),
+            ubicacion_id=request.form.get('ubicacion_id'),
+            gabinete_id=request.form.get('gabinete_id') or None,
+            estado=request.form.get('estado', 'Activo'),
+            fecha_alta=datetime.strptime(request.form.get('fecha_alta'), '%Y-%m-%d').date() if request.form.get('fecha_alta') else None,
+            observaciones=request.form.get('observaciones')
+        )
+        db.session.add(ups)
+        db.session.commit()
+        flash('UPS creado exitosamente', 'success')
+        return redirect(url_for('ups_list'))
+    
+    ubicaciones = Ubicacion.query.filter_by(activo=True).all()
+    gabinetes = Gabinete.query.filter_by(estado='Activo').all()
+    
+    return render_template('ups_form.html', 
+                         ubicaciones=ubicaciones,
+                         gabinetes=gabinetes,
+                         ups=None)
+
+@app.route('/ups/<int:id>')
+@login_required
+def ups_detail(id):
+    ups = UPS.query.get_or_404(id)
+    fallas = Falla.query.filter_by(equipo_tipo='UPS', equipo_id=id).order_by(Falla.fecha_reporte.desc()).all()
+    mantenimientos = Mantenimiento.query.filter_by(equipo_tipo='UPS', equipo_id=id).order_by(Mantenimiento.fecha.desc()).all()
+    
+    return render_template('ups_detalle.html', 
+                         ups=ups,
+                         fallas=fallas,
+                         mantenimientos=mantenimientos)
+
+@app.route('/ups/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@role_required('admin', 'supervisor')
+def ups_edit(id):
+    ups = UPS.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        estado_anterior = ups.estado
+        
+        ups.codigo = request.form.get('codigo')
+        ups.nombre = request.form.get('nombre')
+        ups.modelo = request.form.get('modelo')
+        ups.fabricante = request.form.get('fabricante')
+        ups.capacidad_va = int(request.form.get('capacidad_va')) if request.form.get('capacidad_va') else None
+        ups.tipo_bateria = request.form.get('tipo_bateria')
+        ups.ubicacion_id = request.form.get('ubicacion_id')
+        ups.gabinete_id = request.form.get('gabinete_id') or None
+        ups.estado = request.form.get('estado')
+        ups.observaciones = request.form.get('observaciones')
+        
+        # Registrar cambio de estado
+        if estado_anterior != ups.estado:
+            historial = Historial_Estado_Equipo(
+                equipo_tipo='UPS',
+                equipo_id=id,
+                estado_anterior=estado_anterior,
+                estado_nuevo=ups.estado,
+                motivo=request.form.get('motivo_cambio', ''),
+                usuario_id=current_user.id
+            )
+            db.session.add(historial)
+        
+        db.session.commit()
+        flash('UPS actualizado exitosamente', 'success')
+        return redirect(url_for('ups_detail', id=id))
+    
+    ubicaciones = Ubicacion.query.filter_by(activo=True).all()
+    gabinetes = Gabinete.query.filter_by(estado='Activo').all()
+    
+    return render_template('ups_form.html', 
+                         ups=ups,
+                         ubicaciones=ubicaciones,
+                         gabinetes=gabinetes)
+
+@app.route('/ups/<int:id>', methods=['DELETE'])
+@login_required
+@role_required('admin')
+def ups_delete(id):
+    ups = UPS.query.get_or_404(id)
+    
+    # Verificar si tiene fallas activas
+    fallas_activas = Falla.query.filter_by(
+        equipo_tipo='UPS',
+        equipo_id=id
+    ).filter(Falla.estado.in_(['Pendiente', 'Asignada', 'En Proceso'])).count()
+    
+    if fallas_activas > 0:
+        flash(f'No se puede eliminar el UPS. Tiene {fallas_activas} falla(s) activa(s)', 'danger')
+        return redirect(url_for('ups_detail', id=id))
+    
+    db.session.delete(ups)
+    db.session.commit()
+    flash('UPS eliminado exitosamente', 'success')
+    return redirect(url_for('ups_list'))
+
+# ========== NVR/DVR ==========
+@app.route('/nvr')
+@login_required
+def nvr_list():
+    campus = request.args.get('campus', '')
+    estado = request.args.get('estado', '')
+    busqueda = request.args.get('busqueda', '')
+    
+    query = NVR_DVR.query.join(Ubicacion)
+    
+    if campus:
+        query = query.filter(Ubicacion.campus == campus)
+    if estado:
+        query = query.filter(NVR_DVR.estado == estado)
+    if busqueda:
+        query = query.filter(or_(
+            NVR_DVR.codigo.like(f'%{busqueda}%'),
+            NVR_DVR.nombre.like(f'%{busqueda}%'),
+            NVR_DVR.ip.like(f'%{busqueda}%')
+        ))
+    
+    nvrs = query.all()
+    ubicaciones = Ubicacion.query.all()
+    campus_list = db.session.query(Ubicacion.campus).distinct().all()
+    
+    return render_template('nvr_list.html', 
+                         nvrs=nvrs, 
+                         ubicaciones=ubicaciones,
+                         campus_list=[c[0] for c in campus_list])
+
+@app.route('/nvr/new', methods=['GET', 'POST'])
+@login_required
+@role_required('admin', 'supervisor')
+def nvr_new():
+    if request.method == 'POST':
+        nvr = NVR_DVR(
+            codigo=request.form.get('codigo'),
+            nombre=request.form.get('nombre'),
+            ip=request.form.get('ip'),
+            tipo=request.form.get('tipo'),
+            modelo=request.form.get('modelo'),
+            fabricante=request.form.get('fabricante'),
+            capacidad_camaras=int(request.form.get('capacidad_camaras')) if request.form.get('capacidad_camaras') else None,
+            almacenamiento_gb=int(request.form.get('almacenamiento_gb')) if request.form.get('almacenamiento_gb') else None,
+            ubicacion_id=request.form.get('ubicacion_id'),
+            gabinete_id=request.form.get('gabinete_id') or None,
+            estado=request.form.get('estado', 'Activo'),
+            fecha_alta=datetime.strptime(request.form.get('fecha_alta'), '%Y-%m-%d').date() if request.form.get('fecha_alta') else None,
+            observaciones=request.form.get('observaciones')
+        )
+        db.session.add(nvr)
+        db.session.commit()
+        flash('NVR/DVR creado exitosamente', 'success')
+        return redirect(url_for('nvr_list'))
+    
+    ubicaciones = Ubicacion.query.filter_by(activo=True).all()
+    gabinetes = Gabinete.query.filter_by(estado='Activo').all()
+    
+    return render_template('nvr_form.html', 
+                         ubicaciones=ubicaciones,
+                         gabinetes=gabinetes,
+                         nvr=None)
+
+@app.route('/nvr/<int:id>')
+@login_required
+def nvr_detail(id):
+    nvr = NVR_DVR.query.get_or_404(id)
+    fallas = Falla.query.filter_by(equipo_tipo='NVR_DVR', equipo_id=id).order_by(Falla.fecha_reporte.desc()).all()
+    mantenimientos = Mantenimiento.query.filter_by(equipo_tipo='NVR_DVR', equipo_id=id).order_by(Mantenimiento.fecha.desc()).all()
+    camaras = Camara.query.filter_by(nvr_id=id).all()
+    
+    return render_template('nvr_detalle.html', 
+                         nvr=nvr,
+                         fallas=fallas,
+                         mantenimientos=mantenimientos,
+                         camaras=camaras)
+
+@app.route('/nvr/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@role_required('admin', 'supervisor')
+def nvr_edit(id):
+    nvr = NVR_DVR.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        estado_anterior = nvr.estado
+        
+        nvr.codigo = request.form.get('codigo')
+        nvr.nombre = request.form.get('nombre')
+        nvr.ip = request.form.get('ip')
+        nvr.tipo = request.form.get('tipo')
+        nvr.modelo = request.form.get('modelo')
+        nvr.fabricante = request.form.get('fabricante')
+        nvr.capacidad_camaras = int(request.form.get('capacidad_camaras')) if request.form.get('capacidad_camaras') else None
+        nvr.almacenamiento_gb = int(request.form.get('almacenamiento_gb')) if request.form.get('almacenamiento_gb') else None
+        nvr.ubicacion_id = request.form.get('ubicacion_id')
+        nvr.gabinete_id = request.form.get('gabinete_id') or None
+        nvr.estado = request.form.get('estado')
+        nvr.observaciones = request.form.get('observaciones')
+        
+        # Registrar cambio de estado
+        if estado_anterior != nvr.estado:
+            historial = Historial_Estado_Equipo(
+                equipo_tipo='NVR_DVR',
+                equipo_id=id,
+                estado_anterior=estado_anterior,
+                estado_nuevo=nvr.estado,
+                motivo=request.form.get('motivo_cambio', ''),
+                usuario_id=current_user.id
+            )
+            db.session.add(historial)
+        
+        db.session.commit()
+        flash('NVR/DVR actualizado exitosamente', 'success')
+        return redirect(url_for('nvr_detail', id=id))
+    
+    ubicaciones = Ubicacion.query.filter_by(activo=True).all()
+    gabinetes = Gabinete.query.filter_by(estado='Activo').all()
+    
+    return render_template('nvr_form.html', 
+                         nvr=nvr,
+                         ubicaciones=ubicaciones,
+                         gabinetes=gabinetes)
+
+@app.route('/nvr/<int:id>', methods=['DELETE'])
+@login_required
+@role_required('admin')
+def nvr_delete(id):
+    nvr = NVR_DVR.query.get_or_404(id)
+    
+    # Verificar si tiene fallas activas
+    fallas_activas = Falla.query.filter_by(
+        equipo_tipo='NVR_DVR',
+        equipo_id=id
+    ).filter(Falla.estado.in_(['Pendiente', 'Asignada', 'En Proceso'])).count()
+    
+    # Verificar si tiene cámaras asignadas
+    camaras_asignadas = Camara.query.filter_by(nvr_id=id).count()
+    
+    if fallas_activas > 0:
+        flash(f'No se puede eliminar el NVR/DVR. Tiene {fallas_activas} falla(s) activa(s)', 'danger')
+        return redirect(url_for('nvr_detail', id=id))
+    
+    if camaras_asignadas > 0:
+        flash(f'No se puede eliminar el NVR/DVR. Tiene {camaras_asignadas} cámara(s) asignada(s)', 'danger')
+        return redirect(url_for('nvr_detail', id=id))
+    
+    db.session.delete(nvr)
+    db.session.commit()
+    flash('NVR/DVR eliminado exitosamente', 'success')
+    return redirect(url_for('nvr_list'))
+
+# ========== FUENTES ==========
+@app.route('/fuentes')
+@login_required
+def fuentes_list():
+    campus = request.args.get('campus', '')
+    estado = request.args.get('estado', '')
+    busqueda = request.args.get('busqueda', '')
+    
+    query = Fuente_Poder.query.join(Ubicacion)
+    
+    if campus:
+        query = query.filter(Ubicacion.campus == campus)
+    if estado:
+        query = query.filter(Fuente_Poder.estado == estado)
+    if busqueda:
+        query = query.filter(or_(
+            Fuente_Poder.codigo.like(f'%{busqueda}%'),
+            Fuente_Poder.nombre.like(f'%{busqueda}%')
+        ))
+    
+    fuentes = query.all()
+    ubicaciones = Ubicacion.query.all()
+    campus_list = db.session.query(Ubicacion.campus).distinct().all()
+    
+    return render_template('fuentes_list.html', 
+                         fuentes=fuentes, 
+                         ubicaciones=ubicaciones,
+                         campus_list=[c[0] for c in campus_list])
+
+@app.route('/fuentes/new', methods=['GET', 'POST'])
+@login_required
+@role_required('admin', 'supervisor')
+def fuentes_new():
+    if request.method == 'POST':
+        fuente = Fuente_Poder(
+            codigo=request.form.get('codigo'),
+            nombre=request.form.get('nombre'),
+            modelo=request.form.get('modelo'),
+            fabricante=request.form.get('fabricante'),
+            voltaje=int(request.form.get('voltaje')) if request.form.get('voltaje') else None,
+            corriente=int(request.form.get('corriente')) if request.form.get('corriente') else None,
+            potencia_watts=int(request.form.get('potencia_watts')) if request.form.get('potencia_watts') else None,
+            ubicacion_id=request.form.get('ubicacion_id'),
+            gabinete_id=request.form.get('gabinete_id') or None,
+            estado=request.form.get('estado', 'Activo'),
+            fecha_alta=datetime.strptime(request.form.get('fecha_alta'), '%Y-%m-%d').date() if request.form.get('fecha_alta') else None,
+            observaciones=request.form.get('observaciones')
+        )
+        db.session.add(fuente)
+        db.session.commit()
+        flash('Fuente de poder creada exitosamente', 'success')
+        return redirect(url_for('fuentes_list'))
+    
+    ubicaciones = Ubicacion.query.filter_by(activo=True).all()
+    gabinetes = Gabinete.query.filter_by(estado='Activo').all()
+    
+    return render_template('fuentes_form.html', 
+                         ubicaciones=ubicaciones,
+                         gabinetes=gabinetes,
+                         fuente=None)
+
+@app.route('/fuentes/<int:id>')
+@login_required
+def fuentes_detail(id):
+    fuente = Fuente_Poder.query.get_or_404(id)
+    fallas = Falla.query.filter_by(equipo_tipo='Fuente_Poder', equipo_id=id).order_by(Falla.fecha_reporte.desc()).all()
+    mantenimientos = Mantenimiento.query.filter_by(equipo_tipo='Fuente_Poder', equipo_id=id).order_by(Mantenimiento.fecha.desc()).all()
+    
+    return render_template('fuentes_detalle.html', 
+                         fuente=fuente,
+                         fallas=fallas,
+                         mantenimientos=mantenimientos)
+
+@app.route('/fuentes/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@role_required('admin', 'supervisor')
+def fuentes_edit(id):
+    fuente = Fuente_Poder.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        estado_anterior = fuente.estado
+        
+        fuente.codigo = request.form.get('codigo')
+        fuente.nombre = request.form.get('nombre')
+        fuente.modelo = request.form.get('modelo')
+        fuente.fabricante = request.form.get('fabricante')
+        fuente.voltaje = int(request.form.get('voltaje')) if request.form.get('voltaje') else None
+        fuente.corriente = int(request.form.get('corriente')) if request.form.get('corriente') else None
+        fuente.potencia_watts = int(request.form.get('potencia_watts')) if request.form.get('potencia_watts') else None
+        fuente.ubicacion_id = request.form.get('ubicacion_id')
+        fuente.gabinete_id = request.form.get('gabinete_id') or None
+        fuente.estado = request.form.get('estado')
+        fuente.observaciones = request.form.get('observaciones')
+        
+        # Registrar cambio de estado
+        if estado_anterior != fuente.estado:
+            historial = Historial_Estado_Equipo(
+                equipo_tipo='Fuente_Poder',
+                equipo_id=id,
+                estado_anterior=estado_anterior,
+                estado_nuevo=fuente.estado,
+                motivo=request.form.get('motivo_cambio', ''),
+                usuario_id=current_user.id
+            )
+            db.session.add(historial)
+        
+        db.session.commit()
+        flash('Fuente de poder actualizada exitosamente', 'success')
+        return redirect(url_for('fuentes_detail', id=id))
+    
+    ubicaciones = Ubicacion.query.filter_by(activo=True).all()
+    gabinetes = Gabinete.query.filter_by(estado='Activo').all()
+    
+    return render_template('fuentes_form.html', 
+                         fuente=fuente,
+                         ubicaciones=ubicaciones,
+                         gabinetes=gabinetes)
+
+@app.route('/fuentes/<int:id>', methods=['DELETE'])
+@login_required
+@role_required('admin')
+def fuentes_delete(id):
+    fuente = Fuente_Poder.query.get_or_404(id)
+    
+    # Verificar si tiene fallas activas
+    fallas_activas = Falla.query.filter_by(
+        equipo_tipo='Fuente_Poder',
+        equipo_id=id
+    ).filter(Falla.estado.in_(['Pendiente', 'Asignada', 'En Proceso'])).count()
+    
+    if fallas_activas > 0:
+        flash(f'No se puede eliminar la fuente de poder. Tiene {fallas_activas} falla(s) activa(s)', 'danger')
+        return redirect(url_for('fuentes_detail', id=id))
+    
+    db.session.delete(fuente)
+    db.session.commit()
+    flash('Fuente de poder eliminada exitosamente', 'success')
+    return redirect(url_for('fuentes_list'))
+
 # ========== FALLAS ==========
 @app.route('/fallas')
 @login_required
