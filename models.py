@@ -8,13 +8,20 @@ db = SQLAlchemy()
 class Usuario(UserMixin, db.Model):
     __tablename__ = 'usuarios'
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(200), nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    nombre = db.Column(db.String(200), nullable=False)  # ⚠️ NOT NULL según logs PostgreSQL
-    email = db.Column(db.String(200))
+    nombre_completo = db.Column(db.String(200), nullable=False)
     rol = db.Column(db.String(20), nullable=False)  # admin, supervisor, tecnico, visualizador
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    telefono = db.Column(db.String(20))
+    nombre = db.Column(db.String(200))  # Campo adicional que existe en BD
+    permisos = db.Column(db.Text)
+    departamento = db.Column(db.String(200))
+    ultima_conexion = db.Column(db.DateTime)
+    configuraciones = db.Column(db.Text)
+    modo = db.Column(db.String(50))
     
     @property
     def username_safe(self):

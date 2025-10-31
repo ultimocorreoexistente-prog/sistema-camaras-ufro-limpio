@@ -122,11 +122,14 @@ def diagnostico():
                 except Exception as e:
                     datos_usuario['errores_acceso'].append(f"nombre: {str(e)}")
                 
-                # Intentar nombre
+                # Intentar nombre_completo y nombre
                 try:
-                    nombre_attr = getattr(usuario, 'nombre', None)
-                    if nombre_attr is not None:
-                        datos_usuario['nombre_tabla'] = nombre_attr
+                    nombre_completo = getattr(usuario, 'nombre_completo', None)
+                    nombre = getattr(usuario, 'nombre', None)
+                    if nombre_completo:
+                        datos_usuario['nombre_tabla'] = nombre_completo
+                    elif nombre:
+                        datos_usuario['nombre_tabla'] = nombre
                 except Exception as e:
                     datos_usuario['errores_acceso'].append(f"nombre: {str(e)}")
                 
@@ -144,7 +147,7 @@ def diagnostico():
             if charles:
                 # Intentar crear el mensaje de bienvenida (que es donde está el error)
                 try:
-                    mensaje_bienvenida = getattr(charles, 'nombre', None) or charles.email
+                    mensaje_bienvenida = getattr(charles, 'nombre_completo', None) or getattr(charles, 'nombre', None) or charles.email
                     resultado['intento_login_charles'] = {
                         'usuario_encontrado': True,
                         'email': charles.email,
@@ -247,7 +250,7 @@ def login():
                 login_user(user)
                 # AQUÍ ESTÁ EL ERROR: Intenta acceder a nombre pero en BD es 'nombre'
                 try:
-                    nombre_display = getattr(user, 'nombre', None) or user.email
+                    nombre_display = getattr(user, 'nombre_completo', None) or getattr(user, 'nombre', None) or user.email
                 except Exception as e:
                     # Capturar el error específico
                     flash(f'Login exitoso pero error mostrando nombre: {str(e)}', 'warning')
