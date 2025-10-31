@@ -43,14 +43,6 @@ def safe_date(value):
     except:
         return None
 
-def verificar_existe_registro(modelo, **kwargs):
-    """Verifica si ya existe un registro con los parámetros dados"""
-    query = modelo.query
-    for key, value in kwargs.items():
-        if value is not None:
-            query = query.filter(getattr(modelo, key) == value)
-    return query.first() is not None
-
 def validar_falla_duplicada(equipo_tipo, equipo_id):
     """Valida si se puede insertar una nueva falla"""
     falla_activa = Falla.query.filter_by(
@@ -66,7 +58,7 @@ def validar_falla_duplicada(equipo_tipo, equipo_id):
 
 def extraer_fallas_informe():
     """Extrae fallas del INFORME DE CAMARAS.docx (convertido a markdown)"""
-    informe_path = '../docs/INFORME_DE_CAMARAS.md'
+    informe_path = 'docs/INFORME_DE_CAMARAS.md'
     fallas_extraidas = []
     
     if not os.path.exists(informe_path):
@@ -138,8 +130,8 @@ def migrar_datos():
             ubicacion = Ubicacion(
                 campus=safe_str(row.get('Campus')),
                 edificio=safe_str(row.get('Edificio')),
-                piso=safe_str(row.get('Piso/Nivel')),
-                descripcion=safe_str(row.get('Zona')),
+                piso=safe_str(row.get('Piso')),
+                descripcion=safe_str(row.get('Descripcion')),
                 latitud=safe_float(row.get('Latitud')),
                 longitud=safe_float(row.get('Longitud')),
                 activo=True
@@ -149,71 +141,36 @@ def migrar_datos():
         db.session.commit()
         print(f"   ✓ {count} ubicaciones insertadas\n")
         
-        # 2. EQUIPOS TÉCNICOS (Personal - crear algunos registros de ejemplo)
-        print("2. Creando Personal Técnico...")
-        personal_ejemplo = [
-            {
-                'nombre': 'Carlos',
-                'apellido': 'Rodríguez',
-                'especialidad': 'Cámaras de Seguridad',
-                'telefono': '+56912345678',
-                'email': 'carlos.rodriguez@ufro.cl',
-                'estado': 'Activo'
-            },
-            {
-                'nombre': 'María',
-                'apellido': 'González',
-                'especialidad': 'Redes y Conectividad',
-                'telefono': '+56987654321',
-                'email': 'maria.gonzalez@ufro.cl',
-                'estado': 'Activo'
-            },
-            {
-                'nombre': 'Juan',
-                'apellido': 'Pérez',
-                'especialidad': 'Mantenimiento Preventivo',
-                'telefono': '+56911223344',
-                'email': 'juan.perez@ufro.cl',
-                'estado': 'Activo'
-            }
-        ]
-        
+        # 2. EQUIPOS TÉCNICOS
+        print("2. Migrando Equipos Técnicos...")
+        df = pd.read_excel(f'{base_path}Equipos_Tecnicos.xlsx')
         count = 0
-        for personal in personal_ejemplo:
+        for _, row in df.iterrows():
             equipo = Equipo_Tecnico(
-                nombre=personal['nombre'],
-                apellido=personal['apellido'],
-                especialidad=personal['especialidad'],
-                telefono=personal['telefono'],
-                email=personal['email'],
-                estado=personal['estado'],
-                fecha_ingreso=datetime.now().date()
+                nombre=safe_str(row.get('Nombre')),
+                apellido=safe_str(row.get('Apellido')),
+                especialidad=safe_str(row.get('Especialidad')),
+                telefono=safe_str(row.get('Telefono')),
+                email=safe_str(row.get('Email')),
+                estado=safe_str(row.get('Estado', 'Activo')),
+                fecha_ingreso=safe_date(row.get('Fecha_Ingreso'))
             )
             db.session.add(equipo)
             count += 1
         db.session.commit()
-        print(f"   ✓ {count} personal técnico creado\n")
+        print(f"   ✓ {count} equipos técnicos insertados\n")
         
         # 3. CATÁLOGO TIPOS DE FALLAS
         print("3. Migrando Catálogo de Tipos de Fallas...")
         df = pd.read_excel(f'{base_path}Catalogo_Tipos_Fallas.xlsx')
         count = 0
         for _, row in df.iterrows():
-            # Mapear prioridad sugerida a gravedad
-            prioridad = safe_str(row.get('Prioridad Sugerida', 'Media'))
-            if 'Alta' in prioridad:
-                gravedad = 'Alta'
-            elif 'Baja' in prioridad:
-                gravedad = 'Baja'
-            else:
-                gravedad = 'Media'
-                
             tipo_falla = Catalogo_Tipo_Falla(
-                nombre=safe_str(row.get('Tipo de Falla')),
-                categoria=safe_str(row.get('Categoría Principal')),
-                descripcion=safe_str(row.get('Descripción')),
-                gravedad=gravedad,
-                tiempo_estimado_resolucion=60  # 60 minutos por defecto
+                nombre=safe_str(row.get('Nombre')),
+                categoria=safe_str(row.get('Categoria')),
+                descripcion=safe_str(row.get('Descripcion')),
+                gravedad=safe_str(row.get('Gravedad', 'Media')),
+                tiempo_estimado_resolucion=safe_int(row.get('Tiempo_Estimado_Resolucion'))
             )
             db.session.add(tipo_falla)
             count += 1
@@ -224,26 +181,20 @@ def migrar_datos():
         print("4. Migrando Gabinetes...")
         df = pd.read_excel(f'{base_path}Gabinetes.xlsx')
         count = 0
-        omitidos_sin_codigo = 0
         for _, row in df.iterrows():
-            codigo = safe_str(row.get('ID Gabinete'))
-            if not codigo:
-                omitidos_sin_codigo += 1
-                continue
-                
             gabinete = Gabinete(
-                codigo=codigo,
-                nombre=safe_str(row.get('Nombre de Gabinete')),
-                tipo_ubicacion_general=safe_str(row.get('Tipo de Ubicación General')),
-                tipo_ubicacion_detallada=safe_str(row.get('Tipo de Ubicación Detallada')),
-                ubicacion_id=None,  # Se asignará después si es necesario
+                codigo=safe_str(row.get('Codigo')),
+                nombre=safe_str(row.get('Nombre')),
+                tipo_ubicacion_general=safe_str(row.get('Tipo_Ubicacion_General')),
+                tipo_ubicacion_detallada=safe_str(row.get('Tipo_Ubicacion_Detallada')),
+                ubicacion_id=safe_int(row.get('ID_Ubicacion')),
                 capacidad=safe_int(row.get('Capacidad')),
-                tiene_ups=bool(safe_str(row.get('Tiene UPS', '')) == 'Sí'),
-                tiene_switch=bool(safe_str(row.get('Tiene Switch', '')) == 'Sí'),
-                tiene_nvr=bool(safe_str(row.get('Tiene NVR', '')) == 'Sí'),
-                conexion_fibra=bool(safe_str(row.get('Conexión Fibra', '')) == 'Sí'),
+                tiene_ups=bool(row.get('Tiene_UPS', False)),
+                tiene_switch=bool(row.get('Tiene_Switch', False)),
+                tiene_nvr=bool(row.get('Tiene_NVR', False)),
+                conexion_fibra=bool(row.get('Conexion_Fibra', False)),
                 estado=safe_str(row.get('Estado', 'Activo')),
-                fecha_alta=safe_date(row.get('Fecha Instalación')),
+                fecha_alta=safe_date(row.get('Fecha_Alta')),
                 observaciones=safe_str(row.get('Observaciones')),
                 latitud=safe_float(row.get('Latitud')),
                 longitud=safe_float(row.get('Longitud'))
@@ -251,42 +202,27 @@ def migrar_datos():
             db.session.add(gabinete)
             count += 1
         db.session.commit()
-        mensaje = f"   ✓ {count} gabinetes insertados"
-        if omitidos_sin_codigo > 0:
-            mensaje += f" ({omitidos_sin_codigo} registros sin código omitidos)"
-        print(mensaje + "\n")
+        print(f"   ✓ {count} gabinetes insertados\n")
         
         # 5. SWITCHES
         print("5. Migrando Switches...")
         df = pd.read_excel(f'{base_path}Switches.xlsx')
         count = 0
-        omitidos_sin_codigo = 0
         for _, row in df.iterrows():
-            codigo = safe_str(row.get('ID Switch'))
-            if not codigo:
-                omitidos_sin_codigo += 1
-                continue
-                
-            # Obtener ID del gabinete por nombre
-            gabinete_nombre = safe_str(row.get('Gabinete Asociado'))
-            gabinete_obj = None
-            if gabinete_nombre:
-                gabinete_obj = Gabinete.query.filter_by(nombre=gabinete_nombre).first()
-            
             switch = Switch(
-                codigo=codigo,
-                nombre=safe_str(row.get('Nombre/Modelo')),
-                ip=safe_str(row.get('Dirección IP')),
-                modelo=safe_str(row.get('Nombre/Modelo')),
+                codigo=safe_str(row.get('Codigo')),
+                nombre=safe_str(row.get('Nombre')),
+                ip=safe_str(row.get('IP')),
+                modelo=safe_str(row.get('Modelo')),
                 marca=safe_str(row.get('Marca')),
-                numero_serie=safe_str(row.get('Número de Serie')),
-                gabinete_id=gabinete_obj.id if gabinete_obj else None,
-                puertos_totales=safe_int(row.get('Número de Puertos')),
-                puertos_usados=safe_int(row.get('Puertos Usados', 0)),
-                puertos_disponibles=safe_int(row.get('Puertos Disponibles')),
-                capacidad_poe=bool(safe_str(row.get('Capacidad PoE', '')) == 'Sí'),
+                numero_serie=safe_str(row.get('Numero_Serie')),
+                gabinete_id=safe_int(row.get('ID_Gabinete')),
+                puertos_totales=safe_int(row.get('Puertos_Totales')),
+                puertos_usados=safe_int(row.get('Puertos_Usados', 0)),
+                puertos_disponibles=safe_int(row.get('Puertos_Disponibles')),
+                capacidad_poe=bool(row.get('Capacidad_PoE', False)),
                 estado=safe_str(row.get('Estado', 'Activo')),
-                fecha_alta=safe_date(row.get('Fecha Instalación')),
+                fecha_alta=safe_date(row.get('Fecha_Alta')),
                 observaciones=safe_str(row.get('Observaciones')),
                 latitud=safe_float(row.get('Latitud')),
                 longitud=safe_float(row.get('Longitud'))
@@ -294,31 +230,22 @@ def migrar_datos():
             db.session.add(switch)
             count += 1
         db.session.commit()
-        mensaje = f"   ✓ {count} switches insertados"
-        if omitidos_sin_codigo > 0:
-            mensaje += f" ({omitidos_sin_codigo} registros sin código omitidos)"
-        print(mensaje + "\n")
+        print(f"   ✓ {count} switches insertados\n")
         
         # 6. PUERTOS SWITCH
         print("6. Migrando Puertos de Switch...")
         df = pd.read_excel(f'{base_path}Puertos_Switch.xlsx')
         count = 0
         for _, row in df.iterrows():
-            # Obtener ID del switch por código
-            switch_codigo = safe_str(row.get('ID Switch'))
-            switch_obj = None
-            if switch_codigo:
-                switch_obj = Switch.query.filter_by(codigo=switch_codigo).first()
-            
             puerto = Puerto_Switch(
-                switch_id=switch_obj.id if switch_obj else None,
-                numero_puerto=safe_int(row.get('Número de Puerto')),
-                camara_id=None,  # Se asignará después si es necesario
-                ip_dispositivo=safe_str(row.get('IP Dispositivo')),
-                estado=safe_str(row.get('Estado Puerto', 'Disponible')),
-                tipo_conexion=safe_str(row.get('Tipo de Conexión')),
-                nvr_id=None,  # Se asignará después si es necesario
-                puerto_nvr=safe_str(row.get('Puerto NVR (Puerto)'))
+                switch_id=safe_int(row.get('ID_Switch')),
+                numero_puerto=safe_int(row.get('Numero_Puerto')),
+                camara_id=safe_int(row.get('ID_Camara')),
+                ip_dispositivo=safe_str(row.get('IP_Dispositivo')),
+                estado=safe_str(row.get('Estado', 'Disponible')),
+                tipo_conexion=safe_str(row.get('Tipo_Conexion')),
+                nvr_id=safe_int(row.get('ID_NVR')),
+                puerto_nvr=safe_str(row.get('Puerto_NVR'))
             )
             db.session.add(puerto)
             count += 1
@@ -329,28 +256,18 @@ def migrar_datos():
         print("7. Migrando UPS...")
         df = pd.read_excel(f'{base_path}UPS.xlsx')
         count = 0
-        duplicados_omitidos = 0
         for _, row in df.iterrows():
-            codigo = safe_str(row.get('ID UPS'))
-            if not codigo:
-                continue
-                
-            # Verificar si ya existe
-            if verificar_existe_registro(UPS, codigo=codigo):
-                duplicados_omitidos += 1
-                continue
-                
             ups = UPS(
-                codigo=codigo,
+                codigo=safe_str(row.get('Codigo')),
                 modelo=safe_str(row.get('Modelo')),
                 marca=safe_str(row.get('Marca')),
-                capacidad_va=safe_int(row.get('Capacidad (VA)')),
-                numero_baterias=safe_int(row.get('Número de Baterías')),
-                ubicacion_id=None,  # Se asignará después si es necesario
-                gabinete_id=None,  # Se asignará después si es necesario
-                equipos_que_alimenta=safe_str(row.get('Alimenta a')),
+                capacidad_va=safe_int(row.get('Capacidad_VA')),
+                numero_baterias=safe_int(row.get('Numero_Baterias')),
+                ubicacion_id=safe_int(row.get('ID_Ubicacion')),
+                gabinete_id=safe_int(row.get('ID_Gabinete')),
+                equipos_que_alimenta=safe_str(row.get('Equipos_Que_Alimenta')),
                 estado=safe_str(row.get('Estado', 'Activo')),
-                fecha_alta=safe_date(row.get('Fecha de Instalación')),
+                fecha_alta=safe_date(row.get('Fecha_Alta')),
                 observaciones=safe_str(row.get('Observaciones')),
                 latitud=safe_float(row.get('Latitud')),
                 longitud=safe_float(row.get('Longitud'))
@@ -358,40 +275,25 @@ def migrar_datos():
             db.session.add(ups)
             count += 1
         db.session.commit()
-        if duplicados_omitidos > 0:
-            print(f"   ✓ {count} UPS insertados ({duplicados_omitidos} duplicados omitidos)\n")
-        else:
-            print(f"   ✓ {count} UPS insertados\n")
+        print(f"   ✓ {count} UPS insertados\n")
         
         # 8. NVR/DVR
         print("8. Migrando NVR/DVR...")
         df = pd.read_excel(f'{base_path}NVR_DVR.xlsx')
         count = 0
-        duplicados_omitidos = 0
-        omitidos_sin_codigo = 0
         for _, row in df.iterrows():
-            codigo = safe_str(row.get('ID NVR'))
-            if not codigo:
-                omitidos_sin_codigo += 1
-                continue
-                
-            # Verificar si ya existe
-            if verificar_existe_registro(NVR_DVR, codigo=codigo):
-                duplicados_omitidos += 1
-                continue
-                
             nvr = NVR_DVR(
-                codigo=codigo,
+                codigo=safe_str(row.get('Codigo')),
                 tipo=safe_str(row.get('Tipo', 'NVR')),
                 modelo=safe_str(row.get('Modelo')),
                 marca=safe_str(row.get('Marca')),
-                canales_totales=safe_int(row.get('Número de Canales')),
-                canales_usados=safe_int(row.get('Canales Usados', 0)),
-                ip=safe_str(row.get('Dirección IP')),
-                ubicacion_id=None,  # Se asignará después si es necesario
-                gabinete_id=None,  # Se asignará después si es necesario
+                canales_totales=safe_int(row.get('Canales_Totales')),
+                canales_usados=safe_int(row.get('Canales_Usados', 0)),
+                ip=safe_str(row.get('IP')),
+                ubicacion_id=safe_int(row.get('ID_Ubicacion')),
+                gabinete_id=safe_int(row.get('ID_Gabinete')),
                 estado=safe_str(row.get('Estado', 'Activo')),
-                fecha_alta=safe_date(row.get('Fecha Instalación')),
+                fecha_alta=safe_date(row.get('Fecha_Alta')),
                 observaciones=safe_str(row.get('Observaciones')),
                 latitud=safe_float(row.get('Latitud')),
                 longitud=safe_float(row.get('Longitud'))
@@ -399,78 +301,54 @@ def migrar_datos():
             db.session.add(nvr)
             count += 1
         db.session.commit()
-        mensaje = f"   ✓ {count} NVR/DVR insertados"
-        if duplicados_omitidos > 0:
-            mensaje += f" ({duplicados_omitidos} duplicados omitidos)"
-        if omitidos_sin_codigo > 0:
-            mensaje += f" ({omitidos_sin_codigo} registros sin código omitidos)"
-        print(mensaje + "\n")
+        print(f"   ✓ {count} NVR/DVR insertados\n")
         
         # 9. FUENTES DE PODER
         print("9. Migrando Fuentes de Poder...")
         df = pd.read_excel(f'{base_path}Fuentes_Poder.xlsx')
         count = 0
-        omitidos_sin_codigo = 0
         for _, row in df.iterrows():
-            codigo = safe_str(row.get('ID Fuente'))
-            if not codigo:
-                omitidos_sin_codigo += 1
-                continue
-                
             fuente = Fuente_Poder(
-                codigo=codigo,
+                codigo=safe_str(row.get('Codigo')),
                 modelo=safe_str(row.get('Modelo')),
-                voltaje=safe_str(row.get('Voltaje (V)')),
-                amperaje=safe_str(row.get('Amperaje (A)')),
-                equipos_que_alimenta=safe_str(row.get('Equipos que Alimenta')),
-                ubicacion_id=None,  # Se asignará después si es necesario
-                gabinete_id=None,  # Se asignará después si es necesario
+                voltaje=safe_str(row.get('Voltaje')),
+                amperaje=safe_str(row.get('Amperaje')),
+                equipos_que_alimenta=safe_str(row.get('Equipos_Que_Alimenta')),
+                ubicacion_id=safe_int(row.get('ID_Ubicacion')),
+                gabinete_id=safe_int(row.get('ID_Gabinete')),
                 estado=safe_str(row.get('Estado', 'Activo')),
-                fecha_alta=safe_date(row.get('Fecha Instalación')),
+                fecha_alta=safe_date(row.get('Fecha_Alta')),
                 observaciones=safe_str(row.get('Observaciones'))
             )
             db.session.add(fuente)
             count += 1
         db.session.commit()
-        mensaje = f"   ✓ {count} fuentes de poder insertadas"
-        if omitidos_sin_codigo > 0:
-            mensaje += f" ({omitidos_sin_codigo} registros sin código omitidos)"
-        print(mensaje + "\n")
+        print(f"   ✓ {count} fuentes de poder insertadas\n")
         
-        # 10. CÁMARAS (467 unidades)
+        # 10. CÁMARAS (474 unidades)
         print("10. Migrando Cámaras...")
         df = pd.read_excel(f'{base_path}Listadecámaras_modificada.xlsx')
         count = 0
-        duplicados_omitidos = 0
         for _, row in df.iterrows():
-            codigo = safe_str(row.get('Nombre de Cámara'))
-            if not codigo:
-                continue
-                
-            # Verificar si ya existe
-            if verificar_existe_registro(Camara, codigo=codigo):
-                duplicados_omitidos += 1
-                continue
-                
             camara = Camara(
-                codigo=codigo,
-                nombre=safe_str(row.get('Nombre de Cámara')),
-                ip=safe_str(row.get('IP de Cámara')),
+                codigo=safe_str(row.get('Codigo')),
+                nombre=safe_str(row.get('Nombre')),
+                ip=safe_str(row.get('IP')),
                 modelo=safe_str(row.get('Modelo')),
                 fabricante=safe_str(row.get('Fabricante')),
-                tipo_camara=safe_str(row.get('Tipo de Cámara', 'Domo')),
-                ubicacion_id=None,  # Se asignará después si es necesario
-                gabinete_id=None,  # Se asignará después si es necesario
-                switch_id=None,  # Se asignará después si es necesario
-                puerto_switch_id=None,  # Se asignará después si es necesario
-                nvr_id=None,  # Se asignará después si es necesario
-                puerto_nvr=safe_str(row.get('Puerto NVR')),
-                requiere_poe_adicional=bool(safe_str(row.get('Requiere PoE Adicional', '')) == 'Sí'),
-                tipo_conexion=safe_str(row.get('Tipo de Conexión')),
+                tipo_camara=safe_str(row.get('Tipo_Camara', 'Domo')),
+                ubicacion_id=safe_int(row.get('ID_Ubicacion')),
+                gabinete_id=safe_int(row.get('ID_Gabinete')),
+                switch_id=safe_int(row.get('ID_Switch')),
+                puerto_switch_id=safe_int(row.get('ID_Puerto_Switch')),
+                nvr_id=safe_int(row.get('ID_NVR')),
+                puerto_nvr=safe_str(row.get('Puerto_NVR')),
+                requiere_poe_adicional=bool(row.get('Requiere_PoE_Adicional', False)),
+                tipo_conexion=safe_str(row.get('Tipo_Conexion')),
                 estado=safe_str(row.get('Estado', 'Activo')),
-                fecha_alta=safe_date(row.get('Fecha de Instalación')),
+                fecha_alta=safe_date(row.get('Fecha_Alta')),
                 instalador=safe_str(row.get('Instalador')),
-                fecha_instalacion=safe_date(row.get('Fecha de Instalación')),
+                fecha_instalacion=safe_date(row.get('Fecha_Instalacion')),
                 observaciones=safe_str(row.get('Observaciones')),
                 latitud=safe_float(row.get('Latitud')),
                 longitud=safe_float(row.get('Longitud'))
@@ -478,10 +356,7 @@ def migrar_datos():
             db.session.add(camara)
             count += 1
         db.session.commit()
-        if duplicados_omitidos > 0:
-            print(f"   ✓ {count} cámaras insertadas ({duplicados_omitidos} duplicados omitidos)\n")
-        else:
-            print(f"   ✓ {count} cámaras insertadas\n")
+        print(f"   ✓ {count} cámaras insertadas\n")
         
         # 11. FALLAS (con validación anti-duplicados)
         print("11. Migrando Fallas (con validación anti-duplicados)...")
@@ -503,52 +378,27 @@ def migrar_datos():
         count = 0
         rechazadas = 0
         
-        # Mapear tipos de falla del catálogo a IDs
-        tipos_falla_map = {}
-        tipos_falla = Catalogo_Tipo_Falla.query.all()
-        for tipo in tipos_falla:
-            tipos_falla_map[tipo.nombre.lower()] = tipo.id
-        
         # Fallas_Actualizada.xlsx
         try:
             df1 = pd.read_excel(f'{base_path}Fallas_Actualizada.xlsx')
             for _, row in df1.iterrows():
-                # Buscar cámara por nombre o código
-                nombre_camara = safe_str(row.get('Dispositivo Afectado'))
-                camara = None
+                equipo_tipo = safe_str(row.get('Equipo_Tipo', 'Camara'))
+                equipo_id = safe_int(row.get('Equipo_ID'))
                 
-                if nombre_camara:
-                    camara = Camara.query.filter(
-                        Camara.nombre.ilike(f"%{nombre_camara}%")
-                    ).first()
-                    
-                    if not camara:
-                        camara = Camara.query.filter(
-                            Camara.codigo.ilike(f"%{nombre_camara}%")
-                        ).first()
-                
-                if camara:
+                if equipo_id:
                     # Validar anti-duplicados
-                    permitir, mensaje = validar_falla_duplicada('Camara', camara.id)
+                    permitir, mensaje = validar_falla_duplicada(equipo_tipo, equipo_id)
                     if not permitir:
                         rechazadas += 1
                         continue
                     
-                    # Mapear tipo de falla
-                    tipo_falla_nombre = safe_str(row.get('Tipo de Falla', '')).lower()
-                    tipo_falla_id = 1  # Default
-                    for nombre_tipo, id_tipo in tipos_falla_map.items():
-                        if nombre_tipo in tipo_falla_nombre or tipo_falla_nombre in nombre_tipo:
-                            tipo_falla_id = id_tipo
-                            break
-                    
                     falla = Falla(
-                        equipo_tipo='Camara',
-                        equipo_id=camara.id,
-                        tipo_falla_id=tipo_falla_id,
-                        descripcion=safe_str(row.get('Descripción del Problema')),
+                        equipo_tipo=equipo_tipo,
+                        equipo_id=equipo_id,
+                        tipo_falla_id=safe_int(row.get('Tipo_Falla_ID')),
+                        descripcion=safe_str(row.get('Descripcion')),
                         prioridad=safe_str(row.get('Prioridad', 'Media')),
-                        fecha_reporte=safe_date(row.get('Fecha de Reporte')) or datetime.now(),
+                        fecha_reporte=datetime.now(),
                         reportado_por_id=admin_user.id,
                         estado=safe_str(row.get('Estado', 'Pendiente'))
                     )
@@ -561,42 +411,23 @@ def migrar_datos():
         try:
             df2 = pd.read_excel(f'{base_path}Ejemplos_Fallas_Reales.xlsx')
             for _, row in df2.iterrows():
-                # Buscar cámara por nombre o código
-                nombre_camara = safe_str(row.get('Dispositivo Afectado'))
-                camara = None
+                equipo_tipo = safe_str(row.get('Equipo_Tipo', 'Camara'))
+                equipo_id = safe_int(row.get('Equipo_ID'))
                 
-                if nombre_camara:
-                    camara = Camara.query.filter(
-                        Camara.nombre.ilike(f"%{nombre_camara}%")
-                    ).first()
-                    
-                    if not camara:
-                        camara = Camara.query.filter(
-                            Camara.codigo.ilike(f"%{nombre_camara}%")
-                        ).first()
-                
-                if camara:
+                if equipo_id:
                     # Validar anti-duplicados
-                    permitir, mensaje = validar_falla_duplicada('Camara', camara.id)
+                    permitir, mensaje = validar_falla_duplicada(equipo_tipo, equipo_id)
                     if not permitir:
                         rechazadas += 1
                         continue
                     
-                    # Mapear tipo de falla
-                    tipo_falla_nombre = safe_str(row.get('Tipo de Falla', '')).lower()
-                    tipo_falla_id = 1  # Default
-                    for nombre_tipo, id_tipo in tipos_falla_map.items():
-                        if nombre_tipo in tipo_falla_nombre or tipo_falla_nombre in nombre_tipo:
-                            tipo_falla_id = id_tipo
-                            break
-                    
                     falla = Falla(
-                        equipo_tipo='Camara',
-                        equipo_id=camara.id,
-                        tipo_falla_id=tipo_falla_id,
-                        descripcion=safe_str(row.get('Descripción del Problema')),
+                        equipo_tipo=equipo_tipo,
+                        equipo_id=equipo_id,
+                        tipo_falla_id=safe_int(row.get('Tipo_Falla_ID')),
+                        descripcion=safe_str(row.get('Descripcion')),
                         prioridad=safe_str(row.get('Prioridad', 'Media')),
-                        fecha_reporte=safe_date(row.get('Fecha de Reporte')) or datetime.now(),
+                        fecha_reporte=datetime.now(),
                         reportado_por_id=admin_user.id,
                         estado=safe_str(row.get('Estado', 'Pendiente'))
                     )
@@ -614,15 +445,15 @@ def migrar_datos():
             if fallas_informe:
                 # Mapear tipos de falla a IDs del catálogo
                 tipo_falla_map = {
-                    'telas de araña': 1,
-                    'imagen borrosa': 1,
-                    'mica rallada': 2,
-                    'desconectada': 3,
-                    'mancha en lente': 1,
-                    'empañada': 1,
-                    'sin conexión': 3,
-                    'intermitencia': 3,
-                    'vandalismo/destruida': 2
+                    'Telas de araña': 1,  # Limpieza
+                    'Imagen borrosa': 1,   # Limpieza
+                    'Mica rallada': 2,     # Reparación
+                    'Desconectada': 3,     # Técnica
+                    'Mancha en lente': 1,  # Limpieza
+                    'Empañada': 1,        # Limpieza
+                    'Sin conexión': 3,    # Técnica
+                    'Intermitencia': 3,    # Técnica
+                    'Vandalismo/Destruida': 2  # Reparación
                 }
                 
                 informe_insertadas = 0
@@ -648,12 +479,7 @@ def migrar_datos():
                             continue
                         
                         # Crear falla
-                        tipo_falla_nombre = falla_info['tipo_falla'].lower()
-                        tipo_falla_id = 1  # Default
-                        for nombre_tipo, id_tipo in tipo_falla_map.items():
-                            if nombre_tipo in tipo_falla_nombre:
-                                tipo_falla_id = id_tipo
-                                break
+                        tipo_falla_id = tipo_falla_map.get(falla_info['tipo_falla'], 1)
                         
                         falla = Falla(
                             equipo_tipo='Camara',
@@ -685,45 +511,23 @@ def migrar_datos():
         try:
             df = pd.read_excel(f'{base_path}Mantenimientos.xlsx')
             count = 0
-            omitidos_sin_equipo = 0
             for _, row in df.iterrows():
-                # Buscar cámara por nombre si existe
-                nombre_camara = safe_str(row.get('Dispositivo/Equipo'))
-                camara = None
-                
-                if nombre_camara:
-                    camara = Camara.query.filter(
-                        Camara.nombre.ilike(f"%{nombre_camara}%")
-                    ).first()
-                    
-                    if not camara:
-                        camara = Camara.query.filter(
-                            Camara.codigo.ilike(f"%{nombre_camara}%")
-                        ).first()
-                
-                if not camara:
-                    omitidos_sin_equipo += 1
-                    continue
-                
                 mantenimiento = Mantenimiento(
-                    equipo_tipo='Camara',
-                    equipo_id=camara.id,
-                    tipo=safe_str(row.get('Tipo de Mantenimiento', 'Preventivo')),
-                    fecha=safe_date(row.get('Fecha de Realización')) or datetime.now(),
+                    equipo_tipo=safe_str(row.get('Equipo_Tipo', 'Camara')),
+                    equipo_id=safe_int(row.get('Equipo_ID')),
+                    tipo=safe_str(row.get('Tipo', 'Preventivo')),
+                    fecha=datetime.now(),
                     tecnico_id=admin_user.id,
-                    descripcion=safe_str(row.get('Descripción del Trabajo Realizado')),
-                    materiales_utilizados=safe_str(row.get('Materiales Utilizados')),
-                    tiempo_ejecucion_horas=safe_float(row.get('Tiempo de Ejecución (horas)')),
-                    costo=safe_float(row.get('Costo Total')),
+                    descripcion=safe_str(row.get('Descripcion')),
+                    materiales_utilizados=safe_str(row.get('Materiales_Utilizados')),
+                    tiempo_ejecucion_horas=safe_float(row.get('Tiempo_Ejecucion_Horas')),
+                    costo=safe_float(row.get('Costo')),
                     observaciones=safe_str(row.get('Observaciones'))
                 )
                 db.session.add(mantenimiento)
                 count += 1
             db.session.commit()
-            mensaje = f"   ✓ {count} mantenimientos insertados"
-            if omitidos_sin_equipo > 0:
-                mensaje += f" ({omitidos_sin_equipo} registros sin equipo asociado omitidos)"
-            print(mensaje + "\n")
+            print(f"   ✓ {count} mantenimientos insertados\n")
         except Exception as e:
             print(f"   ⚠ Error procesando Mantenimientos.xlsx: {e}\n")
         

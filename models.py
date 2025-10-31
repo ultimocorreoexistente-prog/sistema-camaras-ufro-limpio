@@ -10,12 +10,21 @@ class Usuario(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    rol = db.Column(db.String(20), nullable=False)  # admin, supervisor, tecnico, visualizador
-    nombre_completo = db.Column(db.String(200))
+    nombre = db.Column(db.String(200), nullable=False)  # ⚠️ NOT NULL según logs PostgreSQL
     email = db.Column(db.String(200))
-    telefono = db.Column(db.String(20))
+    rol = db.Column(db.String(20), nullable=False)  # admin, supervisor, tecnico, visualizador
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    @property
+    def username_safe(self):
+        """Retorna username si existe, sino genera uno basado en email"""
+        if self.username:
+            return self.username
+        elif self.email:
+            return self.email.split('@')[0]  # Extrae parte antes del @ del email
+        else:
+            return f"user_{self.id}"  # Fallback con ID
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -270,5 +279,56 @@ class Historial_Estado_Equipo(db.Model):
     fecha_cambio = db.Column(db.DateTime, default=datetime.utcnow)
     motivo = db.Column(db.Text)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+
+def fix_usuarios_structure():
+    """Corrige la estructura de la tabla usuarios agregando columna username si falta"""
+    try:
+        with db.engine.connect() as conn:
+            # Agregar columna username si no existe
+            conn.execute(db.text("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name = 'usuarios' AND column_name = 'username'
+                    ) THEN
+                        ALTER TABLE usuarios ADD COLUMN username VARCHAR(80);
+                        UPDATE usuarios SET username = email WHERE username IS NULL;
+                        ALTER TABLE usuarios ALTER COLUMN username SET NOT NULL;
+                        CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_username ON usuarios(username);
+                        RAISE NOTICE 'Columna username agregada exitosamente';
+                    END IF;
+                END $$;
+            """))
+            
+            # Eliminar columna modo si existe
+            conn.execute(db.text("""
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name = 'usuarios' AND column_name = 'modo'
+                    ) THEN
+                        ALTER TABLE usuarios DROP COLUMN IF EXISTS modo;
+                        RAISE NOTICE 'Columna modo eliminada';
+                    END IF;
+                END $$;
+            """))
+            
+            conn.commit()
+            print('✅ Estructura de usuarios corregida')
+    except Exception as e:
+        print(f'⚠️ Error al corregir estructura usuarios: {e}')
+
+def init_database():
+    """Inicializa la base de datos si no existe"""
+    try:
+        # FIX CRÍTICO: Corregir estructura ANTES de create_all
+        fix_usuarios_structure()
+        db.create_all()
+        print('✅ Tablas verificadas/creadas exitosamente')
+    except Exception as e:
+        print(f'❌ Error al inicializar base de datos: {e}')
+        raise
     
     usuario = db.relationship('Usuario', backref='cambios_estado')

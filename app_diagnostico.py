@@ -110,7 +110,7 @@ def diagnostico():
                     'username': getattr(usuario, 'username', None),
                     'rol': getattr(usuario, 'rol', None),
                     'activo': getattr(usuario, 'activo', None),
-                    'nombre_modelo': getattr(usuario, 'nombre', None),
+                    'nombre_completo_modelo': getattr(usuario, 'nombre_completo', None),
                     'nombre_tabla': None,  # Se llenará si existe
                     'fecha_creacion': getattr(usuario, 'fecha_creacion', None),
                     'errores_acceso': []
@@ -122,11 +122,11 @@ def diagnostico():
                 except Exception as e:
                     datos_usuario['errores_acceso'].append(f"nombre: {str(e)}")
                 
-                # Intentar nombre
+                # Intentar nombre_completo
                 try:
-                    _ = usuario.nombre
+                    _ = usuario.nombre_completo
                 except Exception as e:
-                    datos_usuario['errores_acceso'].append(f"nombre: {str(e)}")
+                    datos_usuario['errores_acceso'].append(f"nombre_completo: {str(e)}")
                 
                 resultado['datos_usuarios'].append(datos_usuario)
                 
@@ -142,12 +142,12 @@ def diagnostico():
             if charles:
                 # Intentar crear el mensaje de bienvenida (que es donde está el error)
                 try:
-                    mensaje_bienvenida = getattr(charles, 'nombre', None) or charles.email
+                    mensaje_bienvenida = charles.nombre_completo or charles.email
                     resultado['intento_login_charles'] = {
                         'usuario_encontrado': True,
                         'email': charles.email,
                         'usuario_activo': charles.activo,
-                        'intento_acceso_nombre': 'EXITOSO',
+                        'intento_acceso_nombre_completo': 'EXITOSO',
                         'mensaje_bienvenida': mensaje_bienvenida
                     }
                 except Exception as e:
@@ -155,7 +155,7 @@ def diagnostico():
                         'usuario_encontrado': True,
                         'email': charles.email,
                         'usuario_activo': charles.activo,
-                        'error_acceso_nombre': str(e),
+                        'error_acceso_nombre_completo': str(e),
                         'error_tipo': type(e).__name__
                     }
             else:
@@ -172,13 +172,13 @@ def diagnostico():
         # 6. DIAGNÓSTICO DEL PROBLEMA PRINCIPAL
         problemas_identificados = []
         
-        # Verificar si el problema es nombre vs nombre
-        if 'nombre' in campos_modelo and 'nombre' not in campos_tabla:
+        # Verificar si el problema es nombre_completo vs nombre
+        if 'nombre_completo' in campos_modelo and 'nombre_completo' not in campos_tabla:
             problemas_identificados.append({
-                'problema': 'Campo nombre en modelo pero NO existe en tabla',
-                'descripcion': 'El modelo Usuario.py tiene el campo nombre pero la tabla usuarios en PostgreSQL tiene el campo nombre',
-                'impacto': 'ERROR 500 en login porque intenta acceder a user.nombre',
-                'solucion': 'Opción 1: Cambiar modelo para usar campo "nombre" en lugar de "nombre"'
+                'problema': 'Campo nombre_completo en modelo pero NO existe en tabla',
+                'descripcion': 'El modelo Usuario.py tiene el campo nombre_completo pero la tabla usuarios en PostgreSQL tiene el campo nombre',
+                'impacto': 'ERROR 500 en login porque intenta acceder a user.nombre_completo',
+                'solucion': 'Opción 1: Cambiar modelo para usar campo "nombre" en lugar de "nombre_completo"'
             })
         
         if 'nombre' in campos_tabla and 'nombre' not in campos_modelo:
@@ -196,22 +196,22 @@ def diagnostico():
             {
                 'prioridad': 'ALTA',
                 'opcion': 'Corregir modelo Usuario',
-                'descripcion': 'Cambiar modelos.py línea 14 de "nombre" a "nombre"',
-                'codigo': '# En models.py, línea 14:\n# CAMBIAR ESTO:\nnombre = db.Column(db.String(200))\n# POR ESTO:\nnombre = db.Column(db.String(200))',
+                'descripcion': 'Cambiar modelos.py línea 14 de "nombre_completo" a "nombre"',
+                'codigo': '# En models.py, línea 14:\n# CAMBIAR ESTO:\nnombre_completo = db.Column(db.String(200))\n# POR ESTO:\nnombre = db.Column(db.String(200))',
                 'archivo': 'models.py línea 14'
             },
             {
                 'prioridad': 'ALTA', 
                 'opcion': 'Corregir app.py línea 85',
-                'descripcion': 'Cambiar acceso a nombre por nombre',
-                'codigo': '# En app.py, línea 85:\n# CAMBIAR ESTO:\nflash(f\'Bienvenido {user.nombre or user.email}\', \'success\')\n# POR ESTO:\nflash(f\'Bienvenido {user.nombre or user.email}\', \'success\')',
+                'descripcion': 'Cambiar acceso a nombre_completo por nombre',
+                'codigo': '# En app.py, línea 85:\n# CAMBIAR ESTO:\nflash(f\'Bienvenido {user.nombre_completo or user.email}\', \'success\')\n# POR ESTO:\nflash(f\'Bienvenido {user.nombre or user.email}\', \'success\')',
                 'archivo': 'app.py línea 85'
             },
             {
                 'prioridad': 'MEDIA',
                 'opcion': 'Alternativa: Renombrar campo en BD',
-                'descripcion': 'Cambiar nombre → nombre en PostgreSQL',
-                'sql': 'ALTER TABLE usuarios RENAME COLUMN nombre TO nombre;',
+                'descripcion': 'Cambiar nombre → nombre_completo en PostgreSQL',
+                'sql': 'ALTER TABLE usuarios RENAME COLUMN nombre TO nombre_completo;',
                 'archivo': 'Ejecutar en Railway PostgreSQL'
             }
         ]
@@ -243,9 +243,9 @@ def login():
             
             if user and user.check_password(password) and user.activo:
                 login_user(user)
-                # AQUÍ ESTÁ EL ERROR: Intenta acceder a nombre pero en BD es 'nombre'
+                # AQUÍ ESTÁ EL ERROR: Intenta acceder a nombre_completo pero en BD es 'nombre'
                 try:
-                    nombre_display = getattr(user, 'nombre', None) or user.email
+                    nombre_display = user.nombre_completo or user.email
                 except Exception as e:
                     # Capturar el error específico
                     flash(f'Login exitoso pero error mostrando nombre: {str(e)}', 'warning')
