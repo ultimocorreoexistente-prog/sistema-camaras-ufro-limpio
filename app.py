@@ -124,7 +124,9 @@ def diagnostico():
                 
                 # Intentar nombre
                 try:
-                    _ = usuario.nombre
+                    nombre_attr = getattr(usuario, 'nombre', None)
+                    if nombre_attr is not None:
+                        datos_usuario['nombre_tabla'] = nombre_attr
                 except Exception as e:
                     datos_usuario['errores_acceso'].append(f"nombre: {str(e)}")
                 
