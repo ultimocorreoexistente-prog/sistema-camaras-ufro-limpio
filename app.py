@@ -848,6 +848,47 @@ def debug_tables_json():
     except Exception as e:
         return jsonify({'error': str(e)})
 
+@app.route('/emergency-rollback')
+def emergency_rollback():
+    """ENDPOINT DE EMERGENCIA: Hacer rollback de todas las transacciones PostgreSQL pendientes"""
+    try:
+        resultado = {
+            'timestamp': datetime.now().isoformat(),
+            'rollback_exitoso': False,
+            'mensaje': 'Iniciando rollback de emergencia...',
+            'errores': []
+        }
+        
+        from sqlalchemy import text, create_engine
+        engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+        
+        with engine.connect() as conn:
+            try:
+                # FORZAR rollback de cualquier transacción pendiente
+                conn.rollback()
+                
+                # Verificar estado de la conexión
+                status_query = text("SELECT current_transaction_isolation")
+                isolation_level = conn.execute(status_query).fetchone()[0]
+                
+                resultado['rollback_exitoso'] = True
+                resultado['mensaje'] = f'Rollback completado exitosamente. Isolation level: {isolation_level}'
+                resultado['timestamp'] = datetime.now().isoformat()
+                
+                return jsonify(resultado)
+                
+            except Exception as e:
+                resultado['errores'].append(f'Error en rollback: {str(e)}')
+                resultado['rollback_exitoso'] = False
+                return jsonify(resultado), 500
+                
+    except Exception as e:
+        return jsonify({
+            'error': f'Error conectando a la base de datos: {str(e)}',
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+
 @app.route('/eliminar-constraints-y-tablas')
 def eliminar_constraints_y_tablas():
     """Endpoint para eliminar constraints dependientes y luego las tablas"""

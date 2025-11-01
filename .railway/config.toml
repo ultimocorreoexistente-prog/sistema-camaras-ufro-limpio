@@ -1,0 +1,12 @@
+# Configuración Railway para despliegue automático
+[build]
+  command = "pip install -r requirements.txt"
+  publish = "."
+
+[deploy]
+  startCommand = "gunicorn --bind 0.0.0.0:8000 app:app"
+  restartPolicyType = "on_failure"
+  restartPolicyMaxRetries = 3
+
+[web]
+  internalPort = 8000
