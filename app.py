@@ -405,6 +405,82 @@ def debug_tables():
         <p><a href="/dashboard">← Volver al Dashboard</a></p>
         """
 
+@app.route('/debug-tables-json')
+@login_required
+def debug_tables_json():
+    """Endpoint JSON para análisis de tablas"""
+    try:
+        from sqlalchemy import text
+        with app.app_context():
+            result = db.session.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name"))
+            tablas = [row[0] for row in result.fetchall()]
+            
+            # Análisis básico
+            singulares = []
+            plurales = []
+            duplicados = []
+            
+            for tabla in tablas:
+                es_singular = (not tabla.endswith('s') or 
+                             tabla in ['ups', 'nvr_dvr', 'fuente_poder', 'equipo_tecnico', 
+                                      'historial_estado_equipo', 'catalogo_tipo_falla'])
+                
+                if es_singular:
+                    singulares.append(tabla)
+                else:
+                    plurales.append(tabla)
+            
+            # Verificar duplicados
+            mapeo = {
+                'usuario': 'usuarios',
+                'ubicacion': 'ubicaciones',
+                'gabinete': 'gabinetes',
+                'switch': 'switches',
+                'puerto': 'puerto_switch',
+                'camara': 'camaras',
+                'falla': 'fallas',
+                'mantenimiento': 'mantenimientos'
+            }
+            
+            for singular, plural in mapeo.items():
+                if singular in singulares and plural in plurales:
+                    # Contar registros
+                    try:
+                        cursor = db.session.execute(text(f"SELECT COUNT(*) FROM {singular}"))
+                        count_singular = cursor.fetchone()[0]
+                        
+                        cursor = db.session.execute(text(f"SELECT COUNT(*) FROM {plural}"))
+                        count_plural = cursor.fetchone()[0]
+                        
+                        duplicados.append({
+                            'singular': singular,
+                            'plural': plural,
+                            'registros_singular': count_singular,
+                            'registros_plural': count_plural
+                        })
+                    except:
+                        duplicados.append({
+                            'singular': singular,
+                            'plural': plural,
+                            'error': 'No se pudieron contar registros'
+                        })
+            
+            return jsonify({
+                'total_tablas': len(tablas),
+                'tablas': tablas,
+                'singulares': singulares,
+                'plurales': plurales,
+                'duplicados': duplicados,
+                'resumen': {
+                    'singulares_count': len(singulares),
+                    'plurales_count': len(plurales),
+                    'duplicados_count': len(duplicados)
+                }
+            })
+            
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
