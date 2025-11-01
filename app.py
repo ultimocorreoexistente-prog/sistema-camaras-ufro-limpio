@@ -183,6 +183,84 @@ def analisis_tablas():
             'conexion_exitosa': False
         })
 
+# ========== ENDPOINT DE LIMPIEZA FINAL ==========
+@app.route('/limpiar-final')
+def limpiar_final():
+    """Endpoint para eliminar las últimas tablas singulares restantes"""
+    try:
+        resultado = {
+            'timestamp': datetime.now().isoformat(),
+            'conexion_exitosa': True,
+            'tablas_restantes': [],
+            'tablas_eliminadas': [],
+            'resultado_final': 'none'
+        }
+        
+        from sqlalchemy import text, create_engine
+        engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+        
+        with engine.connect() as conn:
+            # Tablas que aún quedan como singulares
+            tablas_restantes = ['switch', 'ubicacion', 'puerto_switch']
+            
+            # Verificar estado actual
+            for tabla in tablas_restantes:
+                try:
+                    query = text(f"SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{tabla}' AND table_schema = 'public'")
+                    count = conn.execute(query).fetchone()[0]
+                    if count > 0:
+                        resultado['tablas_restantes'].append(tabla)
+                        
+                        # Intentar eliminar
+                        try:
+                            conn.execute(text(f"DROP TABLE IF EXISTS {tabla} CASCADE"))
+                            resultado['tablas_eliminadas'].append(tabla)
+                        except Exception as e:
+                            resultado[f'error_{tabla}'] = str(e)
+                except Exception as e:
+                    resultado[f'error_verificando_{tabla}'] = str(e)
+            
+            # Verificación final de todas las tablas
+            tablas_finales_query = text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_type = 'BASE TABLE'
+                ORDER BY table_name
+            """)
+            
+            tablas_finales = conn.execute(tablas_finales_query).fetchall()
+            resultado['todas_las_tablas_finales'] = [row[0] for row in tablas_finales]
+            
+            # Contar duplicados restantes
+            duplicados_restantes = []
+            pares = [
+                ('switch', 'switches'),
+                ('ubicacion', 'ubicaciones'), 
+                ('puerto_switch', 'puertos_switch'),
+                ('equipo_tecnico', 'equipos_tecnicos')
+            ]
+            
+            for singular, plural in pares:
+                if singular in resultado['todas_las_tablas_finales'] and plural in resultado['todas_las_tablas_finales']:
+                    duplicados_restantes.append(f"{singular}/{plural}")
+            
+            resultado['duplicados_restantes'] = duplicados_restantes
+            
+            if not duplicados_restantes:
+                resultado['resultado_final'] = 'limpieza_completada'
+            else:
+                resultado['resultado_final'] = 'limpieza_parcial'
+        
+        return jsonify(resultado)
+        
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'timestamp': datetime.now().isoformat(),
+            'conexion_exitosa': False
+        })
+
 # ========== ENDPOINT DE LIMPIEZA MANUAL ==========
 @app.route('/limpiar-tablas')
 def limpiar_tablas():
