@@ -148,27 +148,26 @@ def analisis_tablas():
                         continue
                 
                 # 6.2 Luego eliminar todas las tablas singulares (una por una con transacciones separadas)
-                for nombre_tabla in tablas_a_eliminar:
-                    try:
-                        # Cada eliminación en transacción separada para evitar fallas en cadena
-                        try:
-                            comando_sql = text(f"DROP TABLE IF EXISTS {nombre_tabla} CASCADE")
-                            conn.execute(comando_sql)
-                            conn.commit()  # Commit después de cada eliminación exitosa
-                            eliminaciones_realizadas.append(nombre_tabla)
-                            print(f"✅ Tabla '{nombre_tabla}' eliminada exitosamente")
-                        except Exception as e:
-                            # En caso de error, hacer rollback y continuar con la siguiente tabla
-                            conn.rollback()
-                            error_msg = f"Error eliminando '{nombre_tabla}': {str(e)}"
-                            errores_eliminacion.append(error_msg)
-                            print(f"❌ {error_msg}")
-                            # Continuar con la siguiente tabla
-                            continue
-                            
-                # 6.3 Commit final exitoso si llegamos hasta aquí
-                resultado['commit_exitoso'] = True
-                print("🎉 Todas las eliminaciones completadas exitosamente")
+for nombre_tabla in tablas_a_eliminar:
+    try:
+        # Cada eliminación en transacción separada para evitar fallas en cadena
+        comando_sql = text(f"DROP TABLE IF EXISTS {nombre_tabla} CASCADE")
+        conn.execute(comando_sql)
+        conn.commit()  # Commit después de cada eliminación exitosa
+        eliminaciones_realizadas.append(nombre_tabla)
+        print(f"✅ Tabla '{nombre_tabla}' eliminada exitosamente")
+    except Exception as e:
+        # En caso de error, hacer rollback y continuar con la siguiente tabla
+        conn.rollback()
+        error_msg = f"Error eliminando '{nombre_tabla}': {str(e)}"
+        errores_eliminacion.append(error_msg)
+        print(f"❌ {error_msg}")
+        # Continuar con la siguiente tabla
+        continue
+
+# 6.3 Este código debe estar FUERA del try del for loop
+resultado['commit_exitoso'] = True
+print("🎉 Todas las eliminaciones completadas exitosamente")
                 
             except Exception as e:
                 # Error general - hacer rollback de toda la transacción
@@ -177,9 +176,7 @@ def analisis_tablas():
                 resultado['commit_exitoso'] = False
                 errores_eliminacion.append(f"Error general: {str(e)}")
                 print("✅ Commit realizado exitosamente")
-            except Exception as e:
-                resultado['error_commit'] = str(e)
-                print(f"❌ Error en commit: {str(e)}")
+            
             
             resultado['eliminaciones_realizadas'] = eliminaciones_realizadas
             resultado['constraints_eliminados'] = constraints_eliminados
