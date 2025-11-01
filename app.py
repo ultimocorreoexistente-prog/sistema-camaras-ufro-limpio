@@ -105,41 +105,43 @@ def analisis_tablas():
             
             resultado['otras_tablas_singulares'] = otras_tablas
             
-            # 6. ELIMINAR OTRAS TABLAS DUPLICADAS DE MANERA DIRECTA
-            # Ejecutar comandos SQL simples para evitar problemas de parámetros
-            comandos_sql = [
-                "DROP TABLE IF EXISTS camara CASCADE",
-                "DROP TABLE IF EXISTS gabinete CASCADE", 
-                "DROP TABLE IF EXISTS switch CASCADE",
-                "DROP TABLE IF EXISTS ubicacion CASCADE",
-                "DROP TABLE IF EXISTS mantenimiento CASCADE",
-                "DROP TABLE IF EXISTS falla CASCADE",
-                "DROP TABLE IF EXISTS equipo_tecnico CASCADE",
-                "DROP TABLE IF EXISTS puerto_switch CASCADE"
-            ]
-            
-            # También agregar las tablas que aún quedan como singulares
-            comandos_sql_adicionales = [
-                "DROP TABLE IF EXISTS switch CASCADE",
-                "DROP TABLE IF EXISTS ubicacion CASCADE", 
-                "DROP TABLE IF EXISTS puerto_switch CASCADE",
-                "DROP TABLE IF EXISTS equipo_tecnico CASCADE"
+            # 6. ELIMINAR TABLAS SINGULARES DUPLICADAS DE MANERA DIRECTA
+            # Lista de comandos SQL para eliminar tablas singulares restantes
+            tablas_a_eliminar = [
+                "switch",
+                "ubicacion", 
+                "puerto_switch",
+                "equipo_tecnico",
+                "tipos_fallas"
             ]
             
             eliminaciones_realizadas = []
+            errores_eliminacion = []
             
-            # Ejecutar todos los comandos
-            todos_los_comandos = comandos_sql + comandos_sql_adicionales
-            
-            for comando in todos_los_comandos:
+            # Ejecutar cada comando DROP TABLE individualmente
+            for nombre_tabla in tablas_a_eliminar:
                 try:
-                    conn.execute(comando)
-                    tabla = comando.split()[4]  # Extraer nombre de tabla del comando
-                    eliminaciones_realizadas.append(tabla)
+                    comando_sql = text(f"DROP TABLE IF EXISTS {nombre_tabla} CASCADE")
+                    conn.execute(comando_sql)
+                    eliminaciones_realizadas.append(nombre_tabla)
+                    print(f"✅ Tabla '{nombre_tabla}' eliminada exitosamente")
                 except Exception as e:
-                    resultado['error_sql'] = str(e)
+                    error_msg = f"Error eliminando '{nombre_tabla}': {str(e)}"
+                    errores_eliminacion.append(error_msg)
+                    print(f"❌ {error_msg}")
+            
+            # Commit para persistir todas las eliminaciones
+            try:
+                conn.commit()
+                resultado['commit_exitoso'] = True
+                print("✅ Commit realizado exitosamente")
+            except Exception as e:
+                resultado['error_commit'] = str(e)
+                print(f"❌ Error en commit: {str(e)}")
             
             resultado['eliminaciones_realizadas'] = eliminaciones_realizadas
+            if errores_eliminacion:
+                resultado['errores_eliminacion'] = errores_eliminacion
             
             # 5. ACCIÓN AUTOMÁTICA: Eliminar tabla usuario si existe y usuarios también existe
             if user_analysis[0] == 'EXISTS' and user_analysis[1] == 'EXISTS':
