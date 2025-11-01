@@ -105,6 +105,37 @@ def analisis_tablas():
             
             resultado['otras_tablas_singulares'] = otras_tablas
             
+            # 6. ELIMINAR OTRAS TABLAS DUPLICADAS
+            tablas_duplicadas = ['camara', 'gabinete', 'switch', 'ubicacion', 'mantenimiento', 'falla', 'equipo_tecnico', 'puerto_switch']
+            eliminaciones_realizadas = []
+            
+            for tabla_singular in tablas_duplicadas:
+                tabla_plural = tabla_singular + 's' if not tabla_singular.endswith('s') else tabla_singular[:-1] + 'es'
+                
+                # Verificar si ambas tablas existen
+                existe_singular = text("""
+                    SELECT COUNT(*) FROM information_schema.tables 
+                    WHERE table_name = %s AND table_schema = 'public'
+                """)
+                existe_plural = text("""
+                    SELECT COUNT(*) FROM information_schema.tables 
+                    WHERE table_name = %s AND table_schema = 'public'
+                """)
+                
+                try:
+                    singular_count = conn.execute(existe_singular, (tabla_singular,)).fetchone()[0]
+                    plural_count = conn.execute(existe_plural, (tabla_plural,)).fetchone()[0]
+                    
+                    if singular_count > 0 and plural_count > 0:
+                        # Eliminar tabla singular para evitar duplicados
+                        conn.execute(text(f"DROP TABLE IF EXISTS {tabla_singular} CASCADE"))
+                        eliminaciones_realizadas.append(tabla_singular)
+                        
+                except Exception as e:
+                    resultado[f'error_eliminando_{tabla_singular}'] = str(e)
+            
+            resultado['eliminaciones_realizadas'] = eliminaciones_realizadas
+            
             # 5. ACCIÓN AUTOMÁTICA: Eliminar tabla usuario si existe y usuarios también existe
             if user_analysis[0] == 'EXISTS' and user_analysis[1] == 'EXISTS':
                 resultado['accion_realizada'] = 'eliminando_usuario_duplicado'
