@@ -123,8 +123,8 @@ def analisis_tablas():
                 """)
                 
                 try:
-                    singular_count = conn.execute(existe_singular, (tabla_singular,)).fetchone()[0]
-                    plural_count = conn.execute(existe_plural, (tabla_plural,)).fetchone()[0]
+                    singular_count = conn.execute(existe_singular, tabla_singular).fetchone()[0]
+                    plural_count = conn.execute(existe_plural, tabla_plural).fetchone()[0]
                     
                     if singular_count > 0 and plural_count > 0:
                         # Eliminar tabla singular para evitar duplicados
