@@ -31,6 +31,101 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return Usuario.query.get(int(user_id))
 
+# ========== ENDPOINT DE ANÁLISIS DE TABLAS ==========
+@app.route('/analisis-tablas')
+def analisis_tablas():
+    """Endpoint para analizar tablas singulares vs plurales en PostgreSQL"""
+    try:
+        resultado = {
+            'timestamp': datetime.now().isoformat(),
+            'conexion_exitosa': True,
+            'tablas_encontradas': [],
+            'analisis_duplicados': {},
+            'accion_realizada': 'none'
+        }
+        
+        # 1. Listar todas las tablas
+        from sqlalchemy import text
+        query = text("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_type = 'BASE TABLE'
+            ORDER BY table_name
+        """)
+        
+        tablas_result = db.session.execute(query).fetchall()
+        tablas = [row[0] for row in tablas_result]
+        resultado['tablas_encontradas'] = tablas
+        
+        # 2. Analizar usuario/usuarios específicamente
+        usuario_query = text("""
+            SELECT 
+                CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'usuario') THEN 'EXISTS' ELSE 'NO_EXISTS' END as tabla_usuario,
+                CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'usuarios') THEN 'EXISTS' ELSE 'NO_EXISTS' END as tabla_usuarios
+        """)
+        
+        user_analysis = db.session.execute(usuario_query).fetchone()
+        resultado['analisis_duplicados']['usuario'] = {
+            'tabla_usuario': user_analysis[0],
+            'tabla_usuarios': user_analysis[1]
+        }
+        
+        # 3. Contar registros si usuario existe
+        if user_analysis[0] == 'EXISTS':
+            count_query = text("SELECT COUNT(*) FROM usuario")
+            count = db.session.execute(count_query).fetchone()[0]
+            resultado['analisis_duplicados']['usuario']['registros_usuario'] = count
+            
+            # 4. Verificar si usuarios ya existe para decidir acción
+            if user_analysis[1] == 'NO_EXISTS' and count == 0:
+                # Tabla usuario vacía, proceder con migración automática
+                resultado['accion_realizada'] = 'migrando_usuario_vacia'
+                
+                # Renombrar tabla
+                rename_query = text("ALTER TABLE usuario RENAME TO usuarios")
+                db.session.execute(rename_query)
+                
+                # Actualizar foreign keys
+                foreign_keys = [
+                    ("falla", "reportado_por_id", "falla_reportado_por_id_fkey"),
+                    ("falla", "tecnico_asignado_id", "falla_tecnico_asignado_id_fkey"),
+                    ("mantenimiento", "tecnico_id", "mantenimiento_tecnico_id_fkey"),
+                    ("historial_estado_equipo", "usuario_id", "historial_estado_equipo_usuario_id_fkey")
+                ]
+                
+                for tabla, columna, constraint in foreign_keys:
+                    try:
+                        # Drop old constraint
+                        drop_query = text(f"ALTER TABLE {tabla} DROP CONSTRAINT IF EXISTS {constraint}")
+                        db.session.execute(drop_query)
+                        
+                        # Add new constraint
+                        add_query = text(f"ALTER TABLE {tabla} ADD CONSTRAINT {constraint} FOREIGN KEY ({columna}) REFERENCES usuarios(id)")
+                        db.session.execute(add_query)
+                    except Exception as e:
+                        resultado[f'error_{tabla}_{columna}'] = str(e)
+                
+                db.session.commit()
+                resultado['migracion_completada'] = True
+                
+            elif user_analysis[1] == 'NO_EXISTS' and count > 0:
+                resultado['accion_realizada'] = 'esperando_revision_usuario_con_datos'
+                resultado['mensaje'] = f'Tabla usuario tiene {count} registros. Migración manual requerida.'
+                
+        # 5. Verificación final - listar tablas actualizadas
+        tablas_final = db.session.execute(query).fetchall()
+        resultado['tablas_finales'] = [row[0] for row in tablas_final]
+        
+        return jsonify(resultado)
+        
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'timestamp': datetime.now().isoformat(),
+            'conexion_exitosa': False
+        })
+
 # ========== ENDPOINT DE DIAGNÓSTICO ==========
 @app.route('/diagnostico')
 def diagnostico():
