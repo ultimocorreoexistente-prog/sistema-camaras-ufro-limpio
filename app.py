@@ -406,7 +406,6 @@ def debug_tables():
         """
 
 @app.route('/debug-tables-json')
-@login_required
 def debug_tables_json():
     """Endpoint JSON para análisis de tablas"""
     try:
