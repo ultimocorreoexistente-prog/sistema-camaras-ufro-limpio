@@ -410,3 +410,22 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get('PORT', 8000))
     app.run(host='0.0.0.0', port=port, debug=True)
+@app.route('/simple-debug')
+def simple_debug():
+    """Endpoint super simple para debug"""
+    try:
+        from sqlalchemy import text
+        with app.app_context():
+            result = db.session.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name"))
+            tablas = [row[0] for row in result.fetchall()]
+            singulares = [t for t in tablas if not t.endswith('s')]
+            plurales = [t for t in tablas if t not in singulares]
+            return f"""
+            <h1>Debug de Tablas</h1>
+            <h2>Total: {len(tablas)}</h2>
+            <h3>Singulares ({len(singulares)}):</h3><ul>{''.join(f'<li>{t}</li>' for t in singulares)}</ul>
+            <h3>Plurales ({len(plurales)}):</h3><ul>{''.join(f'<li>{t}</li>' for t in plurales)}</ul>
+            <h3>Duplicados:</h3><p>{'usuario' if 'usuario' in singulares and 'usuarios' in plurales else 'ninguno'}</p>
+            """
+    except Exception as e:
+        return f"<h1>Error: {e}</h1>"
