@@ -118,9 +118,20 @@ def analisis_tablas():
                 "DROP TABLE IF EXISTS puerto_switch CASCADE"
             ]
             
+            # También agregar las tablas que aún quedan como singulares
+            comandos_sql_adicionales = [
+                "DROP TABLE IF EXISTS switch CASCADE",
+                "DROP TABLE IF EXISTS ubicacion CASCADE", 
+                "DROP TABLE IF EXISTS puerto_switch CASCADE",
+                "DROP TABLE IF EXISTS equipo_tecnico CASCADE"
+            ]
+            
             eliminaciones_realizadas = []
             
-            for comando in comandos_sql:
+            # Ejecutar todos los comandos
+            todos_los_comandos = comandos_sql + comandos_sql_adicionales
+            
+            for comando in todos_los_comandos:
                 try:
                     conn.execute(comando)
                     tabla = comando.split()[4]  # Extraer nombre de tabla del comando
