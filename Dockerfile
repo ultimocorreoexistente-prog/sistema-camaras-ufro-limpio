@@ -22,4 +22,4 @@ ENV FLASK_ENV=production
 
 EXPOSE 8000
 
-CMD gunicorn app:app --workers 2 --timeout 30 --bind 0.0.0.0:${PORT}
+CMD gunicorn app:app --workers 2 --timeout 30 --bind 0.0.0.0:$PORT
