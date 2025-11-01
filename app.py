@@ -44,78 +44,95 @@ def analisis_tablas():
             'accion_realizada': 'none'
         }
         
-        # 1. Listar todas las tablas
-        from sqlalchemy import text
-        query = text("""
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            AND table_type = 'BASE TABLE'
-            ORDER BY table_name
-        """)
+        # 1. Listar todas las tablas usando text() para evitar problemas de modelos
+        from sqlalchemy import text, create_engine
         
-        tablas_result = db.session.execute(query).fetchall()
-        tablas = [row[0] for row in tablas_result]
-        resultado['tablas_encontradas'] = tablas
+        # Crear engine directo para consultas simples
+        engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
         
-        # 2. Analizar usuario/usuarios específicamente
-        usuario_query = text("""
-            SELECT 
-                CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'usuario') THEN 'EXISTS' ELSE 'NO_EXISTS' END as tabla_usuario,
-                CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'usuarios') THEN 'EXISTS' ELSE 'NO_EXISTS' END as tabla_usuarios
-        """)
-        
-        user_analysis = db.session.execute(usuario_query).fetchone()
-        resultado['analisis_duplicados']['usuario'] = {
-            'tabla_usuario': user_analysis[0],
-            'tabla_usuarios': user_analysis[1]
-        }
-        
-        # 3. Contar registros si usuario existe
-        if user_analysis[0] == 'EXISTS':
-            count_query = text("SELECT COUNT(*) FROM usuario")
-            count = db.session.execute(count_query).fetchone()[0]
-            resultado['analisis_duplicados']['usuario']['registros_usuario'] = count
+        with engine.connect() as conn:
+            # Listar tablas
+            query = text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_type = 'BASE TABLE'
+                ORDER BY table_name
+            """)
             
-            # 4. Verificar si usuarios ya existe para decidir acción
-            if user_analysis[1] == 'NO_EXISTS' and count == 0:
-                # Tabla usuario vacía, proceder con migración automática
-                resultado['accion_realizada'] = 'migrando_usuario_vacia'
+            tablas_result = conn.execute(query).fetchall()
+            tablas = [row[0] for row in tablas_result]
+            resultado['tablas_encontradas'] = tablas
+            
+            # 2. Analizar usuario/usuarios específicamente
+            usuario_query = text("""
+                SELECT 
+                    CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'usuario') THEN 'EXISTS' ELSE 'NO_EXISTS' END as tabla_usuario,
+                    CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'usuarios') THEN 'EXISTS' ELSE 'NO_EXISTS' END as tabla_usuarios
+            """)
+            
+            user_analysis = conn.execute(usuario_query).fetchone()
+            resultado['analisis_duplicados']['usuario'] = {
+                'tabla_usuario': user_analysis[0],
+                'tabla_usuarios': user_analysis[1]
+            }
+            
+            # 3. Verificar registros en tablas existentes
+            if user_analysis[0] == 'EXISTS':
+                count_query = text("SELECT COUNT(*) FROM usuario")
+                count = conn.execute(count_query).fetchone()[0]
+                resultado['analisis_duplicados']['usuario']['registros_usuario'] = count
                 
-                # Renombrar tabla
-                rename_query = text("ALTER TABLE usuario RENAME TO usuarios")
-                db.session.execute(rename_query)
+            if user_analysis[1] == 'EXISTS':
+                count_usuarios_query = text("SELECT COUNT(*) FROM usuarios")
+                count_usuarios = conn.execute(count_usuarios_query).fetchone()[0]
+                resultado['analisis_duplicados']['usuario']['registros_usuarios'] = count_usuarios
+            
+            # 4. Verificar otras tablas singulares conocidas
+            tablas_singulares = ['ubicacion', 'gabinete', 'switch', 'camara', 'ups', 'nvr']
+            otras_tablas = {}
+            
+            for tabla in tablas_singulares:
+                existe_query = text("""
+                    SELECT COUNT(*) FROM information_schema.tables 
+                    WHERE table_name = %s AND table_schema = 'public'
+                """)
+                try:
+                    result = conn.execute(existe_query, (tabla,)).fetchone()
+                    otras_tablas[tabla] = 'EXISTS' if result[0] > 0 else 'NO_EXISTS'
+                except:
+                    otras_tablas[tabla] = 'ERROR'
+            
+            resultado['otras_tablas_singulares'] = otras_tablas
+            
+            # 5. ACCIÓN AUTOMÁTICA: Eliminar tabla usuario si existe y usuarios también existe
+            if user_analysis[0] == 'EXISTS' and user_analysis[1] == 'EXISTS':
+                resultado['accion_realizada'] = 'eliminar_tabla_usuario_duplicada'
                 
-                # Actualizar foreign keys
-                foreign_keys = [
-                    ("falla", "reportado_por_id", "falla_reportado_por_id_fkey"),
-                    ("falla", "tecnico_asignado_id", "falla_tecnico_asignado_id_fkey"),
-                    ("mantenimiento", "tecnico_id", "mantenimiento_tecnico_id_fkey"),
-                    ("historial_estado_equipo", "usuario_id", "historial_estado_equipo_usuario_id_fkey")
-                ]
+                # Eliminar tabla usuario para evitar duplicados
+                drop_query = text("DROP TABLE IF EXISTS usuario CASCADE")
+                conn.execute(drop_query)
+                resultado['tabla_usuario_eliminada'] = True
                 
-                for tabla, columna, constraint in foreign_keys:
-                    try:
-                        # Drop old constraint
-                        drop_query = text(f"ALTER TABLE {tabla} DROP CONSTRAINT IF EXISTS {constraint}")
-                        db.session.execute(drop_query)
-                        
-                        # Add new constraint
-                        add_query = text(f"ALTER TABLE {tabla} ADD CONSTRAINT {constraint} FOREIGN KEY ({columna}) REFERENCES usuarios(id)")
-                        db.session.execute(add_query)
-                    except Exception as e:
-                        resultado[f'error_{tabla}_{columna}'] = str(e)
+            elif user_analysis[0] == 'EXISTS' and user_analysis[1] == 'NO_EXISTS':
+                # Renombrar usuario a usuarios si usuarios no existe
+                count = resultado['analisis_duplicados']['usuario'].get('registros_usuario', 0)
                 
-                db.session.commit()
-                resultado['migracion_completada'] = True
-                
-            elif user_analysis[1] == 'NO_EXISTS' and count > 0:
-                resultado['accion_realizada'] = 'esperando_revision_usuario_con_datos'
-                resultado['mensaje'] = f'Tabla usuario tiene {count} registros. Migración manual requerida.'
-                
-        # 5. Verificación final - listar tablas actualizadas
-        tablas_final = db.session.execute(query).fetchall()
-        resultado['tablas_finales'] = [row[0] for row in tablas_final]
+                if count == 0:
+                    # Tabla vacía, renombrar directamente
+                    resultado['accion_realizada'] = 'renombrar_usuario_vacio'
+                    
+                    rename_query = text("ALTER TABLE usuario RENAME TO usuarios")
+                    conn.execute(rename_query)
+                    resultado['tabla_usuario_renombrada'] = True
+                else:
+                    # Tabla con datos, no proceder automáticamente
+                    resultado['accion_realizada'] = 'requiere_revision_manual'
+                    resultado['mensaje'] = f'Tabla usuario tiene {count} registros. Revisar manualmente.'
+            
+            # 6. Verificación final
+            tablas_final = conn.execute(query).fetchall()
+            resultado['tablas_finales'] = [row[0] for row in tablas_final]
         
         return jsonify(resultado)
         
