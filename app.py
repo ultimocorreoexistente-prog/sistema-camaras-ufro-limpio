@@ -107,12 +107,27 @@ def analisis_tablas():
             
             # 5. ACCIÓN AUTOMÁTICA: Eliminar tabla usuario si existe y usuarios también existe
             if user_analysis[0] == 'EXISTS' and user_analysis[1] == 'EXISTS':
-                resultado['accion_realizada'] = 'eliminar_tabla_usuario_duplicada'
+                resultado['accion_realizada'] = 'eliminando_usuario_duplicado'
                 
-                # Eliminar tabla usuario para evitar duplicados
-                drop_query = text("DROP TABLE IF EXISTS usuario CASCADE")
-                conn.execute(drop_query)
-                resultado['tabla_usuario_eliminada'] = True
+                # Primero, intentar eliminar constraints dependientes
+                try:
+                    conn.execute(text("ALTER TABLE falla DROP CONSTRAINT IF EXISTS falla_reportado_por_id_fkey"))
+                    conn.execute(text("ALTER TABLE falla DROP CONSTRAINT IF EXISTS falla_tecnico_asignado_id_fkey"))
+                    conn.execute(text("ALTER TABLE mantenimiento DROP CONSTRAINT IF EXISTS mantenimiento_tecnico_id_fkey"))
+                    conn.execute(text("ALTER TABLE historial_estado_equipo DROP CONSTRAINT IF EXISTS historial_estado_equipo_usuario_id_fkey"))
+                    resultado['constraints_eliminados'] = True
+                except Exception as e:
+                    resultado['error_eliminando_constraints'] = str(e)
+                
+                # Eliminar tabla usuario
+                try:
+                    conn.execute(text("DROP TABLE IF EXISTS usuario CASCADE"))
+                    resultado['tabla_usuario_eliminada'] = True
+                    conn.commit()
+                    resultado['accion_completada'] = True
+                except Exception as e:
+                    resultado['error_eliminando_tabla'] = str(e)
+                    conn.rollback()
                 
             elif user_analysis[0] == 'EXISTS' and user_analysis[1] == 'NO_EXISTS':
                 # Renombrar usuario a usuarios si usuarios no existe
