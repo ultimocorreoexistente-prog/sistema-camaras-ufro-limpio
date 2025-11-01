@@ -809,61 +809,66 @@ def debug_tables_json():
     except Exception as e:
         return jsonify({'error': str(e)})
 
-@app.route('/limpiar-tablas-especificas')
-def limpiar_tablas_especificas():
-    """Endpoint específico para eliminar tablas singulares restantes"""
+@app.route('/eliminar-constraints-y-tablas')
+def eliminar_constraints_y_tablas():
+    """Endpoint para eliminar constraints dependientes y luego las tablas"""
     try:
         resultado = {
             'timestamp': datetime.now().isoformat(),
-            'acciones_realizadas': []
+            'constraints_eliminados': [],
+            'tablas_eliminadas': [],
+            'errores': []
         }
         
         from sqlalchemy import text, create_engine
         engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
         
         with engine.connect() as conn:
-            # Lista específica de tablas a eliminar
-            tablas_eliminar = [
-                'switch',
-                'ubicacion', 
-                'puerto_switch',
-                'equipo_tecnico',
-                'camara',
-                'gabinete',
-                'mantenimiento',
-                'falla'
+            # 1. Eliminar constraints dependientes para evitar errores de eliminación
+            comandos_constraints = [
+                "ALTER TABLE falla DROP CONSTRAINT IF EXISTS falla_reportado_por_id_fkey",
+                "ALTER TABLE falla DROP CONSTRAINT IF EXISTS falla_tecnico_asignado_id_fkey", 
+                "ALTER TABLE mantenimiento DROP CONSTRAINT IF EXISTS mantenimiento_tecnico_id_fkey",
+                "ALTER TABLE historial_estado_equipo DROP CONSTRAINT IF EXISTS historial_estado_equipo_usuario_id_fkey",
+                "ALTER TABLE mantenimiento DROP CONSTRAINT IF EXISTS mantenimiento_camara_id_fkey",
+                "ALTER TABLE mantenimiento DROP CONSTRAINT IF EXISTS mantenimiento_switch_id_fkey",
+                "ALTER TABLE mantenimiento DROP CONSTRAINT IF EXISTS mantenimiento_gabinete_id_fkey"
             ]
             
-            for tabla in tablas_eliminar:
+            for constraint_cmd in comandos_constraints:
                 try:
-                    # Verificar si existe la tabla
-                    existe_query = text("""
-                        SELECT EXISTS (
-                            SELECT 1 FROM information_schema.tables 
-                            WHERE table_name = :tabla AND table_schema = 'public'
-                        )
-                    """)
-                    
+                    conn.execute(text(constraint_cmd))
+                    constraint_name = constraint_cmd.split()[-1]
+                    resultado['constraints_eliminados'].append(constraint_name)
+                except Exception as e:
+                    resultado['errores'].append(f"Constraint: {str(e)}")
+            
+            # 2. Eliminar tablas problemáticas
+            tablas_problematicas = ['camara', 'falla', 'gabinete', 'mantenimiento']
+            
+            for tabla in tablas_problematicas:
+                try:
+                    # Verificar si existe
+                    existe_query = text("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = :tabla AND table_schema = 'public')")
                     existe_result = conn.execute(existe_query, {'tabla': tabla}).scalar()
                     
                     if existe_result:
-                        # Eliminar la tabla
-                        drop_query = text(f"DROP TABLE IF EXISTS {tabla} CASCADE")
-                        conn.execute(drop_query)
-                        resultado['acciones_realizadas'].append(f"✅ Tabla '{tabla}' eliminada")
-                        print(f"Tabla {tabla} eliminada")
+                        drop_cmd = text(f"DROP TABLE IF EXISTS {tabla} CASCADE")
+                        conn.execute(drop_cmd)
+                        resultado['tablas_eliminadas'].append(tabla)
                     else:
-                        resultado['acciones_realizadas'].append(f"ℹ️ Tabla '{tabla}' no existe")
+                        resultado['tablas_eliminadas'].append(f"{tabla} (no existía)")
                         
                 except Exception as e:
-                    resultado['acciones_realizadas'].append(f"❌ Error con '{tabla}': {str(e)}")
+                    resultado['errores'].append(f"Tabla {tabla}: {str(e)}")
             
-            # Commit final
+            # 3. Commit final
             try:
                 conn.commit()
-                resultado['commit'] = 'Exitoso'
+                resultado['commit_exitoso'] = True
             except Exception as e:
-                resultado['commit'] = f"Error: {str(e)}"
+                resultado['commit_exitoso'] = False
+                resultado['errores'].append(f"Commit: {str(e)}")
         
         return jsonify(resultado)
         
