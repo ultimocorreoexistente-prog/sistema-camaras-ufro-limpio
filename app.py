@@ -105,20 +105,42 @@ def analisis_tablas():
             
             resultado['otras_tablas_singulares'] = otras_tablas
             
-            # 6. ELIMINAR TABLAS SINGULARES DUPLICADAS DE MANERA DIRECTA
-            # Lista de comandos SQL para eliminar tablas singulares restantes
+            # 6. ELIMINAR TABLAS SINGULARES DUPLICADAS (INCLUYENDO PROBLEMÁTICAS)
+            # Lista completa de tablas singulares a eliminar
             tablas_a_eliminar = [
                 "switch",
                 "ubicacion", 
                 "puerto_switch",
                 "equipo_tecnico",
-                "tipos_fallas"
+                "tipos_fallas",
+                "camara",      # Tablas problemáticas que necesitan constraints eliminados primero
+                "falla",
+                "gabinete", 
+                "mantenimiento"
             ]
             
             eliminaciones_realizadas = []
             errores_eliminacion = []
+            constraints_eliminados = []
             
-            # Ejecutar cada comando DROP TABLE individualmente
+            # 6.1 Primero eliminar constraints dependientes que pueden bloquear eliminaciones
+            comandos_constraints = [
+                "ALTER TABLE falla DROP CONSTRAINT IF EXISTS falla_reportado_por_id_fkey",
+                "ALTER TABLE falla DROP CONSTRAINT IF EXISTS falla_tecnico_asignado_id_fkey",
+                "ALTER TABLE mantenimiento DROP CONSTRAINT IF EXISTS mantenimiento_tecnico_id_fkey", 
+                "ALTER TABLE historial_estado_equipo DROP CONSTRAINT IF EXISTS historial_estado_equipo_usuario_id_fkey"
+            ]
+            
+            for constraint_cmd in comandos_constraints:
+                try:
+                    conn.execute(text(constraint_cmd))
+                    constraint_name = constraint_cmd.split()[-1]
+                    constraints_eliminados.append(constraint_name)
+                    print(f"✅ Constraint '{constraint_name}' eliminado")
+                except Exception as e:
+                    print(f"⚠️ No se pudo eliminar constraint: {str(e)}")
+            
+            # 6.2 Luego eliminar todas las tablas singulares
             for nombre_tabla in tablas_a_eliminar:
                 try:
                     comando_sql = text(f"DROP TABLE IF EXISTS {nombre_tabla} CASCADE")
@@ -130,7 +152,7 @@ def analisis_tablas():
                     errores_eliminacion.append(error_msg)
                     print(f"❌ {error_msg}")
             
-            # Commit para persistir todas las eliminaciones
+            # 6.3 Commit final para persistir todas las eliminaciones
             try:
                 conn.commit()
                 resultado['commit_exitoso'] = True
@@ -140,6 +162,7 @@ def analisis_tablas():
                 print(f"❌ Error en commit: {str(e)}")
             
             resultado['eliminaciones_realizadas'] = eliminaciones_realizadas
+            resultado['constraints_eliminados'] = constraints_eliminados
             if errores_eliminacion:
                 resultado['errores_eliminacion'] = errores_eliminacion
             
