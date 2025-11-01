@@ -278,6 +278,110 @@ def logout():
 def dashboard():
     return "Dashboard - Sistema funcionando (este es solo un placeholder)"
 
+# Endpoint temporal para listar tablas de la base de datos
+@app.route('/admin/list-temp')
+def admin_list_tables_temp():
+    """Endpoint temporal para listar todas las tablas - SOLO PARA DESARROLLO"""
+    try:
+        import os
+        import json
+        
+        DATABASE_URL = os.environ.get('DATABASE_URL')
+        
+        if not DATABASE_URL:
+            return jsonify({'error': 'DATABASE_URL no encontrada'}), 500
+        
+        # Importar psycopg2 en tiempo de ejecución
+        try:
+            import psycopg2
+            from psycopg2 import sql
+        except ImportError:
+            return jsonify({
+                'error': 'psycopg2 no disponible',
+                'message': 'Usar endpoint /migrate_nomenclature para verificar'
+            }), 500
+        
+        # Conectar y ejecutar query
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
+        
+        # Query para listar todas las tablas
+        query = """
+            SELECT table_name, table_type
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_type = 'BASE TABLE'
+            ORDER BY table_name;
+        """
+        
+        cursor.execute(query)
+        tablas = cursor.fetchall()
+        
+        # Convertir a formato JSON friendly
+        resultado = {
+            'total_tablas': len(tablas),
+            'tablas': [],
+            'singulares': [],
+            'plurales': [],
+            'duplicados_potenciales': []
+        }
+        
+        for nombre, tipo in tablas:
+            tabla_info = {
+                'nombre': nombre,
+                'tipo': tipo,
+                'es_singular': not nombre.endswith('s') or len(nombre) <= 2
+            }
+            resultado['tablas'].append(tabla_info)
+            
+            # Clasificar como singular o plural
+            if tabla_info['es_singular']:
+                resultado['singulares'].append(nombre)
+            else:
+                resultado['plurales'].append(nombre)
+        
+        # Verificar duplicados específicos
+        mapeo_singular_plural = {
+            'usuario': 'usuarios',
+            'ubicacion': 'ubicaciones', 
+            'gabinete': 'gabinetes',
+            'switch': 'switches',
+            'puerto': 'puerto_switch',
+            'up': 'ups',
+            'camara': 'camaras',
+            'falla': 'fallas',
+            'mantenimiento': 'mantenimientos'
+        }
+        
+        for singular, plural in mapeo_singular_plural.items():
+            if singular in resultado['singulares'] and plural in resultado['plurales']:
+                # Contar registros en cada tabla
+                cursor.execute("SELECT COUNT(*) FROM %s" % sql.Identifier(singular).as_string(cursor))
+                count_singular = cursor.fetchone()[0]
+                
+                cursor.execute("SELECT COUNT(*) FROM %s" % sql.Identifier(plural).as_string(cursor))
+                count_plural = cursor.fetchone()[0]
+                
+                resultado['duplicados_potenciales'].append({
+                    'singular': singular,
+                    'plural': plural,
+                    'registros_singular': count_singular,
+                    'registros_plural': count_plural
+                })
+        
+        cursor.close()
+        conn.close()
+        
+        # Devolver como JSON formateado
+        return jsonify(resultado)
+        
+    except Exception as e:
+        return jsonify({
+            'error': 'Error ejecutando query',
+            'message': str(e),
+            'sugerencia': 'La aplicación debe estar corriendo con DATABASE_URL válida'
+        }), 500
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
