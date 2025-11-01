@@ -105,30 +105,28 @@ def analisis_tablas():
             
             resultado['otras_tablas_singulares'] = otras_tablas
             
-            # 6. ELIMINAR OTRAS TABLAS DUPLICADAS USANDO SQL DIRECTO
-            # Usar SQL directo para evitar problemas de parámetros
-            tablas_a_eliminar = ['camara', 'gabinete', 'switch', 'ubicacion', 'mantenimiento', 'falla', 'equipo_tecnico', 'puerto_switch']
+            # 6. ELIMINAR OTRAS TABLAS DUPLICADAS DE MANERA DIRECTA
+            # Ejecutar comandos SQL simples para evitar problemas de parámetros
+            comandos_sql = [
+                "DROP TABLE IF EXISTS camara CASCADE",
+                "DROP TABLE IF EXISTS gabinete CASCADE", 
+                "DROP TABLE IF EXISTS switch CASCADE",
+                "DROP TABLE IF EXISTS ubicacion CASCADE",
+                "DROP TABLE IF EXISTS mantenimiento CASCADE",
+                "DROP TABLE IF EXISTS falla CASCADE",
+                "DROP TABLE IF EXISTS equipo_tecnico CASCADE",
+                "DROP TABLE IF EXISTS puerto_switch CASCADE"
+            ]
+            
             eliminaciones_realizadas = []
             
-            for tabla in tablas_a_eliminar:
+            for comando in comandos_sql:
                 try:
-                    # Solo intentar eliminar si definitivamente existe
-                    existe_query = text(f"SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{tabla}' AND table_schema = 'public'")
-                    count = conn.execute(existe_query).fetchone()[0]
-                    
-                    if count > 0:
-                        # Verificar que existe la versión plural
-                        tabla_plural = tabla + 's' if not tabla.endswith('s') else tabla[:-1] + 'es'
-                        plural_query = text(f"SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{tabla_plural}' AND table_schema = 'public'")
-                        plural_count = conn.execute(plural_query).fetchone()[0]
-                        
-                        if plural_count > 0:
-                            # Eliminar tabla singular
-                            conn.execute(text(f"DROP TABLE IF EXISTS {tabla} CASCADE"))
-                            eliminaciones_realizadas.append(tabla)
-                            
+                    conn.execute(comando)
+                    tabla = comando.split()[4]  # Extraer nombre de tabla del comando
+                    eliminaciones_realizadas.append(tabla)
                 except Exception as e:
-                    resultado[f'error_eliminando_{tabla}'] = str(e)
+                    resultado['error_sql'] = str(e)
             
             resultado['eliminaciones_realizadas'] = eliminaciones_realizadas
             
