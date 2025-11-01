@@ -105,7 +105,7 @@ def analisis_tablas():
             
             resultado['otras_tablas_singulares'] = otras_tablas
             
-            # 6. ELIMINAR TABLAS SINGULARES DUPLICADAS (INCLUYENDO PROBLEMÁTICAS)
+            # 6. ELIMINAR TABLAS SINGULARES DUPLICADAS CON MANEJO CORRECTO DE TRANSACCIONES
             # Lista completa de tablas singulares a eliminar
             tablas_a_eliminar = [
                 "switch",
@@ -123,39 +123,55 @@ def analisis_tablas():
             errores_eliminacion = []
             constraints_eliminados = []
             
-            # 6.1 Primero eliminar constraints dependientes que pueden bloquear eliminaciones
-            comandos_constraints = [
-                "ALTER TABLE falla DROP CONSTRAINT IF EXISTS falla_reportado_por_id_fkey",
-                "ALTER TABLE falla DROP CONSTRAINT IF EXISTS falla_tecnico_asignado_id_fkey",
-                "ALTER TABLE mantenimiento DROP CONSTRAINT IF EXISTS mantenimiento_tecnico_id_fkey", 
-                "ALTER TABLE historial_estado_equipo DROP CONSTRAINT IF EXISTS historial_estado_equipo_usuario_id_fkey"
-            ]
-            
-            for constraint_cmd in comandos_constraints:
-                try:
-                    conn.execute(text(constraint_cmd))
-                    constraint_name = constraint_cmd.split()[-1]
-                    constraints_eliminados.append(constraint_name)
-                    print(f"✅ Constraint '{constraint_name}' eliminado")
-                except Exception as e:
-                    print(f"⚠️ No se pudo eliminar constraint: {str(e)}")
-            
-            # 6.2 Luego eliminar todas las tablas singulares
-            for nombre_tabla in tablas_a_eliminar:
-                try:
-                    comando_sql = text(f"DROP TABLE IF EXISTS {nombre_tabla} CASCADE")
-                    conn.execute(comando_sql)
-                    eliminaciones_realizadas.append(nombre_tabla)
-                    print(f"✅ Tabla '{nombre_tabla}' eliminada exitosamente")
-                except Exception as e:
-                    error_msg = f"Error eliminando '{nombre_tabla}': {str(e)}"
-                    errores_eliminacion.append(error_msg)
-                    print(f"❌ {error_msg}")
-            
-            # 6.3 Commit final para persistir todas las eliminaciones
             try:
-                conn.commit()
+                # 6.1 Primero eliminar constraints dependientes que pueden bloquear eliminaciones
+                comandos_constraints = [
+                    "ALTER TABLE falla DROP CONSTRAINT IF EXISTS falla_reportado_por_id_fkey",
+                    "ALTER TABLE falla DROP CONSTRAINT IF EXISTS falla_tecnico_asignado_id_fkey",
+                    "ALTER TABLE mantenimiento DROP CONSTRAINT IF EXISTS mantenimiento_tecnico_id_fkey", 
+                    "ALTER TABLE historial_estado_equipo DROP CONSTRAINT IF EXISTS historial_estado_equipo_usuario_id_fkey"
+                ]
+                
+                for constraint_cmd in comandos_constraints:
+                    try:
+                        conn.execute(text(constraint_cmd))
+                        constraint_name = constraint_cmd.split()[-1]
+                        constraints_eliminados.append(constraint_name)
+                        print(f"✅ Constraint '{constraint_name}' eliminado")
+                    except Exception as e:
+                        print(f"⚠️ No se pudo eliminar constraint: {str(e)}")
+                        # Continuar con otros constraints aunque uno falle
+                        continue
+                
+                # 6.2 Luego eliminar todas las tablas singulares (una por una con transacciones separadas)
+                for nombre_tabla in tablas_a_eliminar:
+                    try:
+                        # Cada eliminación en transacción separada para evitar fallas en cadena
+                        try:
+                            comando_sql = text(f"DROP TABLE IF EXISTS {nombre_tabla} CASCADE")
+                            conn.execute(comando_sql)
+                            conn.commit()  # Commit después de cada eliminación exitosa
+                            eliminaciones_realizadas.append(nombre_tabla)
+                            print(f"✅ Tabla '{nombre_tabla}' eliminada exitosamente")
+                        except Exception as e:
+                            # En caso de error, hacer rollback y continuar con la siguiente tabla
+                            conn.rollback()
+                            error_msg = f"Error eliminando '{nombre_tabla}': {str(e)}"
+                            errores_eliminacion.append(error_msg)
+                            print(f"❌ {error_msg}")
+                            # Continuar con la siguiente tabla
+                            continue
+                            
+                # 6.3 Commit final exitoso si llegamos hasta aquí
                 resultado['commit_exitoso'] = True
+                print("🎉 Todas las eliminaciones completadas exitosamente")
+                
+            except Exception as e:
+                # Error general - hacer rollback de toda la transacción
+                print(f"🚨 Error general en eliminación: {str(e)}")
+                conn.rollback()
+                resultado['commit_exitoso'] = False
+                errores_eliminacion.append(f"Error general: {str(e)}")
                 print("✅ Commit realizado exitosamente")
             except Exception as e:
                 resultado['error_commit'] = str(e)
