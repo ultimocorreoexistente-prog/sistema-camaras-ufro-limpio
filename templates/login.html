@@ -83,11 +83,20 @@
             padding: 1rem;
             border-radius: 8px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
         }
         
-        .logo-ufro svg {
-            width: 100%;
-            height: 100%;
+        .logo-ufro:hover {
+            transform: scale(1.05);
+        }
+        
+        .logo-ufro img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
         }
         
         /* Panel de Login (centro) */
@@ -202,12 +211,23 @@
         
         /* Responsive */
         @media (max-width: 992px) {
-            .logo-container,
             .camera-icon-container {
                 display: none;
             }
             
+            .logo-container {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 1rem;
+            }
+            
+            .logo-ufro {
+                width: 120px;
+                height: 120px;
+            }
+            
             .container-login {
+                flex-direction: column;
                 padding: 1rem;
             }
         }
@@ -237,13 +257,7 @@
         <!-- Logo UFRO (izquierda) -->
         <div class="logo-container">
             <div class="logo-ufro">
-                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Logo UFRO simplificado -->
-                    <circle cx="100" cy="100" r="90" fill="#003d7a" stroke="#003d7a" stroke-width="2"/>
-                    <path d="M100,30 L120,60 L150,60 L130,80 L140,110 L100,90 L60,110 L70,80 L50,60 L80,60 Z" fill="white"/>
-                    <text x="100" y="155" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">UFRO</text>
-                    <text x="100" y="175" font-family="Arial, sans-serif" font-size="10" fill="white" text-anchor="middle">LA FRONTERA</text>
-                </svg>
+                <img src="{{ url_for('static', filename='images/logo-ufro.png') }}" alt="Logo Universidad de La Frontera" class="img-fluid" style="max-width: 100%; height: auto;">
             </div>
         </div>
         

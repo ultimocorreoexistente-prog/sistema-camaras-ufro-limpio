@@ -19,6 +19,38 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* Logo UFRO en navbar */
+.navbar-brand img {
+    height: 40px;
+    width: auto;
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover img {
+    transform: scale(1.05);
+}
+
+/* Logo responsive */
+@media (max-width: 768px) {
+    .navbar-brand img {
+        height: 32px;
+    }
+    
+    .navbar-brand span {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar-brand img {
+        height: 28px;
+    }
+    
+    .navbar-brand span {
+        font-size: 0.8rem;
+    }
+}
+
 /* Cards */
 .card {
     border: none;

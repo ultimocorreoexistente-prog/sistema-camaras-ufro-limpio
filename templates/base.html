@@ -22,8 +22,9 @@
     {% if current_user.is_authenticated %}
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
-                <i class="bi bi-camera-video"></i> Sistema Cámaras UFRO
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('dashboard') }}">
+                <img src="{{ url_for('static', filename='images/logo-ufro.png') }}" alt="Logo UFRO" class="me-2" style="height: 40px; width: auto;">
+                <span class="text-white">Sistema Cámaras UFRO</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -101,9 +102,22 @@
     </main>
     
     <!-- Footer -->
-    <footer class="bg-light text-center text-muted py-3 mt-5">
+    <footer class="bg-light text-center text-muted py-4 mt-5 border-top">
         <div class="container">
-            <p class="mb-0">Sistema de Gestión de Cámaras UFRO - 2025</p>
+            <div class="row align-items-center">
+                <div class="col-md-4 text-md-start mb-3 mb-md-0">
+                    <img src="{{ url_for('static', filename='images/logo-ufro.png') }}" alt="Logo UFRO" style="height: 30px; width: auto;">
+                </div>
+                <div class="col-md-4">
+                    <p class="mb-0 fw-bold">Sistema de Gestión de Cámaras UFRO</p>
+                    <small class="text-muted">Universidad de La Frontera - 2025</small>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <small class="text-muted">
+                        <i class="bi bi-shield-check"></i> Sistema Seguro
+                    </small>
+                </div>
+            </div>
         </div>
     </footer>
     
