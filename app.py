@@ -189,6 +189,77 @@ def analisis_tablas():
             'conexion_exitosa': False
         })
 
+# ========== ENDPOINT DE LIMPIEZA MANUAL ==========
+@app.route('/limpiar-tablas')
+def limpiar_tablas():
+    """Endpoint para eliminar manualmente todas las tablas singulares duplicadas"""
+    try:
+        resultado = {
+            'timestamp': datetime.now().isoformat(),
+            'conexion_exitosa': True,
+            'tablas_eliminadas': [],
+            'errores': []
+        }
+        
+        from sqlalchemy import text, create_engine
+        engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+        
+        with engine.connect() as conn:
+            # Lista de tablas singulares a eliminar (que tienen duplicado plural)
+            tablas_a_eliminar = [
+                'camara', 'gabinete', 'switch', 'ubicacion', 
+                'mantenimiento', 'falla', 'equipo_tecnico', 'puerto_switch'
+            ]
+            
+            for tabla in tablas_a_eliminar:
+                try:
+                    # Verificar si existe la tabla singular
+                    existe_query = text("""
+                        SELECT COUNT(*) FROM information_schema.tables 
+                        WHERE table_name = %s AND table_schema = 'public'
+                    """)
+                    result = conn.execute(existe_query, (tabla,)).fetchone()
+                    
+                    if result[0] > 0:
+                        # Intentar eliminar la tabla
+                        conn.execute(text(f"DROP TABLE IF EXISTS {tabla} CASCADE"))
+                        resultado['tablas_eliminadas'].append(tabla)
+                        print(f"✅ Eliminada tabla {tabla}")
+                    
+                except Exception as e:
+                    resultado['errores'].append(f"{tabla}: {str(e)}")
+                    print(f"❌ Error eliminando {tabla}: {e}")
+            
+            # Confirmar tabla usuarios
+            try:
+                conn.execute(text("SELECT COUNT(*) FROM usuarios LIMIT 1"))
+                resultado['tabla_usuarios_verificada'] = True
+            except Exception as e:
+                resultado['error_usuarios'] = str(e)
+            
+            # Listado final de tablas
+            tablas_finales_query = text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_type = 'BASE TABLE'
+                ORDER BY table_name
+            """)
+            
+            tablas_finales = conn.execute(tablas_finales_query).fetchall()
+            resultado['tablas_finales'] = [row[0] for row in tablas_finales]
+            
+            conn.commit()
+        
+        return jsonify(resultado)
+        
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'timestamp': datetime.now().isoformat(),
+            'conexion_exitosa': False
+        })
+
 # ========== ENDPOINT DE DIAGNÓSTICO ==========
 @app.route('/diagnostico')
 def diagnostico():
