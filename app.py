@@ -278,73 +278,41 @@ def logout():
 def dashboard():
     return "Dashboard - Sistema funcionando (este es solo un placeholder)"
 
-# Endpoint temporal para listar tablas de la base de datos
-@app.route('/admin/list-temp')
-def admin_list_tables_temp():
-    """Endpoint temporal para listar todas las tablas - SOLO PARA DESARROLLO"""
+@app.route('/debug-tables')
+@login_required
+def debug_tables():
+    """Endpoint simple para mostrar información de tablas usando SQLAlchemy"""
     try:
-        import os
-        import json
+        # Usar SQLAlchemy para obtener información de tablas
+        from sqlalchemy import text
         
-        DATABASE_URL = os.environ.get('DATABASE_URL')
-        
-        if not DATABASE_URL:
-            return jsonify({'error': 'DATABASE_URL no encontrada'}), 500
-        
-        # Importar psycopg2 en tiempo de ejecución
-        try:
-            import psycopg2
-            from psycopg2 import sql
-        except ImportError:
-            return jsonify({
-                'error': 'psycopg2 no disponible',
-                'message': 'Usar endpoint /migrate_nomenclature para verificar'
-            }), 500
-        
-        # Conectar y ejecutar query
-        conn = psycopg2.connect(DATABASE_URL)
-        cursor = conn.cursor()
-        
-        # Query para listar todas las tablas
-        query = """
-            SELECT table_name, table_type
+        # Query directa para obtener tablas
+        result = db.session.execute(text("""
+            SELECT table_name 
             FROM information_schema.tables 
             WHERE table_schema = 'public' 
             AND table_type = 'BASE TABLE'
-            ORDER BY table_name;
-        """
+            ORDER BY table_name
+        """))
         
-        cursor.execute(query)
-        tablas = cursor.fetchall()
+        tablas = [row[0] for row in result.fetchall()]
         
-        # Convertir a formato JSON friendly
-        resultado = {
-            'total_tablas': len(tablas),
-            'tablas': [],
-            'singulares': [],
-            'plurales': [],
-            'duplicados_potenciales': []
-        }
+        # Analizar singulares vs plurales
+        singulares = []
+        plurales = []
+        duplicados = []
         
-        for nombre, tipo in tablas:
-            tabla_info = {
-                'nombre': nombre,
-                'tipo': tipo,
-                'es_singular': not nombre.endswith('s') or len(nombre) <= 2
-            }
-            resultado['tablas'].append(tabla_info)
-            
-            # Clasificar como singular o plural
-            if tabla_info['es_singular']:
-                resultado['singulares'].append(nombre)
+        for tabla in tablas:
+            if tabla.endswith('s') and len(tabla) > 2:
+                plurales.append(tabla)
             else:
-                resultado['plurales'].append(nombre)
+                singulares.append(tabla)
         
         # Verificar duplicados específicos
-        mapeo_singular_plural = {
+        mapeo = {
             'usuario': 'usuarios',
-            'ubicacion': 'ubicaciones', 
-            'gabinete': 'gabinetes',
+            'ubicacion': 'ubicaciones',
+            'gabinete': 'gabinetes', 
             'switch': 'switches',
             'puerto': 'puerto_switch',
             'up': 'ups',
@@ -353,34 +321,89 @@ def admin_list_tables_temp():
             'mantenimiento': 'mantenimientos'
         }
         
-        for singular, plural in mapeo_singular_plural.items():
-            if singular in resultado['singulares'] and plural in resultado['plurales']:
-                # Contar registros en cada tabla
-                cursor.execute("SELECT COUNT(*) FROM %s" % sql.Identifier(singular).as_string(cursor))
-                count_singular = cursor.fetchone()[0]
-                
-                cursor.execute("SELECT COUNT(*) FROM %s" % sql.Identifier(plural).as_string(cursor))
-                count_plural = cursor.fetchone()[0]
-                
-                resultado['duplicados_potenciales'].append({
-                    'singular': singular,
-                    'plural': plural,
-                    'registros_singular': count_singular,
-                    'registros_plural': count_plural
-                })
+        for singular, plural in mapeo.items():
+            if singular in singulares and plural in plurales:
+                duplicados.append((singular, plural))
         
-        cursor.close()
-        conn.close()
+        # Crear HTML response
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Debug - Análisis de Tablas</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 40px; }}
+                .section {{ margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }}
+                .singular {{ background-color: #fff5f5; }}
+                .plural {{ background-color: #f0fff4; }}
+                .duplicate {{ background-color: #fff5e6; }}
+                .warning {{ color: #d63384; font-weight: bold; }}
+                table {{ width: 100%; border-collapse: collapse; }}
+                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                th {{ background-color: #f2f2f2; }}
+            </style>
+        </head>
+        <body>
+            <h1>🔍 Análisis de Tablas PostgreSQL Railway</h1>
+            
+            <div class="section">
+                <h2>📊 Resumen General</h2>
+                <p><strong>Total de tablas:</strong> {len(tablas)}</p>
+                <p><strong>Tablas singulares:</strong> {len(singulares)}</p>
+                <p><strong>Tablas plurales:</strong> {len(plurales)}</p>
+                <p><strong>Duplicados potenciales:</strong> {len(duplicados)}</p>
+            </div>
+            
+            <div class="section singular">
+                <h2>⚠️ Tablas en Singular ({len(singulares)})</h2>
+                {"<ul>" + "".join(f"<li>{tabla}</li>" for tabla in sorted(singulares)) + "</ul>" if singulares else "<p>✅ No hay tablas en singular</p>"}
+            </div>
+            
+            <div class="section plural">
+                <h2>✅ Tablas en Plural ({len(plurales)})</h2>
+                {"<ul>" + "".join(f"<li>{tabla}</li>" for tabla in sorted(plurales)) + "</ul>" if plurales else "<p>❌ No hay tablas en plural</p>"}
+            </div>
+            
+            <div class="section duplicate">
+                <h2>🔄 Duplicados Potenciales ({len(duplicados)})</h2>
+                {f'''
+                <table>
+                    <tr><th>Singular</th><th>Plural</th><th>Estado</th></tr>
+                    {''.join(f"<tr><td>{singular}</td><td>{plural}</td><td class='warning'>REVISAR</td></tr>" for singular, plural in duplicados)}
+                </table>
+                ''' if duplicados else "<p>✅ No se encontraron duplicados</p>"}
+            </div>
+            
+            <div class="section">
+                <h2>🔧 Lista Completa de Tablas</h2>
+                <table>
+                    <tr><th>Tabla</th><th>Tipo</th><th>Clasificación</th></tr>
+                    {''.join(f"<tr><td>{tabla}</td><td>BASE TABLE</td><td>{'Singular' if tabla in singulares else 'Plural'}</td></tr>" for tabla in sorted(tablas))}
+                </table>
+            </div>
+            
+            <div class="section">
+                <h2>💡 Recomendaciones</h2>
+                <ul>
+                    <li>Verificar que todas las tablas plurales correspondan a los modelos en <code>models.py</code></li>
+                    <li>Si existe tabla <code>usuario</code> con datos, migrar a <code>usuarios</code> antes de eliminar</li>
+                    <li>Eliminar tablas singulares vacías después de verificar que no son necesarias</li>
+                </ul>
+            </div>
+            
+            <p><a href="/dashboard">← Volver al Dashboard</a></p>
+        </body>
+        </html>
+        """
         
-        # Devolver como JSON formateado
-        return jsonify(resultado)
+        return html
         
     except Exception as e:
-        return jsonify({
-            'error': 'Error ejecutando query',
-            'message': str(e),
-            'sugerencia': 'La aplicación debe estar corriendo con DATABASE_URL válida'
-        }), 500
+        return f"""
+        <h1>❌ Error</h1>
+        <p><strong>Error:</strong> {str(e)}</p>
+        <p><a href="/dashboard">← Volver al Dashboard</a></p>
+        """
 
 if __name__ == '__main__':
     with app.app_context():
