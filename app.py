@@ -959,8 +959,15 @@ def eliminar_constraints_y_tablas():
     except Exception as e:
         return jsonify({'error': f"Error general: {str(e)}"})
 
+
+
+
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+            print('✅ DB create_all ejecutado correctamente')
+        except Exception as e:
+            print(f'⚠️ Error en create_all, continuando: {e}')
     port = int(os.environ.get('PORT', 8000))
     app.run(host='0.0.0.0', port=port, debug=True)
