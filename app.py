@@ -405,6 +405,21 @@ def debug_tables():
         <p><a href="/dashboard">← Volver al Dashboard</a></p>
         """
 
+@app.route('/debug-db')
+def debug_db():
+    """Endpoint simple para verificar conexión a base de datos"""
+    try:
+        from sqlalchemy import text
+        with app.app_context():
+            # Test básico de conexión
+            result = db.session.execute(text("SELECT 1"))
+            if result.fetchone()[0] == 1:
+                return "OK: Database connection working"
+            else:
+                return "ERROR: Database query failed"
+    except Exception as e:
+        return f"ERROR: {str(e)}"
+
 @app.route('/debug-tables-json')
 def debug_tables_json():
     """Endpoint JSON para análisis de tablas"""
