@@ -1,212 +1,237 @@
 # Sistema de Gestión de Cámaras UFRO
 
-Sistema web completo para la gestión de cámaras de seguridad del Campus de la Universidad de la Frontera (UFRO).
+Sistema web completo para la gestión de infraestructura tecnológica y cámaras de seguridad de la Universidad de La Frontera (UFRO).
 
-## 🎯 Características Principales
+## 🏗️ Arquitectura del Proyecto
 
-- ✅ **Dashboard Interactivo**: Estadísticas en tiempo real con gráficos
-- ✅ **Gestión de Equipos**: Cámaras (474), Gabinetes, Switches, UPS, NVR/DVR, Fuentes de poder
-- ✅ **Sistema de Fallas**: Workflow completo con validación anti-duplicados
-- ✅ **Mantenimientos**: Preventivos, correctivos y predictivos
-- ✅ **Mapas de Red**: Topología con Mermaid.js y geolocalización con Leaflet.js
-- ✅ **Reportes Avanzados**: Exportación Excel/PNG e impresión optimizada
-- ✅ **Autenticación RBAC**: 6 roles de usuario (admin, supervisor, técnico, visualizador)
-- ✅ **Responsive Design**: Bootstrap 5 optimizado para móviles
+```
+sistema-camaras-ufro-completo/
+├── app.py                  # Aplicación principal Flask
+├── config.py               # Configuraciones del sistema
+├── requirements.txt        # Dependencias Python
+├── .env.example           # Variables de entorno de ejemplo
+├── Procfile               # Configuración para deployment en Railway
+├── templates/             # Templates HTML con Jinja2
+│   ├── base.html
+│   ├── dashboard.html
+│   ├── login.html
+│   ├── usuarios/
+│   ├── camaras/
+│   ├── geolocalizacion/
+│   ├── topologia/
+│   ├── fotografias/
+│   ├── fallas/
+│   └── mantenimientos/
+├── static/                # Archivos estáticos
+│   ├── css/style.css     # Estilos principales
+│   ├── js/               # Scripts JavaScript
+│   └── uploads/          # Archivos subidos
+├── models/                # Modelos SQLAlchemy
+│   ├── __init__.py
+│   ├── base.py
+│   ├── usuario.py
+│   ├── camara.py
+│   ├── equipo.py
+│   └── fotografia.py
+├── routes/                # Rutas de la aplicación
+│   ├── __init__.py
+│   ├── usuarios.py
+│   ├── camaras.py
+│   ├── topologia.py
+│   └── fotografias.py
+├── services/              # Lógica de negocio
+│   ├── __init__.py
+│   ├── auth_service.py
+│   ├── foto_service.py
+│   └── reporte_service.py
+├── utils/                 # Utilidades
+│   ├── __init__.py
+│   ├── helpers.py
+│   └── validators.py
+├── scripts/               # Scripts de migración y utilidad
+├── migrations/            # Migraciones de base de datos
+├── uploads/               # Directorio de archivos subidos
+└── docs/                  # Documentación
+```
 
-## 🏗️ Arquitectura
+## 🚀 Instalación y Configuración
 
-- **Backend**: Flask (Python) + SQLAlchemy ORM
-- **Base de Datos**: PostgreSQL (producción) / SQLite (desarrollo)
-- **Frontend**: Bootstrap 5 + Chart.js + Jinja2 Templates
-- **Mapas**: Mermaid.js + Leaflet.js
-- **Deploy**: Railway (autodeploy desde GitHub)
-
-## 📊 Datos del Sistema
-
-- **Total Cámaras**: 474 cámaras distribuidas en campus
-- **Campus**: Andrés Bello (principal), Pucón, Angol, Medicina
-- **Equipos**: 6 categorías de equipos de infraestructura
-- **Fallas**: Sistema de workflow con 6 estados
-- **Mantenimientos**: Registro completo de intervenciones
-
-## 🔧 Instalación Local
+### 1. Clonar y Configurar el Entorno
 
 ```bash
-# Clonar repositorio
-git clone https://github.com/tu-usuario/sistema-camaras-ufro.git
-cd sistema-camaras-ufro
+# Clonar el repositorio
+git clone <repository-url>
+cd sistema-camaras-ufro-completo
+
+# Crear entorno virtual
+python -m venv venv
+source venv/bin/activate  # En Windows: venv\Scripts\activate
 
 # Instalar dependencias
 pip install -r requirements.txt
+```
 
-# Configurar variables de entorno
+### 2. Configuración de Variables de Entorno
+
+```bash
+# Copiar archivo de ejemplo
 cp .env.example .env
-# Editar .env con tus credenciales
 
-# Inicializar base de datos
-python init_db.py
+# Editar .env con tus configuraciones
+SECRET_KEY=tu-clave-secreta-aqui
+DATABASE_URL=postgresql://usuario:password@host:puerto/database
+FLASK_ENV=development
+```
 
-# Ejecutar aplicación
+### 3. Configuración de Base de Datos
+
+```bash
+# Para desarrollo (SQLite)
+export DATABASE_URL='sqlite:///sistema_camaras.db'
+
+# Para producción (Railway PostgreSQL)
+export DATABASE_URL='postgresql://usuario:password@host:puerto/database'
+```
+
+## 🛠️ Uso de la Aplicación
+
+### Desarrollo Local
+
+```bash
+# Ejecutar la aplicación
 python app.py
+
+# La aplicación estará disponible en http://localhost:8000
 ```
 
-## 🚀 Deploy en Railway
+### Deployment en Railway
 
-1. Conectar repositorio a Railway
-2. Configurar variables de entorno:
-   - `DATABASE_URL`: URL de PostgreSQL
-   - `SECRET_KEY`: Clave secreta para producción
-3. Railway hará auto-deploy desde rama `main`
+1. Conectar el repositorio a Railway
+2. Configurar variables de entorno en Railway
+3. Railway detectará automáticamente el Procfile
+4. La aplicación se desplegará automáticamente
 
-## 🔐 Credenciales por Defecto
+## 📊 Modelos de Datos
 
-- **Usuario**: charles@ufro.cl
-- **Contraseña**: ufro2025
-- **Rol**: Superadministrador
+### Usuario
+- Gestión de usuarios con sistema RBAC
+- Roles: Administrador, Supervisor, Operador, Visitante
+- Sistema de autenticación seguro
 
-## 📝 Estructura del Proyecto
+### Cámara
+- Gestión completa de cámaras de seguridad
+- Estados: Online, Offline, Fallando, Mantenimiento
+- Geolocalización y especificaciones técnicas
 
-```
-sistema-camaras-ufro/
-├── app.py                  # Aplicación Flask principal
-├── models.py              # Modelos SQLAlchemy
-├── migrate_data.py        # Script de migración Excel
-├── requirements.txt       # Dependencias Python
-├── templates/             # Templates Jinja2
-│   ├── base.html
-│   ├── login.html
-│   ├── dashboard.html
-│   ├── camaras/
-│   ├── fallas/
-│   ├── mantenimientos/
-│   └── informes/
-├── static/                # Assets estáticos
-│   ├── css/
-│   ├── js/
-│   └── images/
-└── planillas/             # Archivos Excel de datos
-```
+### Equipo de Red
+- Gestión de NVR, DVR, Switches, UPS
+- Estados de equipos y conexiones
+- Topología de red
 
-## 🏢 Funcionalidades por Módulo
+### Fallas y Mantenimientos
+- Registro y seguimiento de fallas
+- Programación de mantenimientos
+- Historial de intervenciones
+
+### Fotografías
+- Gestión de evidencias fotográficas
+- Metadatos de imágenes
+- Asociación con fallas y mantenimientos
+
+## 🔧 Funcionalidades Principales
 
 ### Dashboard
-- Estadísticas generales en tiempo real
-- Gráficos de estado de equipos
+- Resumen ejecutivo del estado del sistema
+- Gráficos de estados de equipos
 - Alertas y notificaciones
-- Resumen de fallas activas
+
+### Gestión de Usuarios
+- CRUD completo de usuarios
+- Sistema de roles y permisos
+- Auditoría de actividades
 
 ### Gestión de Cámaras
-- CRUD completo de 474 cámaras
-- Información técnica detallada
-- Historial de fallas por cámara
-- Estado operativo en tiempo real
+- Registro de cámaras con ubicación
+- Estados en tiempo real
+- Historial de fallas
 
-### Sistema de Fallas
-- **Estados**: Pendiente → Asignada → En Proceso → Reparada → Cerrada → Cancelada
-- **Validación Anti-Duplicados**: Previene fallas duplicadas
-- **Asignación de Técnicos**: Sistema de roles y permisos
-- **Seguimiento Completo**: Fecha, hora, técnico, solución aplicada
+### Topología de Red
+- Visualización de diagramas de red
+- Conexiones entre equipos
+- Mapeo geográfico
 
-### Mantenimientos
-- **Preventivo**: Mantenimientos programados
-- **Correctivo**: Reparaciones de fallas
-- **Predictivo**: Análisis de tendencias
-- **Costos**: Registro completo de gastos
+### Fotografías
+- Subida y gestión de imágenes
+- Organización por categorías
+- Visualización y descarga
 
-### Mapas y Reportes
-- **Topología de Red**: Visualización jerárquica con Mermaid.js
-- **Geolocalización**: Mapas interactivos con Leaflet.js
-- **Informes**: Exportación Excel y PNG
-- **Impresión**: CSS optimizado para impresora
-
-## 👥 Sistema de Usuarios RBAC
-
-- **Superadministrador**: Acceso completo al sistema
-- **Administrador**: Gestión de usuarios y configuración
-- **Supervisor**: Supervisión y reportes
-- **Técnico**: Mantenimientos y reparaciones
-- **Visualizador**: Solo lectura
-- **Invitado**: Acceso limitado
+### Reportes
+- Informes de estado
+- Estadísticas de mantenimiento
+- Exportación de datos
 
 ## 🔒 Seguridad
 
-- Autenticación Flask-Login
-- Hash de contraseñas con Werkzeug
-- Validación de sesiones
+- Autenticación con Flask-Login
 - Protección CSRF
-- Sanitización de inputs
+- Validación de datos de entrada
+- Hash seguro de contraseñas
+- Roles y permisos granulares
 
 ## 📱 Responsive Design
 
-- Bootstrap 5 framework
-- Mobile-first approach
-- Optimización para tablets y móviles
-- Iconografía FontAwesome
-- Temas personalizados
+- Compatible con dispositivos móviles
+- Interfaz adaptable
+- Navegación optimizada para touch
 
 ## 🧪 Testing
 
 ```bash
-# Ejecutar tests (cuando estén implementados)
+# Ejecutar tests
 python -m pytest tests/
 
 # Verificar cobertura
-python -m pytest --cov=app tests/
+python -m pytest --cov=. tests/
 ```
 
-## 📈 Performance
+## 📝 Logs y Monitoreo
 
-- SQLAlchemy ORM optimizado
-- Paginación de resultados
-- Cache de consultas frecuentes
-- Lazy loading de relaciones
-- Minificación de assets
+- Logs estructurados con Python logging
+- Registro de actividades de usuario
+- Monitoreo de base de datos
+- Endpoints de diagnóstico
 
-## 🔄 Migración de Datos
+## 🤝 Contribución
 
-El sistema incluye herramientas para migrar datos desde Excel:
-
-```bash
-# Ejecutar migración completa
-python migrate_data.py
-
-# Migración específica por módulo
-python migrate_data.py --module=camaras
-python migrate_data.py --module=fallas
-```
-
-## 📚 Documentación
-
-- README.md (este archivo)
-- Documentación de API en `/docs/api/`
-- Guías de usuario en `/docs/user/`
-- Documentación técnica en `/docs/tech/`
-
-## 🤝 Contribuir
-
-1. Fork del repositorio
-2. Crear rama feature (`git checkout -b feature/nueva-funcionalidad`)
+1. Fork del proyecto
+2. Crear rama de feature (`git checkout -b feature/nueva-funcionalidad`)
 3. Commit de cambios (`git commit -am 'Agregar nueva funcionalidad'`)
 4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
 5. Crear Pull Request
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+Este proyecto está bajo la licencia MIT. Ver archivo `LICENSE` para más detalles.
 
-## 🆘 Soporte
+## 📞 Soporte
 
-- **Email**: soporte@ufro.cl
-- **Issues**: GitHub Issues
-- **Documentación**: `/docs/`
+Para soporte técnico o consultas:
+- Email: soporte-tecnico@ufro.cl
+- Documentación: `/docs/`
+- Issues: GitHub Issues
 
-## 🏆 Estado del Proyecto
+## 🔄 Versionado
 
-- ✅ **Desarrollo**: Completado
-- ✅ **Testing**: En progreso  
-- ✅ **Deploy**: Railway configurado
-- ✅ **Documentación**: Parcialmente completa
+Este proyecto usa [Semantic Versioning](https://semver.org/) para el versionado.
+
+## 🙏 Agradecimientos
+
+- Universidad de La Frontera (UFRO)
+- Equipo de desarrollo
+- Bibliotecas open source utilizadas
 
 ---
 
-**Sistema de Gestión de Cámaras UFRO** - Desarrollado para la Universidad de la Frontera
+**Versión:** 1.0.0  
+**Fecha:** 2024  
+**Estado:** Producción
