@@ -938,4 +938,4 @@ if __name__ == '__main__':
         app.run(host='0.0.0.0', port=port, debug=True, use_reloader=False)
     except Exception as e:
         print(f"❌ Error crítico al iniciar servidor de desarrollo: {e}")
-        print("✅ La aplicación debería funcionar en producción Railway sin este bloque")
+        print("✅ La aplicación debería funcionar en producción Railway sin este bloque")# Cache invalidation timestamp: 2025-11-03 
