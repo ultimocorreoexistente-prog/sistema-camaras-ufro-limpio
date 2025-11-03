@@ -21,7 +21,6 @@ class Usuario(UserMixin, db.Model):
     departamento = db.Column(db.String(200))
     ultima_conexion = db.Column(db.DateTime)
     configuraciones = db.Column(db.Text)
-    modo = db.Column(db.String(50))
     
     @property
     def username_safe(self):
@@ -100,7 +99,7 @@ class Switch(db.Model):
     gabinete = db.relationship('Gabinete', backref='switches')
 
 class Puerto_Switch(db.Model):
-    __tablename__ = 'puerto_switch'
+    __tablename__ = 'puertos_switch'
     id = db.Column(db.Integer, primary_key=True)
     switch_id = db.Column(db.Integer, db.ForeignKey('switches.id'), nullable=False)
     numero_puerto = db.Column(db.Integer, nullable=False)
@@ -192,7 +191,7 @@ class Camara(db.Model):
     ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
     gabinete_id = db.Column(db.Integer, db.ForeignKey('gabinetes.id'))
     switch_id = db.Column(db.Integer, db.ForeignKey('switches.id'))
-    puerto_switch_id = db.Column(db.Integer, db.ForeignKey('puerto_switch.id'))
+    puerto_switch_id = db.Column(db.Integer, db.ForeignKey('puertos_switch.id'))
     nvr_id = db.Column(db.Integer, db.ForeignKey('nvr_dvr.id'))
     puerto_nvr = db.Column(db.String(20))
     requiere_poe_adicional = db.Column(db.Boolean, default=False)
@@ -266,7 +265,7 @@ class Mantenimiento(db.Model):
     tecnico = db.relationship('Usuario', backref='mantenimientos')
 
 class Equipo_Tecnico(db.Model):
-    __tablename__ = 'equipo_tecnico'
+    __tablename__ = 'equipos_tecnicos'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     apellido = db.Column(db.String(100), nullable=False)
@@ -287,6 +286,7 @@ class Historial_Estado_Equipo(db.Model):
     motivo = db.Column(db.Text)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
 
+# ⚠️ FUNCIÓN CORREGIDA - SOLO PARA USO MANUAL
 def fix_usuarios_structure():
     """Corrige la estructura de la tabla usuarios agregando columna username si falta"""
     try:
@@ -327,15 +327,13 @@ def fix_usuarios_structure():
     except Exception as e:
         print(f'⚠️ Error al corregir estructura usuarios: {e}')
 
-def init_database():
-    """Inicializa la base de datos si no existe"""
-    try:
-        # FIX CRÍTICO: Corregir estructura ANTES de create_all
-        fix_usuarios_structure()
-        db.create_all()
-        print('✅ Tablas verificadas/creadas exitosamente')
-    except Exception as e:
-        print(f'❌ Error al inicializar base de datos: {e}')
-        raise
-    
-    usuario = db.relationship('Usuario', backref='cambios_estado')
+# ⚠️ FUNCIÓN ELIMINADA PARA EVITAR INICIALIZACIÓN AUTOMÁTICA
+# def init_database():  # ← ESTA FUNCIÓN CAUSABA EL PROBLEMA 502
+#     """FUNCIÓN ELIMINADA - NO EJECUTAR EN PRODUCCIÓN"""
+#     try:
+#         fix_usuarios_structure()
+#         db.create_all()  # ← ESTA LÍNEA CAUSABA EL ERROR 502
+#         print('✅ Tablas verificadas/creadas exitosamente')
+#     except Exception as e:
+#         print(f'❌ Error al inicializar base de datos: {e}')
+#         raise
