@@ -16,29 +16,22 @@
                     </div>
 
                     <!-- Mensajes de error -->
-                    {% if form.errors %}
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            {% if form.errors %}
-                                {% for field, errors in form.errors.items %}
-                                    {% for error in errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                {% endfor %}
-                            {% endif %}
-                            {% if messages %}
-                                {% for message in messages %}
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
                                     {{ message }}
-                                {% endfor %}
-                            {% endif %}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endif %}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
 
                     <!-- Formulario de login -->
                     <form method="post" novalidate>
-                        {% csrf_token %}
-                        
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
                         <!-- Campo Email/Usuario -->
                         <div class="mb-3">
                             <label for="id_username" class="form-label">
@@ -47,20 +40,10 @@
                             <input type="email" 
                                    name="username" 
                                    id="id_username" 
-                                   class="form-control form-control-lg {% if form.username.errors %}is-invalid{% endif %}" 
+                                   class="form-control form-control-lg" 
                                    placeholder="usuario@ufro.cl"
                                    required
                                    autofocus>
-                            {% if form.username.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.username.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                            {% if form.username.help_text %}
-                                <div class="form-text">{{ form.username.help_text }}</div>
-                            {% endif %}
                         </div>
 
                         <!-- Campo Contraseña -->
@@ -72,23 +55,15 @@
                                 <input type="password" 
                                        name="password" 
                                        id="id_password" 
-                                       class="form-control form-control-lg {% if form.password.errors %}is-invalid{% endif %}" 
+                                       class="form-control form-control-lg" 
                                        placeholder="Ingrese su contraseña"
                                        required>
                                 <button class="btn btn-outline-secondary" 
                                         type="button" 
-                                        id="togglePassword"
-                                        title="Mostrar/Ocultar contraseña">
+                                        id="togglePassword">
                                     <i class="bi bi-eye" id="toggleIcon"></i>
                                 </button>
                             </div>
-                            {% if form.password.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.password.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
                         </div>
 
                         <!-- Recordarme -->
@@ -115,7 +90,7 @@
 
                     <!-- Enlaces adicionales -->
                     <div class="text-center">
-                        <a href="{% url 'password_reset' %}" class="text-decoration-none small">
+                        <a href="#" class="text-decoration-none small">
                             <i class="bi bi-question-circle me-1"></i>
                             ¿Olvidaste tu contraseña?
                         </a>
@@ -148,7 +123,7 @@
             <div class="text-center mt-4">
                 <small class="text-muted">
                     <i class="bi bi-c-circle me-1"></i>
-                    {{ year|default:2024 }} Universidad de La Frontera
+                    {{ year|default(2024) }} Universidad de La Frontera
                 </small>
             </div>
         </div>
@@ -156,25 +131,10 @@
 </div>
 
 <style>
-    .min-vh-100 {
-        min-height: 100vh;
-    }
-    
-    .card {
-        border-radius: 1rem;
-    }
-    
-    .form-control-lg {
-        border-radius: 0.75rem;
-    }
-    
-    .btn-lg {
-        border-radius: 0.75rem;
-    }
-    
-    #togglePassword:hover {
-        background-color: #e9ecef;
-    }
+    .min-vh-100 { min-height: 100vh; }
+    .card { border-radius: 1rem; }
+    .form-control-lg { border-radius: 0.75rem; }
+    .btn-lg { border-radius: 0.75rem; }
 </style>
 
 <script>
@@ -182,7 +142,6 @@
     document.getElementById('togglePassword').addEventListener('click', function() {
         const passwordField = document.getElementById('id_password');
         const toggleIcon = document.getElementById('toggleIcon');
-        
         if (passwordField.type === 'password') {
             passwordField.type = 'text';
             toggleIcon.className = 'bi bi-eye-slash';
@@ -192,36 +151,11 @@
         }
     });
 
-    // Mostrar loading en botón de submit
+    // Mostrar loading en botón
     document.querySelector('form').addEventListener('submit', function() {
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Iniciando sesión...';
         submitBtn.disabled = true;
-    });
-
-    // Validación en tiempo real
-    document.getElementById('id_username').addEventListener('input', function() {
-        const email = this.value;
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        
-        if (email && !emailRegex.test(email)) {
-            this.setCustomValidity('Ingrese un correo electrónico válido');
-        } else {
-            this.setCustomValidity('');
-        }
-    });
-
-    // Auto-focus en el campo de email
-    document.getElementById('id_username').focus();
-
-    // Prevenir envío múltiple del formulario
-    let isSubmitting = false;
-    document.querySelector('form').addEventListener('submit', function(e) {
-        if (isSubmitting) {
-            e.preventDefault();
-            return false;
-        }
-        isSubmitting = true;
     });
 </script>
 

@@ -28,9 +28,9 @@
                 <h5 class="alert-heading">
                     <i class="bi bi-exclamation-triangle me-2"></i>Estado del Sistema
                 </h5>
-                <p class="mb-2"><strong>Error detectado:</strong> {{ timestamp|default:"Ahora" }}</p>
-                <p class="mb-2"><strong>ID de error:</strong> <code>{{ error_id|default:"ERR-" }}{{ random_id|default:"50001" }}</code></p>
-                <p class="mb-0"><strong>Estado:</strong> El equipo técnico ha sido notificado automáticamente</p>
+                <p class="mb-2"><strong>Error detectado:</strong> {{ timestamp|default("Ahora") }}</p>
+<p class="mb-2"><strong>Ruta solicitada:</strong> {{ path|default("Desconocida") }}</p>
+<p class="mb-2"><strong>Método HTTP:</strong> {{ method|default("Desconocido") }}</p>
             </div>
             
             <!-- Acciones recomendadas -->

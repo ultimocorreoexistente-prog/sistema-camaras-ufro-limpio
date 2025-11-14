@@ -14,7 +14,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted text-uppercase small fw-bold">Total Usuarios</h6>
-                        <h3 class="text-primary">{{ estadisticas.total_usuarios|default:0 }}</h3>
+                        <h3 class="text-primary">{{ estadisticas.total_usuarios|default(0) }}</h3>
                     </div>
                     <div class="text-primary">
                         <i class="bi bi-people fs-1"></i>
@@ -37,7 +37,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted text-uppercase small fw-bold">Carreras</h6>
-                        <h3 class="text-success">{{ estadisticas.total_carreras|default:0 }}</h3>
+                        <h3 class="text-success">{{ estadisticas.total_carreras|default(0) }}</h3>
                     </div>
                     <div class="text-success">
                         <i class="bi bi-mortarboard fs-1"></i>
@@ -60,7 +60,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted text-uppercase small fw-bold">Asignaturas</h6>
-                        <h3 class="text-info">{{ estadisticas.total_asignaturas|default:0 }}</h3>
+                        <h3 class="text-info">{{ estadisticas.total_asignaturas|default(0) }}</h3>
                     </div>
                     <div class="text-info">
                         <i class="bi bi-book fs-1"></i>
@@ -85,7 +85,7 @@
                         <h6 class="text-muted text-uppercase small fw-bold">
                             {% if user.perfil.rol == 'estudiante' %}Matrículas{% elif user.perfil.rol == 'profesor' %}Mis Cursos{% else %}Cursos Activos{% endif %}
                         </h6>
-                        <h3 class="text-warning">{{ estadisticas.actividad_actual|default:0 }}</h3>
+                        <h3 class="text-warning">{{ estadisticas.actividad_actual|default(0) }}</h3>
                     </div>
                     <div class="text-warning">
                         <i class="bi bi-clipboard-data fs-1"></i>
@@ -138,7 +138,7 @@
                                 <p class="mb-1 text-muted small">{{ actividad.descripcion }}</p>
                                 <small class="text-muted">{{ actividad.fecha|timesince }}</small>
                             </div>
-                            <span class="badge bg-{{ actividad.tipo_color|default:'secondary' }}">{{ actividad.tipo }}</span>
+                            <span class="badge bg-{{ actividad.tipo_color|default("secondary") }}">{{ actividad.tipo }}</span>
                         </div>
                     </div>
                     {% empty %}
@@ -258,7 +258,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-{{ usuario.perfil.rol_color|default:'secondary' }}">
+                                    <span class="badge bg-{{ usuario.perfil.rol_color|default("secondary") }}">
                                         {{ usuario.perfil.rol|title }}
                                     </span>
                                 </td>
@@ -304,7 +304,7 @@
                             <div class="display-6 text-success">
                                 <i class="bi bi-check-circle-fill"></i>
                             </div>
-                            <h5 class="mt-2">{{ estadisticas.sistema_online|default:'100' }}%</h5>
+                            <h5 class="mt-2">{{ estadisticas.sistema_online|default(100) }}%</h5>
                             <small class="text-muted">Sistema Online</small>
                         </div>
                     </div>
@@ -313,24 +313,24 @@
                             <div class="display-6 text-info">
                                 <i class="bi bi-clock-fill"></i>
                             </div>
-                            <h5 class="mt-2">{{ estadisticas.sesiones_activas|default:0 }}</h5>
+                            <h5 class="mt-2">{{ estadisticas.sesiones_activas|default(0) }}</h5>
                             <small class="text-muted">Sesiones Activas</small>
                         </div>
                     </div>
                 </div>
                 
                 <div class="mt-3">
-                    <h6 class="text-muted mb-3">Última actualización: {{ estadisticas.ultima_actualizacion|default:'Nunca' }}</h6>
+                    <h6 class="text-muted mb-3">Última actualización: {{ estadisticas.ultima_actualizacion|default("Nunca") }}</h6>
                     
                     <div class="progress mb-2" style="height: 8px;">
-                        <div class="progress-bar bg-success" style="width: {{ estadisticas.uso_cpu|default:25 }}%"></div>
+                        <div class="progress-bar bg-success" style="width: {{ estadisticas.uso_cpu|default(25) }}%"></div>
                     </div>
-                    <small class="text-muted">CPU: {{ estadisticas.uso_cpu|default:25 }}%</small>
+                    <small class="text-muted">CPU: {{ estadisticas.uso_cpu|default(25) }}%</small>
                     
                     <div class="progress mb-2 mt-3" style="height: 8px;">
-                        <div class="progress-bar bg-info" style="width: {{ estadisticas.uso_memoria|default:40 }}%"></div>
+                        <div class="progress-bar bg-info" style="width: {{ estadisticas.uso_memoria|default(40) }}%"></div>
                     </div>
-                    <small class="text-muted">Memoria: {{ estadisticas.uso_memoria|default:40 }}%</small>
+                    <small class="text-muted">Memoria: {{ estadisticas.uso_memoria|default(40) }}%</small>
                 </div>
             </div>
         </div>
@@ -429,7 +429,6 @@
     
     // Auto-actualizar estadísticas cada 60 segundos
     setInterval(function() {
-        // Aquí se podría hacer una llamada AJAX para actualizar las estadísticas
         console.log('Actualizando estadísticas...');
     }, 60000);
 </script>
