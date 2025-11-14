@@ -13,23 +13,25 @@ db = SQLAlchemy()
 # Usuario con Flask-Login
 class Usuario(UserMixin, db.Model):
     __tablename__ = 'usuarios'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    nombre = db.Column(db.String(120), nullable=False)
+    nombre = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    telefono = db.Column(db.String(20))
+    departamento = db.Column(db.String(100))
     rol = db.Column(db.String(50), nullable=False, default='visualizador')
     activo = db.Column(db.Boolean, default=True)
     ultimo_acceso = db.Column(db.DateTime)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
-    
+
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-    
+
     def __repr__(self):
         return f'<Usuario {self.username}>'
 
@@ -37,17 +39,17 @@ class Usuario(UserMixin, db.Model):
 # Ubicación
 class Ubicacion(db.Model):
     __tablename__ = 'ubicaciones'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(200), nullable=False)
     edificio = db.Column(db.String(100))
-    piso = db.Column(db.String(20))
+    piso = db.Column(db.String(50))
     descripcion = db.Column(db.Text)
     latitud = db.Column(db.Float)
     longitud = db.Column(db.Float)
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     def __repr__(self):
         return f'<Ubicacion {self.nombre}>'
 
@@ -55,22 +57,23 @@ class Ubicacion(db.Model):
 # Cámara
 class Camara(db.Model):
     __tablename__ = 'camaras'
-    
+
     id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(120), nullable=False, index=True)
+    nombre = db.Column(db.String(200), nullable=False, index=True)
     ip_address = db.Column(db.String(45), unique=True, nullable=False, index=True)
     ubicacion = db.Column(db.String(200))
     marca = db.Column(db.String(100))
     modelo = db.Column(db.String(100))
+    serie = db.Column(db.String(100))
     estado = db.Column(db.String(50), default='activa')
     ultima_conexion = db.Column(db.DateTime)
     fecha_instalacion = db.Column(db.DateTime)
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Relaciones
     fallas = db.relationship('Falla', backref='camara', lazy='dynamic')
-    
+
     def __repr__(self):
         return f'<Camara {self.nombre}>'
 
@@ -78,7 +81,7 @@ class Camara(db.Model):
 # Falla
 class Falla(db.Model):
     __tablename__ = 'fallas'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(50), unique=True, index=True)
     titulo = db.Column(db.String(200), nullable=False)
@@ -96,7 +99,7 @@ class Falla(db.Model):
     costo_reparacion = db.Column(db.Float, default=0)
     equipos_afectados = db.Column(db.Text)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     def __repr__(self):
         return f'<Falla {self.codigo}>'
 
@@ -104,7 +107,7 @@ class Falla(db.Model):
 # Mantenimiento
 class Mantenimiento(db.Model):
     __tablename__ = 'mantenimientos'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(50), unique=True, index=True)
     titulo = db.Column(db.String(200), nullable=False)
@@ -121,7 +124,7 @@ class Mantenimiento(db.Model):
     costo = db.Column(db.Float, default=0)
     observaciones = db.Column(db.Text)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     def __repr__(self):
         return f'<Mantenimiento {self.codigo}>'
 
@@ -129,7 +132,7 @@ class Mantenimiento(db.Model):
 # Gabinete/Rack
 class Gabinete(db.Model):
     __tablename__ = 'gabinetes'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(50), unique=True, nullable=False, index=True)
     nombre = db.Column(db.String(200), nullable=False)
@@ -139,7 +142,7 @@ class Gabinete(db.Model):
     descripcion = db.Column(db.Text)
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     def __repr__(self):
         return f'<Gabinete {self.codigo}>'
 
@@ -147,7 +150,7 @@ class Gabinete(db.Model):
 # UPS
 class UPS(db.Model):
     __tablename__ = 'ups'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(50), unique=True, nullable=False, index=True)
     nombre = db.Column(db.String(200), nullable=False)
@@ -160,7 +163,7 @@ class UPS(db.Model):
     observaciones = db.Column(db.Text)
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     def __repr__(self):
         return f'<UPS {self.codigo}>'
 
@@ -168,7 +171,7 @@ class UPS(db.Model):
 # Switch
 class Switch(db.Model):
     __tablename__ = 'switches'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(50), unique=True, nullable=False, index=True)
     nombre = db.Column(db.String(200), nullable=False)
@@ -182,7 +185,7 @@ class Switch(db.Model):
     estado = db.Column(db.String(30), default='activo')
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     def __repr__(self):
         return f'<Switch {self.codigo}>'
 
@@ -190,7 +193,7 @@ class Switch(db.Model):
 # NVR/DVR
 class NVR(db.Model):
     __tablename__ = 'nvr'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(50), unique=True, nullable=False, index=True)
     nombre = db.Column(db.String(200), nullable=False)
@@ -202,7 +205,7 @@ class NVR(db.Model):
     estado = db.Column(db.String(30), default='activo')
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     def __repr__(self):
         return f'<NVR {self.codigo}>'
 
@@ -210,18 +213,18 @@ class NVR(db.Model):
 # Fuente de Poder
 class FuentePoder(db.Model):
     __tablename__ = 'fuentes_poder'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(50), unique=True, nullable=False, index=True)
     nombre = db.Column(db.String(200), nullable=False)
     marca = db.Column(db.String(100))
     modelo = db.Column(db.String(100))
     capacidad = db.Column(db.Integer)
-    voltaje = db.Column(db.String(20))
+    voltaje = db.Column(db.String(50))
     estado = db.Column(db.String(30), default='activo')
     activo = db.Column(db.Boolean, default=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     def __repr__(self):
         return f'<FuentePoder {self.codigo}>'
 
@@ -229,7 +232,7 @@ class FuentePoder(db.Model):
 # Fotografía
 class Fotografia(db.Model):
     __tablename__ = 'fotografias'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     titulo = db.Column(db.String(200), nullable=False)
     descripcion = db.Column(db.Text)
@@ -239,6 +242,6 @@ class Fotografia(db.Model):
     entidad_id = db.Column(db.Integer)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     def __repr__(self):
         return f'<Fotografia {self.titulo}>'

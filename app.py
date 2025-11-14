@@ -1,6 +1,5 @@
-# Deploy forzado 2025-11-14
 """
-Sistema de Gestión de Cámaras UFRO - Aplicación Principal
+Sistema Completo de Gestión de Cámaras UFRO
 Versión para Railway con PostgreSQL
 467 cámaras + casos reales
 """
@@ -16,7 +15,7 @@ import json
 app = Flask(__name__)
 
 # Configuración
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'sistema-camaras-ufro-2024-secreto')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'sistema-camaras-ufro-04-secreto')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql://localhost/camaras_ufro')
 
 # Compatibilidad con Railway PostgreSQL
@@ -39,13 +38,12 @@ try:
     db.init_app(app)
 except ImportError as e:
     print(f"Error importing models: {e}")
-    # Crear una instancia básica si los modelos no están disponibles
     from flask_sqlalchemy import SQLAlchemy
     db = SQLAlchemy(app)
 
 CORS(app)
 
-# Configurar Login Manager
+# Configurar Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -59,41 +57,206 @@ def load_user(user_id):
     except:
         return None
 
-
-# ================================
-# RUTAS BÁSICAS
-# ================================
-
+# Rutas principales
 @app.route('/')
 def index():
-    """Página principal"""
-    return jsonify({
-        'status': 'ok',
-        'message': 'Sistema de Gestión de Cámaras UFRO - Online',
-        'version': '1.0.0',
-        'timestamp': datetime.now().isoformat()
-    })
-
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Ruta de login"""
     if request.method == 'POST':
-        return jsonify({'message': 'Login endpoint - POST received'}), 200
-    return jsonify({'message': 'Login endpoint - GET request'}), 200
+        username = request.form.get('username')
+        password = request.form.get('password')
 
+        if 'Usuario' in locals():
+            user = Usuario.query.filter_by(username=username).first()
+            
+            if user and user.check_password(password) and user.activo:
+                login_user(user)
+                if hasattr(user, 'ultimo_acceso'):
+                    user.ultimo_acceso = datetime.utcnow()
+                    db.session.commit()
+                return redirect(url_for('dashboard'))
+        
+        flash('Usuario o contraseña incorrectos', 'error')
+
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
 
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    """Dashboard principal"""
-    return jsonify({'message': 'Dashboard endpoint'}), 200
+    try:
+        # Estadísticas
+        if 'Camara' in locals():
+            total_camaras = Camara.query.filter_by(activo=True).count()
+            camaras_activas = Camara.query.filter_by(estado='activa', activo=True).count()
+            camaras_recientes = Camara.query.order_by(Camara.fecha_creacion.desc()).limit(5).all()
+        else:
+            total_camaras = camaras_activas = 0
+            camaras_recientes = []
 
+        if 'Falla' in locals():
+            fallas_abiertas = Falla.query.filter(Falla.estado.in_(['abierta', 'en_proceso'])).count()
+            fallas_recientes = Falla.query.order_by(Falla.fecha_reporte.desc()).limit(5).all()
+        else:
+            fallas_abiertas = 0
+            fallas_recientes = []
 
-# ================================
-# ENDPOINTS DE DIAGNÓSTICO Y MANTENIMIENTO
-# ================================
+        if 'Mantenimiento' in locals():
+            mantenimientos_pendientes = Mantenimiento.query.filter_by(estado='programado').count()
+        else:
+            mantenimientos_pendientes = 0
 
+        return render_template('dashboard.html',
+                             total_camaras=total_camaras,
+                             camaras_activas=camaras_activas,
+                             fallas_abiertas=fallas_abiertas,
+                             mantenimientos_pendientes=mantenimientos_pendientes,
+                             camaras_recientes=camaras_recientes,
+                             fallas_recientes=fallas_recientes)
+    except Exception as e:
+        flash(f'Error cargando dashboard: {str(e)}', 'error')
+        return render_template('dashboard.html',
+                             total_camaras=0,
+                             camaras_activas=0,
+                             fallas_abiertas=0,
+                             mantenimientos_pendientes=0,
+                             camaras_recientes=[],
+                             fallas_recientes=[])
+
+@app.route('/camaras')
+@login_required
+def camaras():
+    try:
+        if 'Camara' in locals():
+            page = request.args.get('page', 1, type=int)
+            per_page = 20
+
+            camaras = Camara.query.filter_by(activo=True).order_by(Camara.nombre).paginate(
+                page=page, per_page=per_page, error_out=False
+            )
+            return render_template('camaras/list.html', camaras=camaras)
+        else:
+            return "Módulo de cámaras no disponible"
+    except Exception as e:
+        return f"Error en cámaras: {str(e)}"
+
+@app.route('/fallas')
+@login_required
+def fallas():
+    try:
+        if 'Falla' in locals():
+            page = request.args.get('page', 1, type=int)
+            per_page = 20
+
+            fallas = Falla.query.order_by(Falla.fecha_reporte.desc()).paginate(
+                page=page, per_page=per_page, error_out=False
+            )
+            return render_template('fallas/list.html', fallas=fallas)
+        else:
+            return "Módulo de fallas no disponible"
+    except Exception as e:
+        return f"Error en fallas: {str(e)}"
+
+@app.route('/mantenimientos')
+@login_required
+def mantenimientos():
+    try:
+        if 'Mantenimiento' in locals():
+            page = request.args.get('page', 1, type=int)
+            per_page = 20
+
+            mantenimientos = Mantenimiento.query.order_by(Mantenimiento.fecha_programada.desc()).paginate(
+                page=page, per_page=per_page, error_out=False
+            )
+            return render_template('mantenimientos/list.html', mantenimientos=mantenimientos)
+        else:
+            return "Módulo de mantenimientos no disponible"
+    except Exception as e:
+        return f"Error en mantenimientos: {str(e)}"
+
+@app.route('/equipos/gabinetes')
+@login_required
+def gabinetes():
+    try:
+        if 'Gabinete' in locals():
+            gabinetes = Gabinete.query.filter_by(activo=True).all()
+            return render_template('gabinetes/list.html', gabinetes=gabinetes)
+        else:
+            return "Módulo de gabinetes no disponible"
+    except Exception as e:
+        return f"Error en gabinetes: {str(e)}"
+
+@app.route('/equipos/ups')
+@login_required
+def ups():
+    try:
+        if 'UPS' in locals():
+            ups_list = UPS.query.filter_by(activo=True).all()
+            return render_template('ups/list.html', ups_list=ups_list)
+        else:
+            return "Módulo de UPS no disponible"
+    except Exception as e:
+        return f"Error en UPS: {str(e)}"
+
+@app.route('/equipos/switches')
+@login_required
+def switches():
+    try:
+        if 'Switch' in locals():
+            switches = Switch.query.filter_by(activo=True).all()
+            return render_template('switches/list.html', switches=switches)
+        else:
+            return "Módulo de switches no disponible"
+    except Exception as e:
+        return f"Error en switches: {str(e)}"
+
+@app.route('/equipos/nvr')
+@login_required
+def nvr():
+    try:
+        if 'NVR' in locals():
+            nvr_list = NVR.query.filter_by(activo=True).all()
+            return render_template('nvr/list.html', nvr_list=nvr_list)
+        else:
+            return "Módulo de NVR no disponible"
+    except Exception as e:
+        return f"Error en NVR: {str(e)}"
+
+# API endpoints
+@app.route('/api/stats')
+@login_required
+def api_stats():
+    try:
+        stats = {}
+        if 'Camara' in locals():
+            stats.update({
+                'camaras_total': Camara.query.count(),
+                'camaras_activas': Camara.query.filter_by(estado='activa').count()
+            })
+        if 'Falla' in locals():
+            stats['fallas_abiertas'] = Falla.query.filter(Falla.estado.in_(['abierta', 'en_proceso'])).count()
+        if 'Mantenimiento' in locals():
+            stats['mantenimientos_pendientes'] = Mantenimiento.query.filter_by(estado='programado').count()
+        if 'Gabinete' in locals():
+            stats['gabinetes_total'] = Gabinete.query.count()
+        if 'UPS' in locals():
+            stats['ups_total'] = UPS.query.count()
+        if 'Switch' in locals():
+            stats['switches_total'] = Switch.query.count()
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Endpoints de diagnóstico
 @app.route('/health')
 def health_check():
     """Endpoint de health check para monitoreo"""
@@ -104,12 +267,10 @@ def health_check():
         'environment': os.environ.get('FLASK_ENV', 'production')
     })
 
-
 @app.route('/status')
 def system_status():
     """Endpoint de estado del sistema"""
     try:
-        # Verificar base de datos
         db_status = 'ok'
         db_error = None
         try:
@@ -128,7 +289,6 @@ def system_status():
             'database_error': db_error,
             'environment': os.environ.get('FLASK_ENV', 'production')
         })
-
     except Exception as e:
         return jsonify({
             'status': 'error',
@@ -136,53 +296,24 @@ def system_status():
             'timestamp': datetime.now().isoformat()
         }), 500
 
-
-# ================================
-# ERROR HANDLERS
-# ================================
-
+# Manejo de errores
 @app.errorhandler(404)
 def not_found(error):
-    return jsonify({'error': 'Not found'}), 404
+    try:
+        return render_template('errors/404.html'), 404
+    except:
+        return "Página no encontrada", 404
 
 @app.errorhandler(500)
 def internal_error(error):
-    return jsonify({'error': 'Internal server error'}), 500
+    try:
+        if 'db' in locals():
+            db.session.rollback()
+        return render_template('errors/500.html'), 500
+    except:
+        return "Error interno del servidor", 500
 
-
-# ================================
-# RUTAS DE CÁMARAS BÁSICAS
-# ================================
-
-@app.route('/camaras')
-def listar_camaras():
-    """Listar cámaras"""
-    return jsonify({'message': 'Listar cámaras endpoint'}), 200
-
-
-@app.route('/camaras/<int:camera_id>')
-def detalle_camara(camera_id):
-    """Detalle de una cámara"""
-    return jsonify({'message': f'Detalle cámara {camera_id}'}), 200
-
-
-# Rutas para fallas
-@app.route('/fallas')
-def listar_fallas():
-    """Listar fallas"""
-    return jsonify({'message': 'Listar fallas endpoint'}), 200
-
-
-# Rutas para mantenimiento
-@app.route('/mantenimiento')
-def listar_mantenimiento():
-    """Listar mantenimiento"""
-    return jsonify({'message': 'Listar mantenimiento endpoint'}), 200
-
-
-# ================================
-# INICIALIZACIÓN
-# ================================
-
+# Inicialización
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 8000)))
+    port = int(os.environ.get('PORT', 8000))
+    app.run(host='0.0.0.0', port=port, debug=False)

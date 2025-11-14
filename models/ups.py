@@ -212,7 +212,9 @@ class UPS(EquipmentBase):
     
     # Relaciones con otros modelos
     mantenimientos = relationship("Mantenimiento", back_populates="ups", cascade="all, delete-orphan")
+
     fotografias = relationship("Fotografia", back_populates="ups", cascade="all, delete-orphan")
+    #fotografias = relationship("Fotografia", lazy="dynamic", viewonly=True)
     
     # Relaciones con cargas conectadas
     connected_loads = relationship("UPSConnectedLoad", back_populates="ups", cascade="all, delete-orphan")

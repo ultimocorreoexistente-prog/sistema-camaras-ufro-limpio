@@ -96,7 +96,7 @@ class FuentePoder(EquipmentBase):
         load_percentage (float): Porcentaje de carga
     """
     
-    __tablename__ = 'fuentes_poder'
+    __tablename__ = 'fuente_poder'
     
     # Tipo y configuración
     power_supply_type = Column(Enum(PowerSupplyType), nullable=True,
