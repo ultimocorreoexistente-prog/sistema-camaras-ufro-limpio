@@ -1,3 +1,4 @@
+# Deploy forzado 2025-11-14
 """
 Sistema de Gestión de Cámaras UFRO - Aplicación Principal
 Versión para Railway con PostgreSQL
