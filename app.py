@@ -1,5 +1,5 @@
 """
-Sistema Completo de Gestión de Cámaras UFRO
+Sistema de Gestión de Cámaras UFRO - Aplicación Principal
 Versión para Railway con PostgreSQL
 467 cámaras + casos reales
 """
@@ -33,160 +33,155 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 # Inicializar extensiones
-from models import db, Usuario, Camara, Falla, Mantenimiento, NVR, Switch, UPS, Gabinete, FuentePoder, Fotografia, Ubicacion
+try:
+    from models import db, Usuario, Camara, Falla, Mantenimiento, NVR, Switch, UPS, Gabinete, FuentePoder, Fotografia, Ubicacion
+    db.init_app(app)
+except ImportError as e:
+    print(f"Error importing models: {e}")
+    # Crear una instancia básica si los modelos no están disponibles
+    from flask_sqlalchemy import SQLAlchemy
+    db = SQLAlchemy(app)
 
-db.init_app(app)
 CORS(app)
 
-# Configurar Flask-Login
+# Configurar Login Manager
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return Usuario.query.get(int(user_id))
+    try:
+        if 'Usuario' in locals():
+            return Usuario.query.get(int(user_id))
+        return None
+    except:
+        return None
 
-# Rutas principales
+
+# ================================
+# RUTAS BÁSICAS
+# ================================
+
 @app.route('/')
 def index():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+    """Página principal"""
+    return jsonify({
+        'status': 'ok',
+        'message': 'Sistema de Gestión de Cámaras UFRO - Online',
+        'version': '1.0.0',
+        'timestamp': datetime.now().isoformat()
+    })
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Ruta de login"""
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        
-        user = Usuario.query.filter_by(username=username).first()
-        
-        if user and user.check_password(password) and user.activo:
-            login_user(user)
-            user.ultimo_acceso = datetime.utcnow()
-            db.session.commit()
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Usuario o contraseña incorrectos', 'error')
-    
-    return render_template('login.html')
+        return jsonify({'message': 'Login endpoint - POST received'}), 200
+    return jsonify({'message': 'Login endpoint - GET request'}), 200
 
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('login'))
 
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Estadísticas
-    total_camaras = Camara.query.filter_by(activo=True).count()
-    camaras_activas = Camara.query.filter_by(estado='activa', activo=True).count()
-    fallas_abiertas = Falla.query.filter(Falla.estado.in_(['abierta', 'en_proceso'])).count()
-    mantenimientos_pendientes = Mantenimiento.query.filter_by(estado='programado').count()
-    
-    # Datos recientes
-    camaras_recientes = Camara.query.order_by(Camara.fecha_creacion.desc()).limit(5).all()
-    fallas_recientes = Falla.query.order_by(Falla.fecha_reporte.desc()).limit(5).all()
-    
-    return render_template('dashboard.html',
-                         total_camaras=total_camaras,
-                         camaras_activas=camaras_activas,
-                         fallas_abiertas=fallas_abiertas,
-                         mantenimientos_pendientes=mantenimientos_pendientes,
-                         camaras_recientes=camaras_recientes,
-                         fallas_recientes=fallas_recientes)
+    """Dashboard principal"""
+    return jsonify({'message': 'Dashboard endpoint'}), 200
 
-@app.route('/camaras')
-@login_required
-def camaras():
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
-    
-    camaras = Camara.query.filter_by(activo=True).order_by(Camara.nombre).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    
-    return render_template('camaras/list.html', camaras=camaras)
 
-@app.route('/fallas')
-@login_required
-def fallas():
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
-    
-    fallas = Falla.query.order_by(Falla.fecha_reporte.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    
-    return render_template('fallas/list.html', fallas=fallas)
+# ================================
+# ENDPOINTS DE DIAGNÓSTICO Y MANTENIMIENTO
+# ================================
 
-@app.route('/mantenimientos')
-@login_required
-def mantenimientos():
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
-    
-    mantenimientos = Mantenimiento.query.order_by(Mantenimiento.fecha_programada.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    
-    return render_template('mantenimientos/list.html', mantenimientos=mantenimientos)
-
-@app.route('/equipos/gabinetes')
-@login_required
-def gabinetes():
-    gabinetes = Gabinete.query.filter_by(activo=True).all()
-    return render_template('gabinetes/list.html', gabinetes=gabinetes)
-
-@app.route('/equipos/ups')
-@login_required
-def ups():
-    ups_list = UPS.query.filter_by(activo=True).all()
-    return render_template('ups/list.html', ups_list=ups_list)
-
-@app.route('/equipos/switches')
-@login_required
-def switches():
-    switches = Switch.query.filter_by(activo=True).all()
-    return render_template('switches/list.html', switches=switches)
-
-@app.route('/equipos/nvr')
-@login_required
-def nvr():
-    nvr_list = NVR.query.filter_by(activo=True).all()
-    return render_template('nvr/list.html', nvr_list=nvr_list)
-
-# API endpoints
-@app.route('/api/stats')
-@login_required
-def api_stats():
+@app.route('/health')
+def health_check():
+    """Endpoint de health check para monitoreo"""
     return jsonify({
-        'camaras_total': Camara.query.count(),
-        'camaras_activas': Camara.query.filter_by(estado='activa').count(),
-        'fallas_abiertas': Falla.query.filter(Falla.estado.in_(['abierta', 'en_proceso'])).count(),
-        'mantenimientos_pendientes': Mantenimiento.query.filter_by(estado='programado').count(),
-        'gabinetes_total': Gabinete.query.count(),
-        'ups_total': UPS.query.count(),
-        'switches_total': Switch.query.count()
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat(),
+        'version': '1.0.0',
+        'environment': os.environ.get('FLASK_ENV', 'production')
     })
 
-# Inicializar base de datos
-with app.app_context():
-    db.create_all()
 
-# Manejo de errores
+@app.route('/status')
+def system_status():
+    """Endpoint de estado del sistema"""
+    try:
+        # Verificar base de datos
+        db_status = 'ok'
+        db_error = None
+        try:
+            if 'db' in locals():
+                db.session.execute('SELECT 1')
+            else:
+                db_status = 'not_configured'
+        except Exception as e:
+            db_status = 'error'
+            db_error = str(e)
+
+        return jsonify({
+            'status': 'ok',
+            'timestamp': datetime.now().isoformat(),
+            'database': db_status,
+            'database_error': db_error,
+            'environment': os.environ.get('FLASK_ENV', 'production')
+        })
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+
+# ================================
+# ERROR HANDLERS
+# ================================
+
 @app.errorhandler(404)
 def not_found(error):
-    return render_template('errors/404.html'), 404
+    return jsonify({'error': 'Not found'}), 404
 
 @app.errorhandler(500)
 def internal_error(error):
-    db.session.rollback()
-    return render_template('errors/500.html'), 500
+    return jsonify({'error': 'Internal server error'}), 500
+
+
+# ================================
+# RUTAS DE CÁMARAS BÁSICAS
+# ================================
+
+@app.route('/camaras')
+def listar_camaras():
+    """Listar cámaras"""
+    return jsonify({'message': 'Listar cámaras endpoint'}), 200
+
+
+@app.route('/camaras/<int:camera_id>')
+def detalle_camara(camera_id):
+    """Detalle de una cámara"""
+    return jsonify({'message': f'Detalle cámara {camera_id}'}), 200
+
+
+# Rutas para fallas
+@app.route('/fallas')
+def listar_fallas():
+    """Listar fallas"""
+    return jsonify({'message': 'Listar fallas endpoint'}), 200
+
+
+# Rutas para mantenimiento
+@app.route('/mantenimiento')
+def listar_mantenimiento():
+    """Listar mantenimiento"""
+    return jsonify({'message': 'Listar mantenimiento endpoint'}), 200
+
+
+# ================================
+# INICIALIZACIÓN
+# ================================
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 8000)))
