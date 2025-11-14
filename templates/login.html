@@ -8,17 +8,17 @@
 <div class="col-md-6 col-lg-4">
 <div class="card content-card shadow-lg border-0">
 <div class="card-body p-5">
-<-- Header con logo UFRO -->
+<!-- Header con logo UFRO -->
 <div class="text-center mb-4">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/000/svg' viewBox='0 0 150 75'%3E%3Crect width='150' height='75' fill='white' rx='8'/%3E%3Ctext x='75' y='45' text-anchor='middle' font-family='Arial' font-size='4' font-weight='bold' fill='%31e3a8a'%3EUFRO%3C/text%3E%3C/svg%3E" alt="UFRO" class="mb-3" style="height: 80px;">
-<h3 class="fw-bold text-primary mb-">Iniciar Sesión</h3>
+<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 75'%3E%3Crect width='150' height='75' fill='white' rx='8'/%3E%3Ctext x='75' y='45' text-anchor='middle' font-family='Arial' font-size='14' font-weight='bold' fill='%2331e3a8a'%3EUFRO%3C/text%3E%3C/svg%3E" alt="UFRO" class="mb-3" style="height: 80px;">
+<h3 class="fw-bold text-primary mb-0">Iniciar Sesión</h3>
 <p class="text-muted">Sistema de Gestión Académica</p>
 </div>
 
-<-- Mensajes de error -->
+<!-- Mensajes de error -->
 {% if form.errors %}
 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-<i class="bi bi-exclamation-triangle me-"></i>
+<i class="bi bi-exclamation-triangle me-2"></i>
 {% if form.errors %}
 {% for field, errors in form.errors.items %}
 {% for error in errors %}
@@ -35,14 +35,14 @@
 </div>
 {% endif %}
 
-<-- Formulario de login -->
+<!-- Formulario de login -->
 <form method="post" novalidate>
-{% csrf_token %}
+{{ csrf_token() }}
 
-<-- Campo Email/Usuario -->
+<!-- Campo Email/Usuario -->
 <div class="mb-3">
 <label for="id_username" class="form-label">
-<i class="bi bi-envelope me-"></i>Correo Electrónico
+<i class="bi bi-envelope me-2"></i>Correo Electrónico
 </label>
 <input type="email"
 name="username"
@@ -63,10 +63,10 @@ autofocus>
 {% endif %}
 </div>
 
-<-- Campo Contraseña -->
+<!-- Campo Contraseña -->
 <div class="mb-3">
 <label for="id_password" class="form-label">
-<i class="bi bi-lock me-"></i>Contraseña
+<i class="bi bi-lock me-2"></i>Contraseña
 </label>
 <div class="input-group">
 <input type="password"
@@ -91,7 +91,7 @@ title="Mostrar/Ocultar contraseña">
 {% endif %}
 </div>
 
-<-- Recordarme -->
+<!-- Recordarme -->
 <div class="mb-3">
 <div class="form-check">
 <input type="checkbox"
@@ -104,16 +104,16 @@ Recordar mi sesión
 </div>
 </div>
 
-<-- Botón de envío -->
-<div class="d-grid gap- mb-3">
+<!-- Botón de envío -->
+<div class="d-grid gap-2 mb-3">
 <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
-<i class="bi bi-box-arrow-in-right me-"></i>
+<i class="bi bi-box-arrow-in-right me-2"></i>
 Iniciar Sesión
 </button>
 </div>
 </form>
 
-<-- Enlaces adicionales -->
+<!-- Enlaces adicionales -->
 <div class="text-center">
 <a href="{% url 'password_reset' %}" class="text-decoration-none small">
 <i class="bi bi-question-circle me-1"></i>
@@ -123,7 +123,7 @@ Iniciar Sesión
 
 <hr class="my-4">
 
-<-- Información adicional -->
+<!-- Información adicional -->
 <div class="text-center">
 <h6 class="text-muted mb-3">Información del Sistema</h6>
 <div class="row text-center">
@@ -144,11 +144,11 @@ Iniciar Sesión
 </div>
 </div>
 
-<-- Footer -->
+<!-- Footer -->
 <div class="text-center mt-4">
 <small class="text-muted">
 <i class="bi bi-c-circle me-1"></i>
-{{ year|default:04 }} Universidad de La Frontera
+{{ year|default:2024 }} Universidad de La Frontera
 </small>
 </div>
 </div>
@@ -195,7 +195,7 @@ toggleIcon.className = 'bi bi-eye';
 // Mostrar loading en botón de submit
 document.querySelector('form').addEventListener('submit', function() {
 const submitBtn = document.getElementById('submitBtn');
-submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-" role="status"></span>Iniciando sesión...';
+submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Iniciando sesión...';
 submitBtn.disabled = true;
 });
 
