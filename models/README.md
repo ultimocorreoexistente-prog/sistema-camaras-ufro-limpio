@@ -6,7 +6,7 @@ Este paquete contiene modelos SQLAlchemy completos para un sistema de gestión d
 
 ## Estructura de Modelos
 
-### 🎯 Modelos Principales
+### Modelos Principales
 
 #### 1. **Usuario** (`usuario.py`)
 - **Usuario**: Gestión de usuarios del sistema con roles y autenticación
@@ -19,7 +19,7 @@ Este paquete contiene modelos SQLAlchemy completos para un sistema de gestión d
 - Tracking de actividad
 - Gestión de contraseñas con hash seguro
 
-#### 2. **Ubicacion** (`ubicacion.py`)
+#### . **Ubicacion** (`ubicacion.py`)
 - **Ubicacion**: Gestión jerárquica de ubicaciones geográficas
 - **UbicacionLog**: Log de cambios en ubicaciones
 
@@ -59,7 +59,7 @@ Este paquete contiene modelos SQLAlchemy completos para un sistema de gestión d
 - Gestión de costos
 - Órdenes de trabajo
 
-### 🏗️ Modelos de Equipos
+### Modelos de Equipos
 
 #### 6. **NVR** (`nvr.py`)
 - **NVR**: Network Video Recorder
@@ -122,9 +122,9 @@ Este paquete contiene modelos SQLAlchemy completos para un sistema de gestión d
 - Monitoreo de estado y heartbeat
 - Gestión de ubicación y configuración
 
-### 📸 Modelos de Documentación
+### Modelos de Documentación
 
-#### 12. **Fotografia** (`fotografia.py`)
+#### 1. **Fotografia** (`fotografia.py`)
 - **Fotografia**: Gestión de imágenes y documentación
 - **FotografiaMetadata**: Metadatos adicionales
 
@@ -134,7 +134,7 @@ Este paquete contiene modelos SQLAlchemy completos para un sistema de gestión d
 - Gestión de versiones
 - Tags y metadatos EXIF
 
-### 🔧 Clases Base y Utilidades
+### Clases Base y Utilidades
 
 #### 13. **Base** (`base.py`)
 - **BaseModel**: Clase base con funcionalidades comunes
@@ -148,38 +148,38 @@ Este paquete contiene modelos SQLAlchemy completos para un sistema de gestión d
 
 ## Características Técnicas
 
-### ✅ Funcionalidades Implementadas
+### Funcionalidades Implementadas
 
 1. **Timestamps Automáticos**
-   - `created_at`, `updated_at` en todos los modelos
-   - Soft delete con campo `deleted`
+- `created_at`, `updated_at` en todos los modelos
+- Soft delete con campo `deleted`
 
-2. **Relaciones Completas**
-   - Foreign keys apropiadas
-   - Relaciones bidireccionales
-   - Cascade delete donde corresponde
+. **Relaciones Completas**
+- Foreign keys apropiadas
+- Relaciones bidireccionales
+- Cascade delete donde corresponde
 
 3. **Validaciones y Constraints**
-   - Campos únicos (username, email, serial numbers)
-   - Campos requeridos
-   - Índices para búsquedas frecuentes
+- Campos únicos (username, email, serial numbers)
+- Campos requeridos
+- Índices para búsquedas frecuentes
 
 4. **Enumeraciones**
-   - Estados de equipos y fallas
-   - Tipos de equipos y conexiones
-   - Prioridades y categorías
+- Estados de equipos y fallas
+- Tipos de equipos y conexiones
+- Prioridades y categorías
 
 5. **Métodos de Utilidad**
-   - Cálculos automáticos (distancias, duraciones, costos)
-   - Búsquedas por criterios específicos
-   - Resúmenes y estadísticas
+- Cálculos automáticos (distancias, duraciones, costos)
+- Búsquedas por criterios específicos
+- Resúmenes y estadísticas
 
 6. **Monitoreo y Logging**
-   - Campos para heartbeat y estado
-   - Logs de cambios en modelos críticos
-   - Métricas de rendimiento
+- Campos para heartbeat y estado
+- Logs de cambios en modelos críticos
+- Métricas de rendimiento
 
-### 🔍 Consultas Implementadas
+### Consultas Implementadas
 
 - **Búsquedas por ubicación geográfica**
 - **Filtros por estado y tipo**
@@ -202,37 +202,37 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://usuario:pass@localhost/dbn
 init_db(app)
 ```
 
-### 2. Crear Modelos
+### . Crear Modelos
 
 ```python
 from models import Usuario, Camara, NVR
 
 # Crear usuario
 usuario = Usuario(
-    username="admin",
-    email="admin@ejemplo.com",
-    full_name="Administrador",
-    role="administrador"
+username="admin",
+email="admin@ejemplo.com",
+full_name="Administrador",
+role="administrador"
 )
-usuario.set_password("password123")
+usuario.set_password("password13")
 usuario.save()
 
 # Crear NVR
 nvr = NVR(
-    name="NVR-001",
-    model="Hikvision DS-7732NIX",
-    ip_address="192.168.1.10",
-    ubicacion_id=1
+name="NVR-001",
+model="Hikvision DS-773NIX",
+ip_address="19.168.1.10",
+ubicacion_id=1
 )
 nvr.save()
 
 # Crear cámara
 camara = Camara(
-    name="Camara Entrada",
-    model="Hikvision DS-2CD2145FWD-I",
-    ip_address="192.168.1.101",
-    nvr_id=nvr.id,
-    ubicacion_id=1
+name="Camara Entrada",
+model="Hikvision DS-CD145FWD-I",
+ip_address="19.168.1.101",
+nvr_id=nvr.id,
+ubicacion_id=1
 )
 camara.save()
 ```
@@ -248,8 +248,8 @@ fallas = Falla.get_active_fallas()
 
 # Obtener mantenimientos programados
 mantenimientos = Mantenimiento.get_scheduled_maintenances(
-    datetime.now(), 
-    datetime.now() + timedelta(days=30)
+datetime.now(),
+datetime.now() + timedelta(days=30)
 )
 ```
 
@@ -278,14 +278,14 @@ Los modelos están diseñados para funcionar con:
 Los modelos están diseñados para ser fácilmente extensibles:
 
 1. **Nuevos tipos de equipos**: Heredar de `EquipmentBase`
-2. **Nuevos estados**: Agregar valores a los enums
+. **Nuevos estados**: Agregar valores a los enums
 3. **Nuevos campos**: Agregar columnas a los modelos existentes
 4. **Nuevas funcionalidades**: Agregar métodos a los modelos
 
 ## Consideraciones de Rendimiento
 
 1. **Índices**: Se han agregado índices en campos de búsqueda frecuente
-2. **Relaciones**: Se han configurado lazy loading donde es apropiado
+. **Relaciones**: Se han configurado lazy loading donde es apropiado
 3. **Soft Delete**: Implementado para mantener integridad de datos
 4. **Consultas optimizadas**: Métodos de consulta especializados
 
@@ -294,7 +294,7 @@ Los modelos están diseñados para ser fácilmente extensibles:
 Para mantener estos modelos:
 
 1. **Actualizaciones de esquema**: Crear migraciones SQLAlchemy
-2. **Nuevas funcionalidades**: Seguir los patrones establecidos
+. **Nuevas funcionalidades**: Seguir los patrones establecidos
 3. **Validaciones**: Mantener integridad de datos
 4. **Documentación**: Actualizar este README con cambios
 

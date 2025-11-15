@@ -1,208 +1,58 @@
-{% extends 'base.html' %}
-
-{% block title %}Iniciar Sesión - Sistema de Gestión de Cámaras UFRO{% endblock %}
-
-{% block content %}
-<div class="container">
-<div class="row justify-content-center align-items-center min-vh-100">
-<div class="col-md-6 col-lg-4">
-<div class="card content-card shadow-lg border-0">
-<div class="card-body p-5">
-<!-- Header con logo UFRO -->
-<div class="text-center mb-4">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 75'%3E%3Crect width='150' height='75' fill='white' rx='8'/%3E%3Ctext x='75' y='45' text-anchor='middle' font-family='Arial' font-size='14' font-weight='bold' fill='%2331e3a8a'%3EUFRO%3C/text%3E%3C/svg%3E" alt="UFRO" class="mb-3" style="height: 80px;">
-<h3 class="fw-bold text-primary mb-0">Iniciar Sesión</h3>
-<p class="text-muted">Sistema de Gestión de Cámaras</p>
-</div>
-
-<!-- Mostrar mensajes flash -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-{% for category, message in messages %}
-<div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
-<i class="bi bi-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
-{{ message }}
-<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-{% endfor %}
-{% endif %}
-{% endwith %}
-
-<!-- Formulario de login -->
-<form method="post">
-{{ csrf_token() }}
-
-<!-- Campo Email -->
-<div class="mb-3">
-<label for="email" class="form-label">
-<i class="bi bi-envelope me-2"></i>Correo Electrónico
-</label>
-<input type="email" name="email" id="email" class="form-control form-control-lg" 
-       placeholder="usuario@ufro.cl" required autofocus>
-</div>
-
-<!-- Campo Contraseña -->
-<div class="mb-3">
-<label for="password" class="form-label">
-<i class="bi bi-lock me-2"></i>Contraseña
-</label>
-<div class="input-group">
-<input type="password" name="password" id="password" class="form-control form-control-lg" 
-       placeholder="Ingresa tu contraseña" required>
-<button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
-<i class="bi bi-eye" id="eye-icon"></i>
-</button>
-</div>
-</div>
-
-<!-- Recordar usuario -->
-<div class="mb-3 form-check">
-<input type="checkbox" class="form-check-input" id="remember" name="remember">
-<label class="form-check-label" for="remember">
-<i class="bi bi-check-circle me-1"></i>Recordar sesión
-</label>
-</div>
-
-<!-- Botón de login -->
-<div class="d-grid mb-3">
-<button type="submit" class="btn btn-primary btn-lg fw-bold">
-<i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
-</button>
-</div>
-
-<!-- Enlaces adicionales -->
-<div class="text-center">
-<a href="{{ url_for('olvide_password') }}" class="text-decoration-none text-muted small">
-<i class="bi bi-question-circle me-1"></i>¿Olvidaste tu contraseña?
-</a>
-</div>
-</form>
-
-<!-- Información de acceso -->
-<div class="mt-4 text-center">
-<div class="card bg-light border-0">
-<div class="card-body py-3">
-<h6 class="card-title mb-2 text-muted">
-<i class="bi bi-info-circle me-1"></i>Información de Acceso
-</h6>
-<div class="row text-center">
-<div class="col-6">
-<small class="text-muted d-block">
-<strong>Superadministrador</strong>
-</small>
-<small class="text-muted">
-Charles.jelvez@ufrontera.cl
-</small>
-</div>
-<div class="col-6">
-<small class="text-muted d-block">
-<strong>Contraseña</strong>
-</small>
-<small class="text-muted">
-Vivita0468
-</small>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-
-<!-- Script para toggle password -->
-<script>
-function togglePassword() {
-const passwordField = document.getElementById('password');
-const eyeIcon = document.getElementById('eye-icon');
-
-if (passwordField.type === 'password') {
-passwordField.type = 'text';
-eyeIcon.className = 'bi bi-eye-slash';
-} else {
-passwordField.type = 'password';
-eyeIcon.className = 'bi bi-eye';
-}
-}
-
-// Auto-dismiss alerts after 5 seconds
-setTimeout(function() {
-const alerts = document.querySelectorAll('.alert');
-alerts.forEach(function(alert) {
-if (alert.classList.contains('show')) {
-alert.classList.remove('show');
-setTimeout(function() {
-alert.remove();
-}, 150);
-}
-});
-}, 5000);
-
-// Form validation
-document.querySelector('form').addEventListener('submit', function(e) {
-const email = document.getElementById('email').value.trim();
-const password = document.getElementById('password').value.trim();
-
-if (!email || !password) {
-e.preventDefault();
-alert('Por favor, completa todos los campos.');
-return;
-}
-
-if (password.length < 6) {
-e.preventDefault();
-alert('La contraseña debe tener al menos 6 caracteres.');
-return;
-}
-});
-</script>
-
-<style>
-/* Estilos adicionales para el formulario */
-.form-control:focus {
-border-color: #31e3a8a;
-box-shadow: 0 0 0 0.2rem rgba(49, 227, 168, 0.25);
-}
-
-.btn-primary {
-background-color: #31e3a8a;
-border-color: #31e3a8a;
-}
-
-.btn-primary:hover {
-background-color: #2ac89a;
-border-color: #2ac89a;
-}
-
-.content-card {
-border-radius: 15px;
-animation: fadeInUp 0.6s ease-out;
-}
-
-@keyframes fadeInUp {
-from {
-opacity: 0;
-transform: translateY(30px);
-}
-to {
-opacity: 1;
-transform: translateY(0);
-}
-}
-
-/* Estilo para alertas */
-.alert {
-border-radius: 10px;
-border: none;
-}
-
-/* Responsive */
-@media (max-width: 576px) {
-.card-body {
-padding: 2rem 1.5rem !important;
-}
-}
-</style>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema Cámaras UFRO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container-fluid h-100">
+        <div class="row h-100 justify-content-center align-items-center">
+            <div class="col-md-4">
+                <div class="card shadow">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-video fa-3x text-primary mb-3"></i>
+                            <h3 class="card-title">Sistema Cámaras UFRO</h3>
+                            <p class="text-muted">Iniciar Sesión</p>
+                        </div>
+                        
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }}" role="alert">
+                                        {{ message }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                        
+                        <form method="POST" action="{{ url_for('login') }}">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Usuario o Email</label>
+                                <input type="text" class="form-control" id="username" name="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Contraseña</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                            </button>
+                        </form>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                Universidad de La Frontera<br>
+                                Sistema de Gestión de Cámaras
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

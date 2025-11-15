@@ -1,112 +1,155 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard - Sistema de Cámaras UFRO{% endblock %}
+{% block title %}Dashboard - Sistema Cámaras UFRO{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1><i class="bi bi-speedometer2 me-2"></i>Dashboard</h1>
-            <div class="text-muted">
-                <small>Bienvenido, {{ user.nombre }}</small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Estadísticas -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card content-card">
-            <div class="card-body text-center">
-                <i class="bi bi-camera-video text-primary fs-1 mb-2"></i>
-                <h3>{{ stats.total_camaras if stats else 0 }}</h3>
-                <p class="text-muted mb-0">Cámaras Totales</p>
-            </div>
-        </div>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Dashboard</h1>
+        <span class="badge bg-success">Sistema Operativo</span>
     </div>
     
-    <div class="col-md-3 mb-3">
-        <div class="card content-card">
-            <div class="card-body text-center">
-                <i class="bi bi-people text-success fs-1 mb-2"></i>
-                <h3>{{ stats.total_usuarios if stats else 0 }}</h3>
-                <p class="text-muted mb-0">Usuarios Activos</p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3 mb-3">
-        <div class="card content-card">
-            <div class="card-body text-center">
-                <i class="bi bi-graph-up text-info fs-1 mb-2"></i>
-                <h3>{{ stats.accesos_hoy if stats else 0 }}</h3>
-                <p class="text-muted mb-0">Accesos Hoy</p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3 mb-3">
-        <div class="card content-card">
-            <div class="card-body text-center">
-                <i class="bi bi-shield-check text-warning fs-1 mb-2"></i>
-                <h3>Sistema</h3>
-                <p class="text-muted mb-0">Operativo</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Estado de las cámaras -->
-<div class="row">
-    <div class="col-lg-8 mb-4">
-        <div class="card content-card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-camera-video me-2"></i>Estado de Cámaras</h5>
-            </div>
-            <div class="card-body">
-                {% if stats and stats.camaras_por_estado %}
-                    {% for estado, count in stats.camaras_por_estado %}
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span>
-                                <i class="bi bi-circle-fill text-{{ 'success' if estado == 'activa' else 'warning' if estado == 'mantenimiento' else 'danger' }} me-2"></i>
-                                {{ estado.title() }}
-                            </span>
-                            <span class="badge bg-primary">{{ count }}</span>
+    <!-- Estadísticas principales -->
+    <div class="row">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card content-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted text-uppercase small fw-bold">Total Cámaras</h6>
+                            <h3 class="text-primary">{{ total_camaras|default:0 }}</h3>
                         </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-muted text-center">No hay cámaras registradas</p>
-                    <div class="text-center">
-                        <a href="{{ url_for('nueva_camara') }}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle me-1"></i>Agregar Primera Cámara
+                        <div class="text-primary">
+                            <i class="bi bi-camera-video fs-1"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        Sistema de vigilancia
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card content-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted text-uppercase small fw-bold">Cámaras Activas</h6>
+                            <h3 class="text-success">{{ camaras_activas|default:0 }}</h3>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-check-circle fs-1"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        Funcionando correctamente
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card content-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted text-uppercase small fw-bold">Fallas Abiertas</h6>
+                            <h3 class="text-warning">{{ fallas_abiertas|default:0 }}</h3>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-exclamation-triangle fs-1"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        Requieren atención
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card content-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted text-uppercase small fw-bold">Mantenimientos</h6>
+                            <h3 class="text-info">{{ mantenimientos_pendientes|default:0 }}</h3>
+                        </div>
+                        <div class="text-info">
+                            <i class="bi bi-tools fs-1"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        Programados
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cámaras recientes -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Cámaras Recientes</h5>
+                </div>
+                <div class="card-body">
+                    {% if camaras_recientes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Estado</th>
+                                        <th>Fecha Instalación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for camara in camaras_recientes %}
+                                    <tr>
+                                        <td>{{ camara.codigo }}</td>
+                                        <td>{{ camara.nombre }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if camara.estado == 'activo' else 'warning' }}">
+                                                {{ camara.estado|title }}
+                                            </span>
+                                        </td>
+                                        <td>{{ camara.fecha_instalacion.strftime('%d/%m/%Y') if camara.fecha_instalacion else 'N/A' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No hay cámaras registradas.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Acciones Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/camaras" class="btn btn-primary">
+                            <i class="bi bi-camera-video"></i> Ver Cámaras
+                        </a>
+                        <a href="/fallas" class="btn btn-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Gestionar Fallas
+                        </a>
+                        <a href="/mantenimientos" class="btn btn-info">
+                            <i class="bi bi-tools"></i> Mantenimientos
+                        </a>
+                        <a href="/equipos/nvr" class="btn btn-success">
+                            <i class="bi bi-server"></i> Equipos NVR
                         </a>
                     </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-4 mb-4">
-        <div class="card content-card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Acciones Rápidas</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('listar_camaras') }}" class="btn btn-outline-primary">
-                        <i class="bi bi-list me-2"></i>Ver Cámaras
-                    </a>
-                    
-                    {% if user.rol in ['admin', 'superadmin'] %}
-                    <a href="{{ url_for('nueva_camara') }}" class="btn btn-outline-success">
-                        <i class="bi bi-plus-circle me-2"></i>Nueva Cámara
-                    </a>
-                    {% endif %}
-                    
-                    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">
-                        <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
-                    </a>
                 </div>
             </div>
         </div>
