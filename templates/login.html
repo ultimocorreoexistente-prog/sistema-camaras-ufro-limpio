@@ -9,17 +9,17 @@
     <style>
         /* Estilos para los logos */
         .logo-left {
-            max-height: 120px;
+            max-height: 110px;
             width: auto;
             vertical-align: middle;
-            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));
             transition: transform 0.3s ease;
         }
         .logo-right {
-            max-height: 120px;
+            max-height: 110px;
             width: auto;
             vertical-align: middle;
-            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));
             transition: transform 0.3s ease;
         }
         
@@ -27,42 +27,64 @@
             transform: scale(1.05);
         }
         
-        /* Layout compacto para los logos al borde del login */
+        /* Layout compacto */
         .login-container {
-            position: relative;
-            padding: 40px 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         }
         
-        .logo-row {
-            margin-bottom: 30px;
-            padding: 15px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        /* Sección de logos más compacta */
+        .logo-section {
+            margin-bottom: 15px;
+            padding: 10px 20px;
+            background: white;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.1);
         }
         
-        /* Espaciado más compacto */
-        .login-form-container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-            padding: 0;
-        }
-        
-        /* Centrado perfecto de logos */
+        /* Contenedor de logo */
         .logo-container {
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 140px;
+            height: 130px;
+        }
+        
+        /* Formulario de login */
+        .login-form-wrapper {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .login-form-card {
+            padding: 40px;
+        }
+        
+        /* Responsivo */
+        @media (max-width: 768px) {
+            .login-container {
+                padding: 10px;
+            }
+            .logo-left, .logo-right {
+                max-height: 90px;
+            }
         }
     </style>
 </head>
-<body class="bg-light">
-    <div class="container h-100 d-flex align-items-center justify-content-center">
-        <div class="login-container">
-            <!-- Logos directamente arriba del formulario -->
-            <div class="row logo-row">
+<body>
+    <div class="login-container">
+        <!-- Logos -->
+        <div class="logo-section">
+            <div class="row">
                 <div class="col-6 text-center">
                     <div class="logo-container">
                         <img src="{{ url_for('static', filename='images/logo-ufro.png') }}" alt="Universidad de La Frontera" class="logo-left">
@@ -74,50 +96,46 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Formulario de login -->
-            <div class="row justify-content-center">
-                <div class="col-md-4">
-                    <div class="login-form-container">
-                        <div class="card-body p-5">
-                            <div class="text-center mb-4">
-                                <i class="fas fa-video fa-3x text-primary mb-3"></i>
-                                <h3 class="card-title">Sistema Cámaras UFRO</h3>
-                                <p class="text-muted">Iniciar Sesión</p>
+        <!-- Formulario de login -->
+        <div class="login-form-wrapper">
+            <div class="login-form-card">
+                <div class="text-center mb-4">
+                    <i class="fas fa-video fa-3x text-primary mb-3"></i>
+                    <h3 class="card-title">Sistema Cámaras UFRO</h3>
+                    <p class="text-muted">Iniciar Sesión</p>
+                </div>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }}" role="alert">
+                                {{ message }}
                             </div>
-                            
-                            {% with messages = get_flashed_messages(with_categories=true) %}
-                                {% if messages %}
-                                    {% for category, message in messages %}
-                                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }}" role="alert">
-                                            {{ message }}
-                                        </div>
-                                    {% endfor %}
-                                {% endif %}
-                            {% endwith %}
-                            
-                            <form method="POST" action="{{ url_for('login') }}">
-                                <div class="mb-3">
-                                    <label for="username" class="form-label">Usuario o Email</label>
-                                    <input type="text" class="form-control" id="username" name="username" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="password" class="form-label">Contraseña</label>
-                                    <input type="password" class="form-control" id="password" name="password" required>
-                                </div>
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-                                </button>
-                            </form>
-                            
-                            <div class="text-center mt-3">
-                                <small class="text-muted">
-                                    Universidad de La Frontera<br>
-                                    Sistema de Gestión de Cámaras
-                                </small>
-                            </div>
-                        </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Usuario o Email</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
                     </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </button>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Universidad de La Frontera<br>
+                        Sistema de Gestión de Cámaras
+                    </small>
                 </div>
             </div>
         </div>
