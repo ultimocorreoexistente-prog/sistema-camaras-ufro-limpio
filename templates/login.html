@@ -8,97 +8,94 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         /* Estilos para los logos */
-        .logo-left {
-            max-height: 110px;
+        .logo-side {
+            max-height: 120px;
             width: auto;
-            vertical-align: middle;
-            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));
-            transition: transform 0.3s ease;
-        }
-        .logo-right {
-            max-height: 110px;
-            width: auto;
-            vertical-align: middle;
             filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));
             transition: transform 0.3s ease;
         }
         
-        .logo-left:hover, .logo-right:hover {
-            transform: scale(1.05);
+        .logo-side:hover {
+            transform: scale(1.1);
         }
         
-        /* Layout compacto */
+        /* Layout con logos a los lados */
         .login-container {
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
-            padding: 20px;
+            justify-content: center;
+            padding: 40px 20px;
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         }
         
-        /* Sección de logos más compacta */
-        .logo-section {
-            margin-bottom: 15px;
-            padding: 10px 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border: 1px solid rgba(0,0,0,0.1);
-        }
-        
-        /* Contenedor de logo */
-        .logo-container {
+        /* Logo a la izquierda */
+        .logo-left-container {
+            margin-right: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 130px;
         }
         
-        /* Formulario de login */
+        /* Logo a la derecha */
+        .logo-right-container {
+            margin-left: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Formulario central */
         .login-form-wrapper {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
             overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.1);
+            border: 2px solid rgba(0,0,0,0.05);
         }
         
         .login-form-card {
-            padding: 40px;
+            padding: 50px;
+            min-width: 400px;
         }
         
         /* Responsivo */
         @media (max-width: 768px) {
-            .login-container {
-                padding: 10px;
+            .login-form-card {
+                min-width: 300px;
+                padding: 30px;
             }
-            .logo-left, .logo-right {
-                max-height: 90px;
+            .logo-side {
+                max-height: 80px;
+            }
+            .logo-left-container {
+                margin-right: 20px;
+            }
+            .logo-right-container {
+                margin-left: 20px;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .login-container {
+                flex-direction: column;
+                text-align: center;
+            }
+            .logo-left-container,
+            .logo-right-container {
+                margin: 20px 0;
             }
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <!-- Logos -->
-        <div class="logo-section">
-            <div class="row">
-                <div class="col-6 text-center">
-                    <div class="logo-container">
-                        <img src="{{ url_for('static', filename='images/logo-ufro.png') }}" alt="Universidad de La Frontera" class="logo-left">
-                    </div>
-                </div>
-                <div class="col-6 text-center">
-                    <div class="logo-container">
-                        <img src="{{ url_for('static', filename='images/logo_cctv.png') }}" alt="Sistema CCTV" class="logo-right">
-                    </div>
-                </div>
-            </div>
+        <!-- Logo izquierdo -->
+        <div class="logo-left-container">
+            <img src="{{ url_for('static', filename='images/logo-ufro.png') }}" alt="Universidad de La Frontera" class="logo-side">
         </div>
 
-        <!-- Formulario de login -->
+        <!-- Formulario de login central -->
         <div class="login-form-wrapper">
             <div class="login-form-card">
                 <div class="text-center mb-4">
@@ -138,6 +135,11 @@
                     </small>
                 </div>
             </div>
+        </div>
+
+        <!-- Logo derecho -->
+        <div class="logo-right-container">
+            <img src="{{ url_for('static', filename='images/logo_cctv.png') }}" alt="Sistema CCTV" class="logo-side">
         </div>
     </div>
 </body>
