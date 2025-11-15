@@ -51,9 +51,7 @@ login_manager.login_view = 'login'
 @login_manager.user_loader
 def load_user(user_id):
     try:
-        if 'Usuario' in locals():
-            return Usuario.query.get(int(user_id))
-        return None
+        return Usuario.query.get(int(user_id))
     except:
         return None
 
@@ -70,17 +68,22 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        if 'Usuario' in locals():
+        try:
             user = Usuario.query.filter_by(username=username).first()
             
             if user and user.check_password(password) and user.activo:
                 login_user(user)
                 if hasattr(user, 'ultimo_acceso'):
                     user.ultimo_acceso = datetime.utcnow()
-                    db.session.commit()
+                    try:
+                        db.session.commit()
+                    except:
+                        pass  # No hacer commit si falla, pero continuar con el login
                 return redirect(url_for('dashboard'))
-        
-        flash('Usuario o contraseña incorrectos', 'error')
+            
+            flash('Usuario o contraseña incorrectos', 'error')
+        except Exception as e:
+            flash(f'Error en autenticación: {str(e)}', 'error')
 
     return render_template('login.html')
 
@@ -95,25 +98,14 @@ def logout():
 def dashboard():
     try:
         # Estadísticas
-        if 'Camara' in locals():
-            total_camaras = Camara.query.filter_by(activo=True).count()
-            camaras_activas = Camara.query.filter_by(estado='activa', activo=True).count()
-            camaras_recientes = Camara.query.order_by(Camara.fecha_creacion.desc()).limit(5).all()
-        else:
-            total_camaras = camaras_activas = 0
-            camaras_recientes = []
+        total_camaras = Camara.query.filter_by(activo=True).count()
+        camaras_activas = Camara.query.filter_by(estado='activa', activo=True).count()
+        camaras_recientes = Camara.query.order_by(Camara.fecha_creacion.desc()).limit(5).all()
 
-        if 'Falla' in locals():
-            fallas_abiertas = Falla.query.filter(Falla.estado.in_(['abierta', 'en_proceso'])).count()
-            fallas_recientes = Falla.query.order_by(Falla.fecha_reporte.desc()).limit(5).all()
-        else:
-            fallas_abiertas = 0
-            fallas_recientes = []
+        fallas_abiertas = Falla.query.filter(Falla.estado.in_(['abierta', 'en_proceso'])).count()
+        fallas_recientes = Falla.query.order_by(Falla.fecha_reporte.desc()).limit(5).all()
 
-        if 'Mantenimiento' in locals():
-            mantenimientos_pendientes = Mantenimiento.query.filter_by(estado='programado').count()
-        else:
-            mantenimientos_pendientes = 0
+        mantenimientos_pendientes = Mantenimiento.query.filter_by(estado='programado').count()
 
         return render_template('dashboard.html',
                              total_camaras=total_camaras,
@@ -136,16 +128,13 @@ def dashboard():
 @login_required
 def camaras():
     try:
-        if 'Camara' in locals():
-            page = request.args.get('page', 1, type=int)
-            per_page = 20
+        page = request.args.get('page', 1, type=int)
+        per_page = 20
 
-            camaras = Camara.query.filter_by(activo=True).order_by(Camara.nombre).paginate(
-                page=page, per_page=per_page, error_out=False
-            )
-            return render_template('camaras/list.html', camaras=camaras)
-        else:
-            return "Módulo de cámaras no disponible"
+        camaras = Camara.query.filter_by(activo=True).order_by(Camara.nombre).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        return render_template('camaras/list.html', camaras=camaras)
     except Exception as e:
         return f"Error en cámaras: {str(e)}"
 
@@ -153,16 +142,13 @@ def camaras():
 @login_required
 def fallas():
     try:
-        if 'Falla' in locals():
-            page = request.args.get('page', 1, type=int)
-            per_page = 20
+        page = request.args.get('page', 1, type=int)
+        per_page = 20
 
-            fallas = Falla.query.order_by(Falla.fecha_reporte.desc()).paginate(
-                page=page, per_page=per_page, error_out=False
-            )
-            return render_template('fallas/list.html', fallas=fallas)
-        else:
-            return "Módulo de fallas no disponible"
+        fallas = Falla.query.order_by(Falla.fecha_reporte.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        return render_template('fallas/list.html', fallas=fallas)
     except Exception as e:
         return f"Error en fallas: {str(e)}"
 
@@ -170,16 +156,13 @@ def fallas():
 @login_required
 def mantenimientos():
     try:
-        if 'Mantenimiento' in locals():
-            page = request.args.get('page', 1, type=int)
-            per_page = 20
+        page = request.args.get('page', 1, type=int)
+        per_page = 20
 
-            mantenimientos = Mantenimiento.query.order_by(Mantenimiento.fecha_programada.desc()).paginate(
-                page=page, per_page=per_page, error_out=False
-            )
-            return render_template('mantenimientos/list.html', mantenimientos=mantenimientos)
-        else:
-            return "Módulo de mantenimientos no disponible"
+        mantenimientos = Mantenimiento.query.order_by(Mantenimiento.fecha_programada.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        return render_template('mantenimientos/list.html', mantenimientos=mantenimientos)
     except Exception as e:
         return f"Error en mantenimientos: {str(e)}"
 
@@ -187,11 +170,8 @@ def mantenimientos():
 @login_required
 def gabinetes():
     try:
-        if 'Gabinete' in locals():
-            gabinetes = Gabinete.query.filter_by(activo=True).all()
-            return render_template('gabinetes/list.html', gabinetes=gabinetes)
-        else:
-            return "Módulo de gabinetes no disponible"
+        gabinetes = Gabinete.query.filter_by(activo=True).all()
+        return render_template('gabinetes/list.html', gabinetes=gabinetes)
     except Exception as e:
         return f"Error en gabinetes: {str(e)}"
 
@@ -199,11 +179,8 @@ def gabinetes():
 @login_required
 def ups():
     try:
-        if 'UPS' in locals():
-            ups_list = UPS.query.filter_by(activo=True).all()
-            return render_template('ups/list.html', ups_list=ups_list)
-        else:
-            return "Módulo de UPS no disponible"
+        ups_list = UPS.query.filter_by(activo=True).all()
+        return render_template('ups/list.html', ups_list=ups_list)
     except Exception as e:
         return f"Error en UPS: {str(e)}"
 
@@ -211,11 +188,8 @@ def ups():
 @login_required
 def switches():
     try:
-        if 'Switch' in locals():
-            switches = Switch.query.filter_by(activo=True).all()
-            return render_template('switches/list.html', switches=switches)
-        else:
-            return "Módulo de switches no disponible"
+        switches = Switch.query.filter_by(activo=True).all()
+        return render_template('switches/list.html', switches=switches)
     except Exception as e:
         return f"Error en switches: {str(e)}"
 
@@ -223,11 +197,8 @@ def switches():
 @login_required
 def nvr():
     try:
-        if 'NVR' in locals():
-            nvr_list = NVR.query.filter_by(activo=True).all()
-            return render_template('nvr/list.html', nvr_list=nvr_list)
-        else:
-            return "Módulo de NVR no disponible"
+        nvr_list = NVR.query.filter_by(activo=True).all()
+        return render_template('nvr/list.html', nvr_list=nvr_list)
     except Exception as e:
         return f"Error en NVR: {str(e)}"
 
@@ -236,22 +207,15 @@ def nvr():
 @login_required
 def api_stats():
     try:
-        stats = {}
-        if 'Camara' in locals():
-            stats.update({
-                'camaras_total': Camara.query.count(),
-                'camaras_activas': Camara.query.filter_by(estado='activa').count()
-            })
-        if 'Falla' in locals():
-            stats['fallas_abiertas'] = Falla.query.filter(Falla.estado.in_(['abierta', 'en_proceso'])).count()
-        if 'Mantenimiento' in locals():
-            stats['mantenimientos_pendientes'] = Mantenimiento.query.filter_by(estado='programado').count()
-        if 'Gabinete' in locals():
-            stats['gabinetes_total'] = Gabinete.query.count()
-        if 'UPS' in locals():
-            stats['ups_total'] = UPS.query.count()
-        if 'Switch' in locals():
-            stats['switches_total'] = Switch.query.count()
+        stats = {
+            'camaras_total': Camara.query.count(),
+            'camaras_activas': Camara.query.filter_by(estado='activa').count(),
+            'fallas_abiertas': Falla.query.filter(Falla.estado.in_(['abierta', 'en_proceso'])).count(),
+            'mantenimientos_pendientes': Mantenimiento.query.filter_by(estado='programado').count(),
+            'gabinetes_total': Gabinete.query.count(),
+            'ups_total': UPS.query.count(),
+            'switches_total': Switch.query.count()
+        }
         return jsonify(stats)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -274,10 +238,7 @@ def system_status():
         db_status = 'ok'
         db_error = None
         try:
-            if 'db' in locals():
-                db.session.execute('SELECT 1')
-            else:
-                db_status = 'not_configured'
+            db.session.execute('SELECT 1')
         except Exception as e:
             db_status = 'error'
             db_error = str(e)
@@ -307,8 +268,7 @@ def not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     try:
-        if 'db' in locals():
-            db.session.rollback()
+        db.session.rollback()
         return render_template('errors/500.html'), 500
     except:
         return "Error interno del servidor", 500
