@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Iniciar Sesión - Sistema de Gestión Académica UFRO{% endblock %}
+{% block title %}Iniciar Sesión - Sistema de Gestión de Cámaras UFRO{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -10,221 +10,199 @@
 <div class="card-body p-5">
 <!-- Header con logo UFRO -->
 <div class="text-center mb-4">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/000/svg' viewBox='0 0 150 75'%3E%3Crect width='150' height='75' fill='white' rx='8'/%3E%3Ctext x='75' y='45' text-anchor='middle' font-family='Arial' font-size='4' font-weight='bold' fill='%31e3a8a'%3EUFRO%3C/text%3E%3C/svg%3E" alt="UFRO" class="mb-3" style="height: 80px;">
-<h3 class="fw-bold text-primary mb-">Iniciar Sesión</h3>
-<p class="text-muted">Sistema de Gestión Académica</p>
+<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 75'%3E%3Crect width='150' height='75' fill='white' rx='8'/%3E%3Ctext x='75' y='45' text-anchor='middle' font-family='Arial' font-size='14' font-weight='bold' fill='%2331e3a8a'%3EUFRO%3C/text%3E%3C/svg%3E" alt="UFRO" class="mb-3" style="height: 80px;">
+<h3 class="fw-bold text-primary mb-0">Iniciar Sesión</h3>
+<p class="text-muted">Sistema de Gestión de Cámaras</p>
 </div>
 
-<!-- Mensajes de error -->
-{% if form.errors %}
-<div class="alert alert-danger alert-dismissible fade show" role="alert">
-<i class="bi bi-exclamation-triangle me-"></i>
-{% if form.errors %}
-{% for field, errors in form.errors.items %}
-{% for error in errors %}
-{{ error }}
-{% endfor %}
-{% endfor %}
-{% endif %}
+<!-- Mostrar mensajes flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
-{% for message in messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+<i class="bi bi-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
 {{ message }}
-{% endfor %}
-{% endif %}
 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
+{% endfor %}
 {% endif %}
+{% endwith %}
 
 <!-- Formulario de login -->
-<form method="post" novalidate>
+<form method="post">
 {{ csrf_token() }}
 
-<!-- Campo Email/Usuario -->
+<!-- Campo Email -->
 <div class="mb-3">
-<label for="id_username" class="form-label">
-<i class="bi bi-envelope me-"></i>Correo Electrónico
+<label for="email" class="form-label">
+<i class="bi bi-envelope me-2"></i>Correo Electrónico
 </label>
-<input type="email"
-name="username"
-id="id_username"
-class="form-control form-control-lg {% if form.username.errors %}is-invalid{% endif %}"
-placeholder="usuario@ufro.cl"
-required
-autofocus>
-{% if form.username.errors %}
-<div class="invalid-feedback">
-{% for error in form.username.errors %}
-{{ error }}
-{% endfor %}
-</div>
-{% endif %}
-{% if form.username.help_text %}
-<div class="form-text">{{ form.username.help_text }}</div>
-{% endif %}
+<input type="email" name="email" id="email" class="form-control form-control-lg" 
+       placeholder="usuario@ufro.cl" required autofocus>
 </div>
 
 <!-- Campo Contraseña -->
 <div class="mb-3">
-<label for="id_password" class="form-label">
-<i class="bi bi-lock me-"></i>Contraseña
+<label for="password" class="form-label">
+<i class="bi bi-lock me-2"></i>Contraseña
 </label>
 <div class="input-group">
-<input type="password"
-name="password"
-id="id_password"
-class="form-control form-control-lg {% if form.password.errors %}is-invalid{% endif %}"
-placeholder="Ingrese su contraseña"
-required>
-<button class="btn btn-outline-secondary"
-type="button"
-id="togglePassword"
-title="Mostrar/Ocultar contraseña">
-<i class="bi bi-eye" id="toggleIcon"></i>
+<input type="password" name="password" id="password" class="form-control form-control-lg" 
+       placeholder="Ingresa tu contraseña" required>
+<button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
+<i class="bi bi-eye" id="eye-icon"></i>
 </button>
 </div>
-{% if form.password.errors %}
-<div class="invalid-feedback">
-{% for error in form.password.errors %}
-{{ error }}
-{% endfor %}
-</div>
-{% endif %}
 </div>
 
-<!-- Recordarme -->
-<div class="mb-3">
-<div class="form-check">
-<input type="checkbox"
-class="form-check-input"
-id="remember_me"
-name="remember_me">
-<label class="form-check-label" for="remember_me">
-Recordar mi sesión
+<!-- Recordar usuario -->
+<div class="mb-3 form-check">
+<input type="checkbox" class="form-check-input" id="remember" name="remember">
+<label class="form-check-label" for="remember">
+<i class="bi bi-check-circle me-1"></i>Recordar sesión
 </label>
 </div>
-</div>
 
-<!-- Botón de envío -->
-<div class="d-grid gap- mb-3">
-<button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
-<i class="bi bi-box-arrow-in-right me-"></i>
-Iniciar Sesión
+<!-- Botón de login -->
+<div class="d-grid mb-3">
+<button type="submit" class="btn btn-primary btn-lg fw-bold">
+<i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
 </button>
 </div>
-</form>
 
 <!-- Enlaces adicionales -->
 <div class="text-center">
-<!-- <a href="#" class="text-decoration-none small"> -->
-<a href="#" class="text-decoration-none small" onclick="alert('Función de recuperación de contraseña no implementada'); return false;">
-<i class="bi bi-question-circle me-1"></i>
-¿Olvidaste tu contraseña?
+<a href="{{ url_for('olvide_password') }}" class="text-decoration-none text-muted small">
+<i class="bi bi-question-circle me-1"></i>¿Olvidaste tu contraseña?
 </a>
 </div>
+</form>
 
-<hr class="my-4">
-
-<!-- Información adicional -->
-<div class="text-center">
-<h6 class="text-muted mb-3">Información del Sistema</h6>
+<!-- Información de acceso -->
+<div class="mt-4 text-center">
+<div class="card bg-light border-0">
+<div class="card-body py-3">
+<h6 class="card-title mb-2 text-muted">
+<i class="bi bi-info-circle me-1"></i>Información de Acceso
+</h6>
 <div class="row text-center">
-<div class="col-4">
-<i class="bi bi-shield-check text-primary fs-4"></i>
-<small class="d-block text-muted">Seguro</small>
-</div>
-<div class="col-4">
-<i class="bi bi-cloud text-success fs-4"></i>
-<small class="d-block text-muted">En Línea</small>
-</div>
-<div class="col-4">
-<i class="bi bi-university text-info fs-4"></i>
-<small class="d-block text-muted">UFRO</small>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-
-<!-- Footer -->
-<div class="text-center mt-4">
+<div class="col-6">
+<small class="text-muted d-block">
+<strong>Superadministrador</strong>
+</small>
 <small class="text-muted">
-<i class="bi bi-c-circle me-1"></i>
-{{ year|default("2025") }} Universidad de La Frontera
+Charles.jelvez@ufrontera.cl
+</small>
+</div>
+<div class="col-6">
+<small class="text-muted d-block">
+<strong>Contraseña</strong>
+</small>
+<small class="text-muted">
+Vivita0468
 </small>
 </div>
 </div>
 </div>
 </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
 
-<style>
-.min-vh-100 {
-min-height: 100vh;
-}
-
-.card {
-border-radius: 1rem;
-}
-
-.form-control-lg {
-border-radius: 0.75rem;
-}
-
-.btn-lg {
-border-radius: 0.75rem;
-}
-
-#togglePassword:hover {
-background-color: #e9ecef;
-}
-</style>
-
+<!-- Script para toggle password -->
 <script>
-// Toggle password visibility
-document.getElementById('togglePassword').addEventListener('click', function() {
-const passwordField = document.getElementById('id_password');
-const toggleIcon = document.getElementById('toggleIcon');
+function togglePassword() {
+const passwordField = document.getElementById('password');
+const eyeIcon = document.getElementById('eye-icon');
 
 if (passwordField.type === 'password') {
 passwordField.type = 'text';
-toggleIcon.className = 'bi bi-eye-slash';
+eyeIcon.className = 'bi bi-eye-slash';
 } else {
 passwordField.type = 'password';
-toggleIcon.className = 'bi bi-eye';
+eyeIcon.className = 'bi bi-eye';
+}
+}
+
+// Auto-dismiss alerts after 5 seconds
+setTimeout(function() {
+const alerts = document.querySelectorAll('.alert');
+alerts.forEach(function(alert) {
+if (alert.classList.contains('show')) {
+alert.classList.remove('show');
+setTimeout(function() {
+alert.remove();
+}, 150);
 }
 });
+}, 5000);
 
-// Mostrar loading en botón de submit
-document.querySelector('form').addEventListener('submit', function() {
-const submitBtn = document.getElementById('submitBtn');
-submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-" role="status"></span>Iniciando sesión...';
-submitBtn.disabled = true;
-});
-
-// Validación en tiempo real
-document.getElementById('id_username').addEventListener('input', function() {
-const email = this.value;
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-if (email && emailRegex.test(email)) {
-this.setCustomValidity('Ingrese un correo electrónico válido');
-} else {
-this.setCustomValidity('');
-}
-});
-
-// Auto-focus en el campo de email
-document.getElementById('id_username').focus();
-
-// Prevenir envío múltiple del formulario
-let isSubmitting = false;
+// Form validation
 document.querySelector('form').addEventListener('submit', function(e) {
-if (isSubmitting) {
+const email = document.getElementById('email').value.trim();
+const password = document.getElementById('password').value.trim();
+
+if (!email || !password) {
 e.preventDefault();
-return false;
+alert('Por favor, completa todos los campos.');
+return;
 }
-isSubmitting = true;
+
+if (password.length < 6) {
+e.preventDefault();
+alert('La contraseña debe tener al menos 6 caracteres.');
+return;
+}
 });
 </script>
 
+<style>
+/* Estilos adicionales para el formulario */
+.form-control:focus {
+border-color: #31e3a8a;
+box-shadow: 0 0 0 0.2rem rgba(49, 227, 168, 0.25);
+}
+
+.btn-primary {
+background-color: #31e3a8a;
+border-color: #31e3a8a;
+}
+
+.btn-primary:hover {
+background-color: #2ac89a;
+border-color: #2ac89a;
+}
+
+.content-card {
+border-radius: 15px;
+animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+from {
+opacity: 0;
+transform: translateY(30px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+/* Estilo para alertas */
+.alert {
+border-radius: 10px;
+border: none;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+.card-body {
+padding: 2rem 1.5rem !important;
+}
+}
+</style>
 {% endblock %}

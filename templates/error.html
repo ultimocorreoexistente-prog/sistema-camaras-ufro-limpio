@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Error {{ code }} - Sistema de Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6 text-center">
+        <div class="card content-card">
+            <div class="card-body py-5">
+                <div class="mb-4">
+                    {% if code == 404 %}
+                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 5rem;"></i>
+                    {% elif code == 403 %}
+                        <i class="bi bi-shield-exclamation text-danger" style="font-size: 5rem;"></i>
+                    {% elif code == 500 %}
+                        <i class="bi bi-gear-exclamation text-danger" style="font-size: 5rem;"></i>
+                    {% else %}
+                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 5rem;"></i>
+                    {% endif %}
+                </div>
+                
+                <h1 class="display-1 fw-bold text-primary">{{ code }}</h1>
+                <h2 class="h4 mb-4">
+                    {% if code == 404 %}
+                        Página No Encontrada
+                    {% elif code == 403 %}
+                        Acceso Denegado
+                    {% elif code == 500 %}
+                        Error del Servidor
+                    {% else %}
+                        Error
+                    {% endif %}
+                </h2>
+                
+                <p class="text-muted mb-4">
+                    {% if code == 404 %}
+                        La página que buscas no existe o ha sido movida.
+                    {% elif code == 403 %}
+                        No tienes permisos para acceder a esta página.
+                    {% elif code == 500 %}
+                        Se ha producido un error interno en el servidor.
+                    {% else %}
+                        {{ message or 'Ha ocurrido un error inesperado.' }}
+                    {% endif %}
+                </p>
+                
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                        <i class="bi bi-house me-1"></i>Ir al Dashboard
+                    </a>
+                    
+                    <a href="{{ url_for('listar_camaras') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-camera-video me-1"></i>Ver Cámaras
+                    </a>
+                    
+                    <button onclick="history.back()" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Volver
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información adicional para errores específicos -->
+        {% if code == 403 %}
+        <div class="card content-card mt-4">
+            <div class="card-body">
+                <h6><i class="bi bi-info-circle me-2"></i>¿Qué puedo hacer?</h6>
+                <ul class="text-start text-muted">
+                    <li>Verifica que tu cuenta tenga los permisos necesarios</li>
+                    <li>Contacta al administrador si necesitas acceso</li>
+                    <li>Intenta cerrar sesión y volver a iniciar sesión</li>
+                </ul>
+            </div>
+        </div>
+        {% elif code == 500 %}
+        <div class="card content-card mt-4">
+            <div class="card-body">
+                <h6><i class="bi bi-tools me-2"></i>Solución de Problemas</h6>
+                <ul class="text-start text-muted">
+                    <li>Espera unos minutos e intenta nuevamente</li>
+                    <li>Verifica tu conexión a internet</li>
+                    <li>Contacta al soporte técnico si el problema persiste</li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Botón flotante para soporte -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="bi bi-question-circle text-primary me-2"></i>
+            <strong class="me-auto">Soporte</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+            <small>Si el problema persiste, contacta al administrador del sistema.</small>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-show toast for errors
+document.addEventListener('DOMContentLoaded', function() {
+    const toast = document.querySelector('.toast');
+    if (toast && {{ code }}) {
+        new bootstrap.Toast(toast).show();
+    }
+});
+</script>
+{% endblock %}
