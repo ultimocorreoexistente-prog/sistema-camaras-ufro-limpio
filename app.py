@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
 from datetime import datetime
-from forms import LoginForm, CamaraForm, CamaraEditForm
+#from forms import LoginForm, CamaraForm, CamaraEditForm
 from models import db, Usuario, Camara
 from config import get_config
 import os
