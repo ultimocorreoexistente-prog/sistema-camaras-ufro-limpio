@@ -9,17 +9,16 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc && \
     rm -rf /var/lib/apt/lists/*
 
-# Instalar dependencias de Python
+# ✅ Primero copia requirements.txt (necesario para instalar dependencias)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar aplicación principal
+# ✅ Luego copia la aplicación
 COPY app.py .
-COPY migrate_data.py .
 COPY Procfile .
-COPY forms.py .
+COPY migrate_data.py .
 
-# ✅ CORRECCIÓN CRÍTICA: copiar carpeta models/ (NO models.py)
+# ✅ CORRECCIÓN CRÍTICA: copia la carpeta models/ completa (NO models.py)
 COPY models ./models
 
 # Crear directorios necesarios
@@ -37,5 +36,5 @@ ENV PYTHONUNBUFFERED=1
 # Exponer puerto
 EXPOSE 8000
 
-# Comando de arranque (usando gunicorn desde Procfile o directo)
-CMD ["gunicorn", "app:app", "--workers", "2", "--timeout", "30", "--bind", "0.0.0.0:8000"]
+# ✅ Comando de arranque robusto (timeout aumentado para Railway)
+CMD ["gunicorn", "app:app", "--workers", "2", "--timeout", "60", "--bind", "0.0.0.0:8000"]
