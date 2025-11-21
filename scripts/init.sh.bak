@@ -1,0 +1,39 @@
+#!/bin/bash
+set -e  # Detener si hay error
+
+echo "🔧 Iniciando despliegue en Railway..."
+
+# 1. Verificar SECRET_KEY (obligatorio en producción)
+if [ -z "$SECRET_KEY" ]; then
+  echo "❌ ERROR: SECRET_KEY no está definida en variables de entorno"
+  echo "💡 En Railway: Project → Variables → Añade SECRET_KEY con una clave aleatoria"
+  exit 1
+fi
+
+# 2. Verificar DATABASE_URL
+if [ -z "$DATABASE_URL" ]; then
+  echo "❌ ERROR: DATABASE_URL no está definida"
+  echo "💡 Railway debería inyectarla automáticamente si tienes PostgreSQL vinculado"
+  exit 1
+fi
+
+echo "✅ SECRET_KEY y DATABASE_URL detectadas"
+
+# 3. Ejecutar inicialización de la base de datos
+echo "🔄 Inicializando base de datos..."
+python -c "
+from app import app
+from models import db
+with app.app_context():
+    try:
+        db.create_all()
+        print('✅ Tablas creadas o verificadas exitosamente')
+    except Exception as e:
+        print('❌ Error al crear tablas:')
+        print(e)
+        exit(1)
+"
+
+# 4. Iniciar la aplicación
+echo "🚀 Iniciando aplicación con gunicorn..."
+exec gunicorn app:app --workers 1 --timeout 60 --bind 0.0.0.0:$PORT

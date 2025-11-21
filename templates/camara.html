@@ -1,13 +1,10 @@
 {% extends 'base.html' %}
-
 {% block title %}Cámaras - Sistema de Cámaras UFRO{% endblock %}
-
 {% block content %}
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1><i class="bi bi-camera-video me-2"></i>Gestión de Cámaras</h1>
-            
             {% if user.rol in ['admin', 'superadmin'] %}
             <a href="{{ url_for('nueva_camara') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-1"></i>Nueva Cámara
@@ -16,7 +13,6 @@
         </div>
     </div>
 </div>
-
 <div class="row">
     <div class="col-12">
         <div class="card content-card">
@@ -41,25 +37,19 @@
                             <tbody>
                                 {% for camara in camaras %}
                                 <tr>
-                                    <td>{{ camara[0] }}</td>
+                                    <td>{{ camara.id }}</td>
+                                    <td><strong>{{ camara.nombre }}</strong></td>
+                                    <td>{{ camara.ubicacion or '-' }}</td>
+                                    <td>{{ camara.ip_address or '-' }}</td>
                                     <td>
-                                        <strong>{{ camara[1] }}</strong>
-                                        {% if camara[5] %}
-                                        <br><small class="text-muted">{{ camara[5] }}</small>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ camara[2] }}</td>
-                                    <td>{{ camara[3] if camara[3] else '-' }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ 'success' if camara[6] == 'activa' else 'warning' if camara[6] == 'mantenimiento' else 'danger' }}">
-                                            {{ camara[6] if camara[6] else 'sin estado' }}
+                                        <span class="badge bg-{{ 'success' if camara.estado == 'activa' else 'warning' if camara.estado == 'mantenimiento' else 'danger' }}">
+                                            {{ camara.estado|title }}
                                         </span>
                                     </td>
-                                    <td>{{ camara[4] if camara[4] else '-' }}</td>
+                                    <td>{{ camara.tipo_camara or '-' }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            {% if user.rol in ['admin', 'superadmin'] %}
-                                            <a href="{{ url_for('editar_camara', id=camara[0]) }}" 
+                                            <a href="{{ url_for('editar_camara', id=camara.id) }}" 
                                                class="btn btn-outline-primary btn-sm" 
                                                title="Editar">
                                                 <i class="bi bi-pencil"></i>
@@ -67,12 +57,9 @@
                                             <button type="button" 
                                                     class="btn btn-outline-danger btn-sm" 
                                                     title="Eliminar"
-                                                    onclick="eliminarCamara({{ camara[0] }}, '{{ camara[1] }}')">
+                                                    onclick="eliminarCamara({{ camara.id }}, '{{ camara.nombre|e }}')">
                                                 <i class="bi bi-trash"></i>
                                             </button>
-                                            {% else %}
-                                            <span class="text-muted">Sin permisos</span>
-                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
@@ -85,7 +72,6 @@
                         <i class="bi bi-camera-video text-muted" style="font-size: 4rem;"></i>
                         <h4 class="text-muted mt-3">No hay cámaras registradas</h4>
                         <p class="text-muted">Comienza agregando tu primera cámara al sistema.</p>
-                        
                         {% if user.rol in ['admin', 'superadmin'] %}
                         <a href="{{ url_for('nueva_camara') }}" class="btn btn-primary">
                             <i class="bi bi-plus-circle me-1"></i>Agregar Primera Cámara
@@ -112,7 +98,10 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="confirmarEliminar">Eliminar</button>
+                <form id="formEliminar" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
             </div>
         </div>
     </div>
@@ -120,33 +109,12 @@
 
 <script>
 let camaraIdParaEliminar = null;
-
 function eliminarCamara(id, nombre) {
     camaraIdParaEliminar = id;
     document.getElementById('camaraNombre').textContent = nombre;
+    const form = document.getElementById('formEliminar');
+    form.action = `/camaras/${id}/eliminar`;
     new bootstrap.Modal(document.getElementById('eliminarModal')).show();
 }
-
-document.getElementById('confirmarEliminar').addEventListener('click', function() {
-    if (camaraIdParaEliminar) {
-        // Crear formulario dinámico para enviar POST
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/camaras/${camaraIdParaEliminar}/eliminar`;
-        
-        // Agregar token CSRF si existe
-        const csrfToken = document.querySelector('meta[name="csrf-token"]');
-        if (csrfToken) {
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrf_token';
-            csrfInput.value = csrfToken.getAttribute('content');
-            form.appendChild(csrfInput);
-        }
-        
-        document.body.appendChild(form);
-        form.submit();
-    }
-});
 </script>
 {% endblock %}

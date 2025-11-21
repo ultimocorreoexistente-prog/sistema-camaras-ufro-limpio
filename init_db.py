@@ -1,28 +1,34 @@
 from app import app, db
 from models import Usuario
-from werkzeug.security import generate_password_hash
+import secrets
 
-with app.app_context():
-    db.create_all()
-    print('Tablas creadas exitosamente')
+def crear_superadmin_seguro():
+    if Usuario.query.filter_by(email='Charles.Jelvez@ufrontera.cl').first():
+        print("✅ Superadmin ya existe")
+        return
+
+    temp_pass = secrets.token_urlsafe(12)[:12]
+    superadmin = Usuario(
+        username='charles.jelvez',
+        email='Charles.Jelvez@ufrontera.cl',
+        nombre='Charles Jelvez',
+        rol='superadmin',
+        activo=True
+    )
+    superadmin.password_hash = secrets.token_urlsafe(20)  # placeholder
+    from werkzeug.security import generate_password_hash
+    superadmin.password_hash = generate_password_hash(temp_pass)
+    db.session.add(superadmin)
+    db.session.commit()
     
-    if Usuario.query.count() == 0:
-        usuarios = [
-            Usuario(username='admin', rol='admin', nombre_completo='Administrador', activo=True),
-            Usuario(username='supervisor', rol='supervisor', nombre_completo='Supervisor', activo=True),
-            Usuario(username='tecnico1', rol='tecnico', nombre_completo='Técnico 1', activo=True),
-            Usuario(username='visualizador', rol='visualizador', nombre_completo='Visualizador', activo=True)
-        ]
-        
-        passwords = ['admin123', 'super123', 'tecnico123', 'viz123']
-        
-        for user, password in zip(usuarios, passwords):
-            user.set_password(password)
-            db.session.add(user)
-        
-        db.session.commit()
-        print('Usuarios creados exitosamente')
-    else:
-        print('Los usuarios ya existen')
-    
-    print(f'\nTotal usuarios: {Usuario.query.count()}')
+    print("✅ Superadmin creado")
+    print(f"📧 Email: Charles.Jelvez@ufrontera.cl")
+    print(f"🔑 Contraseña temporal: {temp_pass}")
+    print("⚠️  Debe cambiarla al primer login.")
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+        print("✅ Tablas creadas")
+        crear_superadmin_seguro()
+        print(f"📊 Total usuarios: {Usuario.query.count()}")

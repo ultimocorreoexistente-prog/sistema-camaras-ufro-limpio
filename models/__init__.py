@@ -1,39 +1,83 @@
-from flask_sqlalchemy import SQLAlchemy
+"""
+Paquete de modelos para el Sistema de Cámaras UFRO
+Permite: from models import db, Gabinete, Switch, NVR, etc.
+"""
 
-# Inicializar SQLAlchemy
+# Instancia única compartida de SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
-# Importaciones de modelos para que SQLAlchemy los registre
+# Enums compartidos
+import enum
+
+class EquipmentStatus(enum.Enum):
+    ACTIVO = "activo"
+    INACTIVO = "inactivo"
+    MANTENIMIENTO = "mantenimiento"
+    BAJA = "baja"
+    FALLA = "falla"
+
+class EquipmentType(enum.Enum):
+    CAMARA = "camara"
+    SWITCH = "switch"
+    NVR = "nvr"
+    UPS = "ups"
+    GABINETE = "gabinete"
+    FUENTE_PODER = "fuente_poder"
+    MANTENIMIENTO = "mantenimiento"
+    FALLA = "falla"
+
+# Importar modelos (solo la arquitectura modular avanzada)
+from .usuario import Usuario
+from .ubicacion import Ubicacion
+from .camara import Camara
+from .gabinete import Cabinet as Gabinete, GabineteEquipment
+from .switch import Switch
+from .puertos_switch import PuertoSwitch
+from .nvr import NVR
+from .ups import UPS
+from .fuente_poder import FuentePoder
+from .falla import Falla
+from .mantenimiento import Mantenimiento
+from .fotografia import Fotografia
+
+# Exportar para imports directos
+__all__ = [
+    'db',
+    'EquipmentStatus',
+    'EquipmentType',
+    'Usuario',
+    'Ubicacion',
+    'Camara',
+    'Gabinete',
+    'GabineteEquipment',
+    'Switch',
+    'NVR',
+    'UPS',
+    'FuentePoder',
+    'Falla',
+    'Mantenimiento',
+    'Fotografia'
+]
+
+# Funciones de inicialización
 def init_models():
-    """Inicializar todos los modelos"""
-    from .usuario import Usuario
-    from .camara import Camara
-    return Usuario, Camara
+    return Usuario, Camara, Gabinete
 
 def init_db(app):
-    """Inicializar base de datos con app Flask"""
-    global db
     db.init_app(app)
-    
-    # Importar todos los modelos para que SQLAlchemy los registre
-    Usuario, Camara = init_models()
-    
-    # Crear todas las tablas
     with app.app_context():
         db.create_all()
-        
-        # Crear superadmin si no existe
-        if not Usuario.query.filter_by(email='admin@ufro.cl').first():
+        if not Usuario.query.filter_by(email='Charles.Jelvez@ufrontera.cl').first():
+            from werkzeug.security import generate_password_hash
             admin = Usuario(
-                username='admin',
-                email='admin@ufro.cl', 
-                full_name='Administrador Sistema',
-                role='superadmin'
+                username='charles.jelvez',
+                email='Charles.Jelvez@ufrontera.cl',
+                nombre='Charles Jelvez',
+                rol='superadmin',
+                activo=True
             )
-            admin.set_password('admin123')
+            admin.password_hash = generate_password_hash('Vivita0468')
             db.session.add(admin)
             db.session.commit()
-            print("✅ Superadmin creado: admin@ufro.cl / admin123")
-
-# Importaciones directas para compatibilidad
-__all__ = ['db', 'init_db', 'init_models']
+            print("✅ Superadmin creado")

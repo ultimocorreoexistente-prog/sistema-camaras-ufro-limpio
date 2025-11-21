@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}Editar Cámara - {{ camara.nombre }}{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('listar_camaras') }}">Cámaras</a></li>
+                <li class="breadcrumb-item active">Editar</li>
+            </ol>
+        </nav>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-pencil me-2"></i>Editar: {{ camara.nombre }}</h1>
+            <a href="{{ url_for('listar_camaras') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Volver
+            </a>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card content-card">
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.codigo.label(class="form-label") }}
+                                {{ form.codigo(class="form-control") }}
+                                {% if form.codigo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.codigo.errors|join(', ') }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.nombre.label(class="form-label") }}
+                                {{ form.nombre(class="form-control") }}
+                                {% if form.nombre.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.nombre.errors|join(', ') }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.ip.label(class="form-label") }}
+                                {{ form.ip(class="form-control", placeholder="192.168.1.100") }}
+                                {% if form.ip.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.ip.errors|join(', ') }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.tipo_camara.label(class="form-label") }}
+                                {{ form.tipo_camara(class="form-select") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.ubicacion.label(class="form-label") }}
+                        {{ form.ubicacion(class="form-control") }}
+                        {% if form.ubicacion.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.ubicacion.errors|join(', ') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.campus.label(class="form-label") }}
+                                {{ form.campus(class="form-select") }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.edificio.label(class="form-label") }}
+                                {{ form.edificio(class="form-control") }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ form.estado.label(class="form-label") }}
+                                {{ form.estado(class="form-select") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.latitud.label(class="form-label") }}
+                                {{ form.latitud(class="form-control", placeholder="-38.9538") }}
+                                {% if form.latitud.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.latitud.errors|join(', ') }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.longitud.label(class="form-label") }}
+                                {{ form.longitud(class="form-control", placeholder="-72.3311") }}
+                                {% if form.longitud.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.longitud.errors|join(', ') }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.observaciones.label(class="form-label") }}
+                        {{ form.observaciones(class="form-control", rows="3") }}
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('listar_camaras') }}" class="btn btn-secondary">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card content-card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información</h6>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-5">ID:</dt>
+                    <dd class="col-7">{{ camara.id }}</dd>
+                    <dt class="col-5">Creada:</dt>
+                    <dd class="col-7">{{ camara.fecha_creacion.strftime('%d/%m/%Y') if camara.fecha_creacion else '-' }}</dd>
+                    <dt class="col-5">IP actual:</dt>
+                    <dd class="col-7"><code>{{ camara.ip_address or '-' }}</code></dd>
+                    <dt class="col-5">Estado:</dt>
+                    <dd class="col-7">
+                        <span class="badge bg-{{ 'success' if camara.estado == 'activa' else 'warning' if camara.estado == 'mantenimiento' else 'danger' }}">
+                            {{ camara.estado|title }}
+                        </span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

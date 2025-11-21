@@ -1,0 +1,58 @@
+--- a/models/gabinete.py
++++ b/models/gabinete.py
+@@ -38,7 +38,7 @@
+ class Cabinet(EquipmentBase):
+-   """
++    """
+     Modelo de gabinetes y racks de red.
+     Attributes:
+     cabinet_type (str): Tipo de gabinete
+@@ -45,7 +45,7 @@
+     access_log_enabled (bool): Log de acceso habilitado
+     """
+-__tablename__ = 'gabinetes'
++    __tablename__ = 'gabinetes'
+ 
+ # Tipo y dimensiones físicas
+ cabinet_type = Column(Enum(CabinetType), nullable=True,
+@@ -191,7 +191,7 @@
+ # Condiciones ambientales
+ environmental_conditions = Column(String(100), nullable=True,
+                                   comment="Condiciones ambientales soportadas")
+-seismic_rating = Column(String(0), nullable=True,
++seismic_rating = Column(String(20), nullable=True,
+                         comment="Rating sísmico")
+ 
+ # Certificaciones
+@@ -215,7 +215,7 @@
+ # Estado actual
+ door_status = Column(String(0), default="closed", nullable=False,
+                      comment="Estado de la puerta (open/closed)")
+-alarm_status = Column(String(0), nullable=True,
++alarm_status = Column(String(50), nullable=True,
+                       comment="Estado de alarmas")
+ access_log_enabled = Column(Boolean, default=False, nullable=False,
+                             comment="Log de acceso habilitado")
+@@ -262,9 +262,10 @@
+ # Relaciones con equipos instalados
+ installed_equipment = relationship("GabineteEquipment", back_populate="gabinete", cascade="all, delete-orphan")
+ 
+-def __repr__(self):
+-return f"<Gabinete(name='{self.name}', type='{self.cabinet_type.value if self.cabinet_type else 'N/A'}', units={self.rack_units}U)>"
+-def get_available_units(self):
++    def __repr__(self):
++        return f"<Gabinete(name='{self.name}', type='{self.cabinet_type.value if self.cabinet_type else 'N/A'}', units={self.rack_units}U)>"
++
++    def get_available_units(self):
+     """
+     Obtiene las unidades de rack disponibles.
+     Returns:
+@@ -750,7 +751,7 @@
+ # Gestión
+ priority_level = Column(Integer, default=, nullable=False,
+                         comment="Nivel de prioridad (1=alta, =media, 3=baja)")
+-
++                        comment="Nivel de prioridad (1=alta, 2=media, 3=baja)")
+ # Fechas
+ installation_date = Column(DateTime, default=datetime.utcnow, nullable=False,
+                            comment="Fecha de instalación")

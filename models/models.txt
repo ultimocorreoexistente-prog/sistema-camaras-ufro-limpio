@@ -1,0 +1,52 @@
+ El volumen de la unidad C no tiene etiqueta.
+ El n£mero de serie del volumen es: 424E-DF92
+
+ Directorio de C:\Users\Usuario\sistema-camaras-ufro-limpio\models
+
+17-11-2025  13:20    <DIR>          .
+17-11-2025  13:20    <DIR>          ..
+15-11-2025  11:10             1.411 base.py
+15-11-2025  11:10             2.169 camara.py
+14-11-2025  08:59             1.635 camaras.py
+15-11-2025  17:04             8.271 catalogo_tipo_falla.py
+15-11-2025  17:04            24.980 datos_iniciales.py
+15-11-2025  17:04             7.817 ejemplo_equipo_tecnico.py
+15-11-2025  17:04             7.066 ejemplo_network_connections.py
+15-11-2025  17:04             7.083 ejemplo_puertos_switch.py
+15-11-2025  17:04            19.909 ejemplo_uso.py
+17-11-2025  13:20    <DIR>          enums
+14-11-2025  08:59             3.252 equipo.py
+13-11-2025  18:24            13.496 equipo.py.bak
+15-11-2025  17:04            13.623 equipo_tecnico.py
+14-11-2025  08:59             1.304 falla.py
+14-11-2025  08:59             2.265 fotografia.py
+14-11-2025  08:59            18.459 fuente_poder.py
+14-11-2025  08:59            23.813 gabinete.py
+15-11-2025  17:04            10.352 historial_estado_equipo.py
+15-11-2025  17:04            16.989 install.py
+14-11-2025  08:59             4.982 mantenimiento.py
+17-11-2025  13:20                 0 models.txt
+15-11-2025  17:04             9.463 network_connections.py
+14-11-2025  08:59            14.645 nvr.py
+15-11-2025  17:04             6.944 puertos_switch.py
+14-11-2025  08:59             8.270 README.md
+15-11-2025  17:04             7.265 README_catalogo_tipo_falla.md
+15-11-2025  17:04             7.781 README_EQUIPO_TECNICO.md
+15-11-2025  17:04             7.790 README_network_connections.md
+15-11-2025  17:04             6.991 README_PUERTOS_SWITCH.md
+14-11-2025  08:59             6.652 RESUMEN_COMPLETADO.md
+15-11-2025  17:04             5.781 RESUMEN_PUERTO_SWITCH_COMPLETADO.md
+14-11-2025  08:59            18.957 switch.py
+15-11-2025  17:04             4.049 test_catalogo_tipo_falla.py
+15-11-2025  17:04             7.008 test_puertos_switch.py
+14-11-2025  08:59             1.532 ubicacion.py
+14-11-2025  08:59            16.883 ups.py
+15-11-2025  11:10             2.653 usuario.py
+14-11-2025  08:59               723 usuario_log.py
+15-11-2025  17:04             9.552 usuario_logs.py
+14-11-2025  08:59               165 usuario_roles.py
+14-11-2025  08:59            10.044 _datos_iniciales.py
+15-11-2025  11:11             1.180 __init__.py
+17-11-2025  13:20    <DIR>          __pycache__
+              41 archivos        343.204 bytes
+               4 dirs  115.981.082.624 bytes libres

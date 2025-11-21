@@ -1,22 +1,15 @@
 {% extends 'base.html' %}
-
 {% block title %}Nueva Cámara - Sistema de Cámaras UFRO{% endblock %}
-
 {% block content %}
 <div class="row">
     <div class="col-12">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item">
-                    <a href="{{ url_for('dashboard') }}"><i class="bi bi-house"></i></a>
-                </li>
-                <li class="breadcrumb-item">
-                    <a href="{{ url_for('listar_camaras') }}">Cámaras</a>
-                </li>
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}"><i class="bi bi-house"></i></a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('listar_camaras') }}">Cámaras</a></li>
                 <li class="breadcrumb-item active">Nueva Cámara</li>
             </ol>
         </nav>
-        
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1><i class="bi bi-plus-circle me-2"></i>Nueva Cámara</h1>
             <a href="{{ url_for('listar_camaras') }}" class="btn btn-outline-secondary">
@@ -25,7 +18,6 @@
         </div>
     </div>
 </div>
-
 <div class="row">
     <div class="col-lg-8">
         <div class="card content-card">
@@ -33,91 +25,125 @@
                 <h5 class="mb-0"><i class="bi bi-camera-video me-2"></i>Información de la Cámara</h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('nueva_camara') }}">
-                    {{ form.hidden_tag() if form and form.csrf_token }}
-                    
+                <form method="POST">
+                    {{ form.hidden_tag() }}
                     <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="codigo" class="form-label">
+                                    <i class="bi bi-tag me-1"></i>Código *
+                                </label>
+                                {{ form.codigo(class="form-control", id="codigo", required=true, autofocus=true) }}
+                                {% if form.codigo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.codigo.errors|join(', ') }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="nombre" class="form-label">
-                                    <i class="bi bi-tag me-1"></i>Nombre de la Cámara
+                                    <i class="bi bi-tag me-1"></i>Nombre *
                                 </label>
-                                {{ form.nombre(class="form-control", id="nombre", required=true, autofocus=true) }}
-                                {% if form and form.nombre.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.nombre.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="ubicacion" class="form-label">
-                                    <i class="bi bi-geo-alt me-1"></i>Ubicación
-                                </label>
-                                {{ form.ubicacion(class="form-control", id="ubicacion", required=true) }}
-                                {% if form and form.ubicacion.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.ubicacion.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
+                                {{ form.nombre(class="form-control", id="nombre", required=true) }}
+                                {% if form.nombre.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.nombre.errors|join(', ') }}
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
-                    
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="ip_address" class="form-label">
+                                <label for="ip" class="form-label">
                                     <i class="bi bi-globe me-1"></i>Dirección IP
                                 </label>
-                                {{ form.ip_address(class="form-control", id="ip_address", placeholder="192.168.1.100") }}
-                                {% if form and form.ip_address.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.ip_address.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
+                                {{ form.ip(class="form-control", id="ip", placeholder="192.168.1.100") }}
+                                {% if form.ip.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.ip.errors|join(', ') }}
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
-                        
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="tipo" class="form-label">
-                                    <i class="bi bi-gear me-1"></i>Tipo de Cámara
+                                <label for="tipo_camara" class="form-label">
+                                    <i class="bi bi-gear me-1"></i>Tipo
                                 </label>
-                                {{ form.tipo(class="form-control", id="tipo", placeholder="IP, Analog, WiFi, etc.") }}
-                                {% if form and form.tipo.errors %}
-                                    <div class="invalid-feedback">
-                                        {% for error in form.tipo.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
+                                {{ form.tipo_camara(class="form-select", id="tipo_camara") }}
+                                {% if form.tipo_camara.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.tipo_camara.errors|join(', ') }}
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
-                    
                     <div class="mb-3">
-                        <label for="descripcion" class="form-label">
-                            <i class="bi bi-text-left me-1"></i>Descripción
+                        <label for="ubicacion" class="form-label">
+                            <i class="bi bi-geo-alt me-1"></i>Ubicación Detallada *
                         </label>
-                        {{ form.descripcion(class="form-control", id="descripcion", rows="4", placeholder="Descripción adicional de la cámara...") }}
-                        {% if form and form.descripcion.errors %}
-                            <div class="invalid-feedback">
-                                {% for error in form.descripcion.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                        {{ form.ubicacion(class="form-control", id="ubicacion", required=true) }}
+                        {% if form.ubicacion.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.ubicacion.errors|join(', ') }}
+                        </div>
                         {% endif %}
                     </div>
-                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="campus" class="form-label">Campus</label>
+                                {{ form.campus(class="form-select", id="campus") }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="edificio" class="form-label">Edificio</label>
+                                {{ form.edificio(class="form-control", id="edificio") }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="estado" class="form-label">Estado</label>
+                                {{ form.estado(class="form-select", id="estado") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="latitud" class="form-label">Latitud</label>
+                                {{ form.latitud(class="form-control", id="latitud", placeholder="-38.9538") }}
+                                {% if form.latitud.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.latitud.errors|join(', ') }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="longitud" class="form-label">Longitud</label>
+                                {{ form.longitud(class="form-control", id="longitud", placeholder="-72.3311") }}
+                                {% if form.longitud.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.longitud.errors|join(', ') }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">
+                            <i class="bi bi-text-left me-1"></i>Observaciones
+                        </label>
+                        {{ form.observaciones(class="form-control", id="observaciones", rows="3") }}
+                    </div>
                     <div class="d-flex justify-content-end gap-2">
                         <a href="{{ url_for('listar_camaras') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle me-1"></i>Cancelar
@@ -128,24 +154,16 @@
             </div>
         </div>
     </div>
-    
     <div class="col-lg-4">
         <div class="card content-card">
             <div class="card-header">
-                <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información</h6>
+                <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Ayuda</h6>
             </div>
             <div class="card-body">
-                <h6>Campos Requeridos:</h6>
-                <ul class="list-unstyled">
-                    <li><i class="bi bi-check text-success me-2"></i><strong>Nombre:</strong> Identificador único</li>
-                    <li><i class="bi bi-check text-success me-2"></i><strong>Ubicación:</strong> Ubicación física</li>
-                </ul>
-                
-                <h6 class="mt-4">Campos Opcionales:</h6>
-                <ul class="list-unstyled">
-                    <li><i class="bi bi-dash text-muted me-2"></i><strong>IP:</strong> Dirección de red</li>
-                    <li><i class="bi bi-dash text-muted me-2"></i><strong>Tipo:</strong> Modelo o tipo</li>
-                    <li><i class="bi bi-dash text-muted me-2"></i><strong>Descripción:</strong> Detalles adicionales</li>
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-check text-success me-2"></i>Los campos con * son obligatorios</li>
+                    <li><i class="bi bi-geo-alt text-info me-2"></i>Coordenadas: usar formato decimal</li>
+                    <li><i class="bi bi-shield text-warning me-2"></i>El código debe ser único</li>
                 </ul>
             </div>
         </div>

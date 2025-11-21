@@ -1,82 +1,201 @@
-# models/equipo.py
+"""
+Modelo base para equipos de red y hardware.
+Proporciona funcionalidades comunes para todos los tipos de equipos.
+"""
 from datetime import datetime
-
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Float
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Enum
+from sqlalchemy.orm import relationship, declared_attr
 from models.base import BaseModel
-from models import db
+from models import db, EquipmentStatus, EquipmentType
+import enum
+
+class ConnectionType(enum.Enum):
+    """Tipos de conexión de red."""
+    ETHERNET = "ethernet"
+    FIBRA_OPTICA = "fibra_optica"
+    WIFI = "wifi"
+    COAXIAL = "coaxial"
+    INALAMBRICO = "inalambrico"
 
 class NetworkConnection(BaseModel, db.Model):
-__tablename__ = 'network_connections'
-source_equipment_id = Column(Integer, nullable=False)
-source_equipment_type = Column(String(30), nullable=False)
-target_equipment_id = Column(Integer, nullable=False)
-target_equipment_type = Column(String(30), nullable=False)
-connection_type = Column(String(0), nullable=False)
-cable_type = Column(String(50), nullable=True)
-cable_length = Column(Float, nullable=True)
-port_source = Column(String(0), nullable=True)
-port_target = Column(String(0), nullable=True)
-is_active = Column(Boolean, default=True, nullable=False)
-vlan_id = Column(Integer, nullable=True)
-bandwidth_limit = Column(Integer, nullable=True)
-latency_ms = Column(Float, nullable=True)
-packet_loss = Column(Float, default=0.0, nullable=False)
-notes = Column(Text, nullable=True)
+    """
+    Modelo de conexiones de red entre equipos.
+    """
+    __tablename__ = 'network_connections'
+    id = Column(Integer, primary_key=True)
 
-class Switch(BaseModel, db.Model):
-__tablename__ = 'switches'
-name = Column(String(100), nullable=False)
-ip_address = Column(String(45), nullable=True)
-created_by = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
-created_by_user = relationship("Usuario", foreign_keys=[created_by])
+    # Equipos conectados
+    source_equipment_id = Column(Integer, nullable=False,
+                                comment="ID del equipo origen de la conexión")
+    source_equipment_type = Column(String(30), nullable=False,
+                                  comment="Tipo del equipo origen")
+    target_equipment_id = Column(Integer, nullable=False,
+                                comment="ID del equipo destino de la conexión")
+    target_equipment_type = Column(String(30), nullable=False,
+                                  comment="Tipo del equipo destino")
 
-# CORREGIDO: relación con Ubicacion
-ubicacion_id = Column(Integer, ForeignKey('ubicaciones.id'), nullable=True)
-ubicacion = relationship("Ubicacion", back_populates="switches")
+    # Detalles de la conexión
+    connection_type = Column(Enum(ConnectionType), nullable=False,
+                            comment="Tipo de conexión física")
+    cable_type = Column(String(50), nullable=True,
+                       comment="Tipo de cable utilizado (Cat6, fibra, etc.)")
+    cable_length = Column(Float, nullable=True,
+                         comment="Longitud del cable en metros")
+    port_source = Column(String(20), nullable=True,
+                        comment="Puerto o interfaz de origen")
+    port_target = Column(String(20), nullable=True,
+                        comment="Puerto o interfaz de destino")
 
-fotografias = relationship("Fotografia", back_populates="switch")
+    # Estado y configuración
+    is_active = Column(Boolean, default=True, nullable=False,
+                      comment="Si la conexión está activa")
+    vlan_id = Column(Integer, nullable=True,
+                    comment="ID de la VLAN asignada")
 
-def __repr__(self):
-return f"<Switch(name='{self.name}')>"
+    # Métricas de rendimiento
+    bandwidth_limit = Column(Integer, nullable=True,
+                            comment="Límite de ancho de banda en Mbps")
+    latency_ms = Column(Float, nullable=True,
+                       comment="Latencia promedio en milisegundos")
+    packet_loss = Column(Float, default=0.0, nullable=False,
+                        comment="Pérdida de paquetes en porcentaje")
 
-class UPS(BaseModel, db.Model):
-__tablename__ = 'ups'
-name = Column(String(100), nullable=False)
-created_by = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
-created_by_user = relationship("Usuario", foreign_keys=[created_by])
-fotografias = relationship("Fotografia", back_populates="ups")
+    # Metadatos
+    notes = Column(Text, nullable=True,
+                  comment="Notas adicionales")
 
-def __repr__(self):
-return f"<UPS(name='{self.name}')>"
+    def __repr__(self):
+        return f"<NetworkConnection(from_{self.source_equipment_type}_{self.source_equipment_id}_to_{self.target_equipment_type}_{self.target_equipment_id})>"
 
-class NVR(BaseModel, db.Model):
-__tablename__ = 'nvr_dvr' # nombre real
-name = Column(String(100), nullable=False)
-created_by = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
-created_by_user = relationship("Usuario", foreign_keys=[created_by])
-camaras = relationship("Camara", back_populates="nvr")
-fotografias = relationship("Fotografia", back_populates="nvr")
+    def get_source_equipment(self):
+        """Obtiene el equipo origen según su tipo."""
+        from models import NVR, Switch, UPS, FuentePoder, Gabinete, Camara
+        equipment_map = {
+            'nvr': NVR,
+            'switch': Switch,
+            'ups': UPS,
+            'fuente_poder': FuentePoder,
+            'gabinete': Gabinete,
+            'camara': Camara
+        }
+        equipment_class = equipment_map.get(self.source_equipment_type)
+        if equipment_class:
+            return equipment_class.query.get(self.source_equipment_id)
+        return None
 
-def __repr__(self):
-return f"<NVR(name='{self.name}')>"
+    def get_target_equipment(self):
+        """Obtiene el equipo destino según su tipo."""
+        from models import NVR, Switch, UPS, FuentePoder, Gabinete, Camara
+        equipment_map = {
+            'nvr': NVR,
+            'switch': Switch,
+            'ups': UPS,
+            'fuente_poder': FuentePoder,
+            'gabinete': Gabinete,
+            'camara': Camara
+        }
+        equipment_class = equipment_map.get(self.target_equipment_type)
+        if equipment_class:
+            return equipment_class.query.get(self.target_equipment_id)
+        return None
 
-class Gabinete(BaseModel, db.Model):
-__tablename__ = 'gabinetes'
-name = Column(String(100), nullable=False)
-created_by = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
-created_by_user = relationship("Usuario", foreign_keys=[created_by])
-fotografias = relationship("Fotografia", back_populates="gabinete")
+    @classmethod
+    def get_by_equipment(cls, equipment_id, equipment_type):
+        """Obtiene todas las conexiones de un equipo."""
+        return cls.query.filter(
+            db.or_(
+                db.and_(cls.source_equipment_id == equipment_id, 
+                       cls.source_equipment_type == equipment_type),
+                db.and_(cls.target_equipment_id == equipment_id,
+                       cls.target_equipment_type == equipment_type)
+            ),
+            cls.deleted == False
+        ).all()
 
-def __repr__(self):
-return f"<Gabinete(name='{self.name}')>"
 
-class FuentePoder(BaseModel, db.Model):
-__tablename__ = 'fuente_poder' # singular, como en tu DB
-name = Column(String(100), nullable=False)
-created_by = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
-created_by_user = relationship("Usuario", foreign_keys=[created_by])
-fotografias = relationship("Fotografia", back_populates="fuente_poder")
+class EquipmentBase(BaseModel, db.Model):
+    """
+    Clase base abstracta para todos los equipos.
+    """
+    __abstract__ = True
 
-def __repr__(self):
-return f"<FuentePoder(name='{self.name}')>"
+    # Información básica
+    name = Column(String(100), nullable=False, index=True,
+                 comment="Nombre identificador del equipo")
+    model = Column(String(50), nullable=True,
+                  comment="Modelo del equipo")
+    manufacturer = Column(String(50), nullable=True,
+                         comment="Fabricante del equipo")
+    serial_number = Column(String(100), nullable=True, unique=True,
+                          comment="Número de serie del equipo")
+    inventory_number = Column(String(50), nullable=True, unique=True,
+                             comment="Número de inventario interno")
+
+    # Identificación de red
+    ip_address = Column(String(45), nullable=True, index=True,
+                       comment="Dirección IP del equipo")
+    mac_address = Column(String(17), nullable=True, unique=True,
+                        comment="Dirección MAC del equipo")
+    hostname = Column(String(100), nullable=True,
+                     comment="Nombre del host")
+
+    # Ubicación y estado
+    ubicacion_id = Column(Integer, ForeignKey('ubicaciones.id'), nullable=True,
+                         comment="ID de la ubicación donde está instalado")
+    status = Column(String(20), nullable=False, default=EquipmentStatus.ACTIVO,
+                   comment="Estado actual del equipo")
+
+    # Configuración
+    firmware_version = Column(String(20), nullable=True,
+                             comment="Versión del firmware")
+    configuration_backup = Column(Text, nullable=True,
+                                 comment="Respaldo de configuración en formato JSON")
+
+    # Fechas importantes
+    purchase_date = Column(DateTime, nullable=True,
+                          comment="Fecha de compra")
+    warranty_expiry = Column(DateTime, nullable=True,
+                            comment="Fecha de vencimiento de garantía")
+    installation_date = Column(DateTime, nullable=True,
+                              comment="Fecha de instalación")
+
+    # Especificaciones técnicas
+    power_consumption = Column(Float, nullable=True,
+                              comment="Consumo de energía en watts")
+    operating_temperature = Column(String(50), nullable=True,
+                                  comment="Temperatura de operación")
+    dimensions = Column(String(50), nullable=True,
+                       comment="Dimensiones del equipo")
+    weight = Column(Float, nullable=True,
+                   comment="Peso en kilogramos")
+
+    # Monitoreo
+    last_heartbeat = Column(DateTime, nullable=True,
+                           comment="Último heartbeat del equipo")
+    uptime_percentage = Column(Float, default=100.0, nullable=False,
+                              comment="Porcentaje de tiempo de actividad")
+
+    # Metadatos
+    notes = Column(Text, nullable=True,
+                  comment="Notas adicionales")
+
+    # Relaciones
+    @declared_attr
+    def ubicacion(cls):
+        return relationship("Ubicacion", back_populates="equipos")
+
+    def is_online(self):
+        if not self.last_heartbeat:
+            return False
+        time_diff = datetime.utcnow() - self.last_heartbeat
+        return time_diff.total_seconds() < 300  # 5 minutos
+
+    def update_heartbeat(self):
+        self.last_heartbeat = datetime.utcnow()
+        db.session.commit()
+
+    def get_age_in_years(self):
+        if not self.installation_date:
+            return None
+        age = datetime.utcnow() - self.installation_date
+        return round(age.days / 365.25, 2)

@@ -5,30 +5,32 @@ from models.base import BaseModel
 from models import db
 
 class Falla(BaseModel, db.Model):
-__tablename__ = 'fallas'
+    
+    __tablename__ = 'fallas'
+    id = Column(Integer, primary_key=True)
+    
+    equipo_id = Column(Integer, nullable=False)
+    equipo_type = Column(String(50), nullable=False)
+    descripcion = Column(Text, nullable=False)
+    severidad = Column(String(20), nullable=False, default='media')
+    estado = Column(String(20), nullable=False, default='reportada')
 
-equipo_id = Column(Integer, nullable=False)
-equipo_type = Column(String(50), nullable=False)
-descripcion = Column(Text, nullable=False)
-severidad = Column(String(0), nullable=False, default='media')
-estado = Column(String(0), nullable=False, default='reportada')
+    parent_falla_id = Column(Integer, ForeignKey('fallas.id'), nullable=True)
+    related_falla = relationship(
+    "Falla",
+    foreign_keys=[parent_falla_id],
+    remote_side=lambda: [Falla.id], # CORREGIDO
+    backref="related_fallas"
+    )
 
-parent_falla_id = Column(Integer, ForeignKey('fallas.id'), nullable=True)
-related_falla = relationship(
-"Falla",
-foreign_keys=[parent_falla_id],
-remote_side=lambda: [Falla.id], # CORREGIDO
-backref="related_fallas"
-)
+    created_by_user_id = Column(Integer, ForeignKey('usuarios.id'), nullable=False)
+    created_by_user = relationship("Usuario", back_populates="created_fallas")
 
-created_by_user_id = Column(Integer, ForeignKey('usuarios.id'), nullable=False)
-created_by_user = relationship("Usuario", back_populates="created_fallas")
+    camara_id = Column(Integer, ForeignKey('camaras.id'), nullable=True)
+    camara = relationship("Camara", back_populates="fallas")
 
-camara_id = Column(Integer, ForeignKey('camaras.id'), nullable=True)
-camara = relationship("Camara", back_populates="fallas")
-
-fecha_reporte = Column(DateTime, default=datetime.utcnow, nullable=False)
-fecha_resolucion = Column(DateTime, nullable=True)
-resolucion = Column(Text, nullable=True)
-solucion_aplicada = Column(Text, nullable=True)
-requiere_mantenimiento = Column(Boolean, default=False)
+    fecha_reporte = Column(DateTime, default=datetime.utcnow, nullable=False)
+    fecha_resolucion = Column(DateTime, nullable=True)
+    resolucion = Column(Text, nullable=True)
+    solucion_aplicada = Column(Text, nullable=True)
+    requiere_mantenimiento = Column(Boolean, default=False)
