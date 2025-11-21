@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py .
 COPY migrate_data.py .
 COPY Procfile .
+COPY forms.py .
 
 # ✅ CORRECCIÓN CRÍTICA: copiar carpeta models/ (NO models.py)
 COPY models ./models
