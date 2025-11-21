@@ -3,18 +3,15 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
+# Copiar aplicación principal
 COPY app.py .
-# Copiar toda la carpeta models/
-COPY models ./models
 COPY migrate_data.py .
 
-# Crear directorios
-RUN mkdir -p templates static
+# Copiar carpeta models/ completa (NO models.py)
+COPY models ./models
 
-# Copiar archivos (sin condicionales)
+# Crear directorios y copiar assets
+RUN mkdir -p templates static uploads
 COPY templates ./templates
 COPY static ./static
 
