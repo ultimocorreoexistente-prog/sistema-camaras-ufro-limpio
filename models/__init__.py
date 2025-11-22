@@ -1,4 +1,4 @@
-"""
+""""
 Paquete de modelos para el Sistema de Cámaras UFRO
 Permite: from models import db, Gabinete, Switch, NVR, etc.
 """
@@ -31,7 +31,7 @@ class EquipmentType(enum.Enum):
 from .usuario import Usuario
 from .ubicacion import Ubicacion
 from .camara import Camara
-from .gabinete import Gabinete, GabineteEquipment  # ✅ Sin Cabinet as Gabinete
+from .gabinete import Gabinete, GabineteEquipment
 from .switch import Switch
 from .puertos_switch import PuertoSwitch
 from .nvr import NVR
@@ -40,7 +40,7 @@ from .fuente_poder import FuentePoder
 from .falla import Falla
 from .mantenimiento import Mantenimiento
 from .fotografia import Fotografia
-from .equipo_tecnico import Equipo_Tecnico
+# from .equipo_tecnico import Equipo_Tecnico  # ❌ No existe en models.txt
 from .catalogo_tipo_falla import Catalogo_Tipo_Falla
 
 # Exportar para imports directos
@@ -61,7 +61,7 @@ __all__ = [
     'Falla',
     'Mantenimiento',
     'Fotografia',
-    'Equipo_Tecnico',
+    # 'Equipo_Tecnico',  # ❌ Comentado
     'Catalogo_Tipo_Falla'
 ]
 
@@ -74,15 +74,21 @@ def init_db(app):
     with app.app_context():
         db.create_all()
         if not Usuario.query.filter_by(email='Charles.Jelvez@ufrontera.cl').first():
-            from werkzeug.security import generate_password_hash
+            from werkzeug.security import generate_password_hash  # ✅ RESTAURADO
+            
             admin = Usuario(
                 username='charles.jelvez',
                 email='Charles.Jelvez@ufrontera.cl',
-                nombre='Charles Jelvez',
-                rol='superadmin',
-                activo=True
+                full_name='Charles Jelvez',
+                role='superadmin',
+                is_active=True
             )
-            admin.password_hash = generate_password_hash('Vivita0468')
+            
+            try:
+                admin.set_password('Vivita0468')
+            except Exception:
+                admin.password_hash = generate_password_hash('Vivita0468')
+            
             db.session.add(admin)
             db.session.commit()
             print("✅ Superadmin creado")
