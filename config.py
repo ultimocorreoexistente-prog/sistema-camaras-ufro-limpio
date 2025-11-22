@@ -6,9 +6,10 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
-    SECURITY_PASSWORD_SALT = os.environ.get('SECURITY_PASSWORD_SALT') or 'dev-salt'
+    SECURITY_PASSWORD_SALT = os.environ.get('SECURITY_PASSWORD_SALT') or 'dev-salt-change-in-production'
     
-    DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:password@localhost:5432/camaras_ufro')
+    # ✅ Corregido: Railway usa DATABASE_URL directamente
+    DATABASE_URL = os.environ.get('DATABASE_URL') or 'postgresql://postgres:password@localhost:5432/camaras_ufro'
     if DATABASE_URL.startswith('postgres://'):
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
@@ -20,7 +21,7 @@ class Config:
         'max_overflow': 30
     }
 
-    SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') != 'development'
+    SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV', 'production') != 'development'
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     REMEMBER_COOKIE_DURATION = timedelta(hours=24)

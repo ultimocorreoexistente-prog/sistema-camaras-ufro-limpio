@@ -13,19 +13,17 @@ RUN apt-get update && \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar aplicación principal
+# ✅ COPIAR TODOS LOS ARCHIVOS NECESARIOS (corregido)
 COPY app.py .
+COPY config.py .          # ← crítico para "ModuleNotFoundError: config"
 COPY Procfile .
 COPY migrate_data.py .
-COPY config.py .
-
-# ✅ CORRECCIÓN CRÍTICA: copiar carpeta models/ completa (NO models.py)
-COPY models ./models
-
-# Crear y copiar assets
-RUN mkdir -p templates static uploads logs
+COPY models ./models      # ← copia la carpeta completa (no models.py)
 COPY templates ./templates
 COPY static ./static
+
+# Crear directorios necesarios
+RUN mkdir -p uploads logs
 
 # Configuración de entorno para producción
 ENV PORT=8000
@@ -35,5 +33,5 @@ ENV PYTHONUNBUFFERED=1
 # Exponer puerto
 EXPOSE 8000
 
-# ✅ Comando de arranque robusto (timeout aumentado para Railway)
+# ✅ Comando de arranque robusto (usando Procfile implícito)
 CMD ["gunicorn", "app:app", "--workers", "2", "--timeout", "60", "--bind", "0.0.0.0:8000"]

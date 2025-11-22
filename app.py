@@ -28,13 +28,12 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # ✅ Usar request.form directamente (sin LoginForm)
         email = request.form.get('email', '').lower()
         password = request.form.get('password', '')
         
         if not email or not password:
             flash('Email y contraseña son requeridos', 'danger')
-            return render_template('login.html', user=None)
+            return render_template('login.html')
         
         user = Usuario.query.filter_by(email=email).first()
         if user and user.activo and check_password_hash(user.password_hash, password):
@@ -46,7 +45,7 @@ def login():
         else:
             flash('Email o contraseña incorrectos', 'danger')
     
-    return render_template('login.html', user=None)
+    return render_template('login.html')
 
 
 @app.route('/logout')
@@ -64,12 +63,10 @@ def dashboard():
         'total_camaras': Camara.query.count(),
         'camaras_por_estado': db.session.query(Camara.estado, db.func.count()).group_by(Camara.estado).all(),
         'total_usuarios': Usuario.query.filter_by(activo=True).count(),
-        'accesos_hoy': 0  # opcional: implementar con logs
+        'accesos_hoy': 0
     }
     return render_template('dashboard.html', stats=stats, user=current_user)
 
-
-# === RUTAS DE CÁMARAS (IMPLEMENTADAS) ===
 
 @app.route('/camaras')
 @login_required
@@ -85,8 +82,10 @@ def nueva_camara():
         flash('No tienes permisos para crear cámaras', 'warning')
         return redirect(url_for('dashboard'))
     
+    from models import Ubicacion
+    ubicaciones = Ubicacion.query.all()
+    
     if request.method == 'POST':
-        # ✅ Usar request.form directamente (sin CamaraForm)
         camara = Camara(
             codigo=request.form.get('codigo'),
             nombre=request.form.get('nombre'),
@@ -96,7 +95,7 @@ def nueva_camara():
             tipo_camara=request.form.get('tipo_camara'),
             ubicacion_id=request.form.get('ubicacion_id'),
             estado=request.form.get('estado', 'Activo'),
-            fecha_alta=request.form.get('fecha_alta'),
+            fecha_instalacion=request.form.get('fecha_instalacion'),
             latitud=request.form.get('latitud'),
             longitud=request.form.get('longitud'),
             observaciones=request.form.get('observaciones')
@@ -106,9 +105,6 @@ def nueva_camara():
         flash('Cámara creada exitosamente', 'success')
         return redirect(url_for('listar_camaras'))
     
-    # GET: obtener ubicaciones para el select
-    from models import Ubicacion
-    ubicaciones = Ubicacion.query.all()
     return render_template('camaras_form.html', camara=None, ubicaciones=ubicaciones, user=current_user)
 
 
@@ -120,9 +116,10 @@ def editar_camara(id):
         return redirect(url_for('dashboard'))
     
     camara = Camara.query.get_or_404(id)
+    from models import Ubicacion
+    ubicaciones = Ubicacion.query.all()
     
     if request.method == 'POST':
-        # ✅ Actualizar desde request.form
         camara.codigo = request.form.get('codigo')
         camara.nombre = request.form.get('nombre')
         camara.ip_address = request.form.get('ip')
@@ -131,7 +128,7 @@ def editar_camara(id):
         camara.tipo_camara = request.form.get('tipo_camara')
         camara.ubicacion_id = request.form.get('ubicacion_id')
         camara.estado = request.form.get('estado', 'Activo')
-        camara.fecha_alta = request.form.get('fecha_alta')
+        camara.fecha_instalacion = request.form.get('fecha_instalacion')
         camara.latitud = request.form.get('latitud')
         camara.longitud = request.form.get('longitud')
         camara.observaciones = request.form.get('observaciones')
@@ -140,9 +137,6 @@ def editar_camara(id):
         flash('Cámara actualizada exitosamente', 'success')
         return redirect(url_for('listar_camaras'))
     
-    # GET: obtener ubicaciones para el select
-    from models import Ubicacion
-    ubicaciones = Ubicacion.query.all()
     return render_template('camaras_form.html', camara=camara, ubicaciones=ubicaciones, user=current_user)
 
 
@@ -163,7 +157,6 @@ def eliminar_camara(id):
 @login_required
 def test_camara(id):
     camara = Camara.query.get_or_404(id)
-    # Simulación segura (en producción, usar ping/requests con timeout)
     ip = camara.ip_address
     status = 'success' if ip and '127' not in ip and ip != '0.0.0.0' else 'error'
     return jsonify({
@@ -172,8 +165,6 @@ def test_camara(id):
         'ip': ip
     })
 
-
-# === Manejo de errores ===
 
 @app.errorhandler(403)
 def forbidden(e):
@@ -193,4 +184,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     port = int(os.environ.get('PORT', 8000))
-    app.run(host='0.0.0.0', port=port, debug=(app.config['FLASK_ENV'] == 'development'))
+    app.run(host='0.0.0.0', port=port, debug=(os.environ.get('FLASK_ENV') == 'development'))
