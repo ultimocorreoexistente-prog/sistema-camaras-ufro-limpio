@@ -80,7 +80,7 @@ def extraer_fallas_informe():
     fallas_extraidas = []
     
     if not os.path.exists(informe_path):
-        print(f"   ⚠ Archivo {informe_path} no encontrado")
+        print(f"    ⚠ Archivo {informe_path} no encontrado")
         return fallas_extraidas
     
     with open(informe_path, 'r', encoding='utf-8') as f:
@@ -149,7 +149,7 @@ def migrar_datos():
             db.session.add(ubicacion)
             count += 1
         db.session.commit()
-        print(f"   ✓ {count} ubicaciones insertadas\n")
+        print(f"    ✓ {count} ubicaciones insertadas\n")
         
         # 2. EQUIPOS TÉCNICOS
         print("2. Migrando Equipos Técnicos...")
@@ -168,7 +168,7 @@ def migrar_datos():
             db.session.add(equipo)
             count += 1
         db.session.commit()
-        print(f"   ✓ {count} equipos técnicos insertados\n")
+        print(f"    ✓ {count} equipos técnicos insertados\n")
         
         # 3. CATÁLOGO TIPOS DE FALLAS
         print("3. Migrando Catálogo de Tipos de Fallas...")
@@ -185,7 +185,7 @@ def migrar_datos():
             db.session.add(tipo_falla)
             count += 1
         db.session.commit()
-        print(f"   ✓ {count} tipos de fallas insertados\n")
+        print(f"    ✓ {count} tipos de fallas insertados\n")
         
         # 4. GABINETES
         print("4. Migrando Gabinetes...")
@@ -212,7 +212,7 @@ def migrar_datos():
             db.session.add(gabinete)
             count += 1
         db.session.commit()
-        print(f"   ✓ {count} gabinetes insertados\n")
+        print(f"    ✓ {count} gabinetes insertados\n")
         
         # 5. SWITCHES
         print("5. Migrando Switches...")
@@ -240,7 +240,7 @@ def migrar_datos():
             db.session.add(switch)
             count += 1
         db.session.commit()
-        print(f"   ✓ {count} switches insertados\n")
+        print(f"    ✓ {count} switches insertados\n")
         
         # 6. PUERTOS SWITCH
         print("6. Migrando Puertos de Switch...")
@@ -260,7 +260,7 @@ def migrar_datos():
             db.session.add(puerto)
             count += 1
         db.session.commit()
-        print(f"   ✓ {count} puertos de switch insertados\n")
+        print(f"    ✓ {count} puertos de switch insertados\n")
         
         # 7. UPS
         print("7. Migrando UPS...")
@@ -285,7 +285,7 @@ def migrar_datos():
             db.session.add(ups)
             count += 1
         db.session.commit()
-        print(f"   ✓ {count} UPS insertados\n")
+        print(f"    ✓ {count} UPS insertados\n")
         
         # 8. NVR/DVR
         print("8. Migrando NVR/DVR...")
@@ -311,7 +311,7 @@ def migrar_datos():
             db.session.add(nvr)
             count += 1
         db.session.commit()
-        print(f"   ✓ {count} NVR/DVR insertados\n")
+        print(f"    ✓ {count} NVR/DVR insertados\n")
         
         # 9. FUENTES DE PODER
         print("9. Migrando Fuentes de Poder...")
@@ -333,7 +333,7 @@ def migrar_datos():
             db.session.add(fuente)
             count += 1
         db.session.commit()
-        print(f"   ✓ {count} fuentes de poder insertadas\n")
+        print(f"    ✓ {count} fuentes de poder insertadas\n")
         
         # 10. CÁMARAS
         print("10. Migrando Cámaras...")
@@ -366,13 +366,13 @@ def migrar_datos():
             db.session.add(camara)
             count += 1
         db.session.commit()
-        print(f"   ✓ {count} cámaras insertadas\n")
+        print(f"    ✓ {count} cámaras insertadas\n")
         
         # 11. FALLAS
         print("11. Migrando Fallas (con validación anti-duplicados)...")
         admin_user = Usuario.query.filter_by(username='admin').first()
         if not admin_user:
-            print("   ⚠ Usuario admin no existe, creando...")
+            print("    ⚠ Usuario admin no existe, creando...")
             admin_user = Usuario(
                 username='admin',
                 rol='admin',
@@ -409,7 +409,7 @@ def migrar_datos():
                     else:
                         rechazadas += 1
         except Exception as e:
-            print(f"   ⚠ Error procesando Fallas_Actualizada.xlsx: {e}")
+            print(f"    ⚠ Error procesando Fallas_Actualizada.xlsx: {e}")
         
         # 12. MANTENIMIENTOS
         print("12. Migrando Mantenimientos...")
@@ -432,9 +432,9 @@ def migrar_datos():
                 db.session.add(mantenimiento)
                 count += 1
             db.session.commit()
-            print(f"   ✓ {count} mantenimientos insertados\n")
+            print(f"    ✓ {count} mantenimientos insertados\n")
         except Exception as e:
-            print(f"   ⚠ Error procesando Mantenimientos.xlsx: {e}\n")
+            print(f"    ⚠ Error procesando Mantenimientos.xlsx: {e}\n")
         
         print("=== MIGRACIÓN COMPLETADA EXITOSAMENTE ===")
         print("\n=== RESUMEN DE DATOS ===")
@@ -466,9 +466,13 @@ def ejecutar_migracion():
     with app.app_context():
         print("\nLimpiando base de datos...")
         try:
+            # FIX: Cambiado a get_tables_for_bind() para evitar NoReferencedTableError
+            # durante la ordenación de Foreign Keys. Se aplica DROP CASCADE directamente.
             with db.engine.execution_options(isolation_level="AUTOCOMMIT").connect() as conn:
-                for tbl in reversed(db.metadata.sorted_tables):
-                    conn.execute(text(f'DROP TABLE IF EXISTS "{tbl.name}" CASCADE'))
+                # Obtenemos las tablas en el orden inverso en el que fueron creadas por create_all (si es posible)
+                # y forzamos el DROP CASCADE usando el nombre de la tabla.
+                for tbl_name in reversed(db.get_tables_for_bind()):
+                    conn.execute(text(f'DROP TABLE IF EXISTS "{tbl_name}" CASCADE'))
             print("✓ Base de datos limpia")
         except Exception as e:
             print(f"❌ Error al limpiar la base de datos: {e}")
