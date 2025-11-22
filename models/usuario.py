@@ -1,17 +1,18 @@
 from datetime import datetime
 import bcrypt
+from flask_login import UserMixin  # ✅ Añadido (crítico para Flask-Login)
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
 from . import db
 from models.base import BaseModelMixin
 
-class Usuario(BaseModelMixin, db.Model):
+class Usuario(UserMixin, BaseModelMixin, db.Model):  # ✅ UserMixin primero
     __tablename__ = 'usuarios'
     id = Column(Integer, primary_key=True)
 
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(100), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
-    full_name = Column(String(100), nullable=False)  # Para templates: user.full_name
+    full_name = Column(String(100), nullable=False)
     role = Column(String(20), nullable=False, default='visualizador')
     phone = Column(String(20), nullable=True)
     department = Column(String(50), nullable=True)
@@ -56,7 +57,7 @@ class Usuario(BaseModelMixin, db.Model):
 
     @classmethod
     def get_by_email(cls, email):
-        return cls.query.filter_by(email=email).first()  # eliminado 'deleted=False' temporalmente
+        return cls.query.filter_by(email=email).first()
 
     def __repr__(self):
         return f"<Usuario(id={self.id}, username='{self.username}', email='{self.email}')>"

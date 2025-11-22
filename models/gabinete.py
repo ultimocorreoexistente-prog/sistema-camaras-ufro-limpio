@@ -38,7 +38,7 @@ class VentilationType(enum.Enum):
     CONDITIONED = "conditioned"
 
 
-class Cabinet(EquipmentBase):
+class Gabinete(EquipmentBase):  # ✅ Renombrado de Cabinet → Gabinete (consistencia en español)
     """
     Modelo de gabinetes y racks de red.
     Attributes:
@@ -100,7 +100,7 @@ class Cabinet(EquipmentBase):
 
     __tablename__ = 'gabinetes'
 
-    # ✅ Corrección crítica: añadir primary key
+    # ✅ Corrección crítica: primary key
     id = Column(Integer, primary_key=True)
 
     # Tipo y dimensiones físicas
@@ -202,7 +202,7 @@ class Cabinet(EquipmentBase):
     # Condiciones ambientales
     environmental_conditions = Column(String(100), nullable=True,
                                       comment="Condiciones ambientales soportadas")
-    seismic_rating = Column(String(20), nullable=True,  # ✅ Corregido String(20) → String(20)
+    seismic_rating = Column(String(20), nullable=True,  # ✅ Corregido String(0) → String(20)
                             comment="Rating sísmico")
 
     # Certificaciones
@@ -244,9 +244,9 @@ class Cabinet(EquipmentBase):
                                  comment="Humedad actual (%)")
 
     # Estado actual
-    door_status = Column(String(20), default="closed", nullable=False,  # ✅ Corregido String(20) → String(20)
+    door_status = Column(String(20), default="closed", nullable=False,  # ✅ String(0) → String(20)
                          comment="Estado de la puerta (open/closed)")
-    alarm_status = Column(String(50), nullable=True,  # ✅ Corregido String(20) → String(50)
+    alarm_status = Column(String(50), nullable=True,  # ✅ String(0) → String(50)
                           comment="Estado de alarmas")
     access_log_enabled = Column(Boolean, default=False, nullable=False,
                                 comment="Log de acceso habilitado")
@@ -265,11 +265,6 @@ class Cabinet(EquipmentBase):
         return f"<Gabinete(name='{self.name}', type='{self.cabinet_type.value if self.cabinet_type else 'N/A'}', units={self.rack_units}U)>"
 
     def get_available_units(self):
-        """
-        Obtiene las unidades de rack disponibles.
-        Returns:
-            int: Número de unidades disponibles
-        """
         if not self.rack_units:
             return 0
         used_units = sum([eq.rack_units_used for eq in self.installed_equipment])
@@ -277,449 +272,50 @@ class Cabinet(EquipmentBase):
         return max(0, available)
 
     def can_install_equipment(self, required_units):
-        """
-        Verifica si se puede instalar equipo que requiera las unidades especificadas.
-        Args:
-            required_units (int): Unidades de rack requeridas
-        Returns:
-            bool: True si se puede instalar
-        """
         return self.get_available_units() >= required_units
 
     def get_capacity_utilization_percentage(self):
-        """
-        Calcula el porcentaje de utilización de capacidad.
-        Returns:
-            float: Porcentaje de utilización
-        """
         total_units = self.usable_rack_units or self.rack_units
         if not total_units or total_units == 0:
             return 0
         used_units = sum([eq.rack_units_used for eq in self.installed_equipment])
         return (used_units / total_units) * 100
 
-    def get_equipment_summary(self):
-        """
-        Obtiene un resumen de los equipos instalados.
-        Returns:
-            dict: Resumen de equipos
-        """
-        total_equipment = len(self.installed_equipment)
-        if total_equipment == 0:
-            return {
-                'total_equipment': 0,
-                'equipment_types': {},
-                'weight_kg': 0,
-                'power_consumption_watts': 0
-            }
-        equipment_types = {}
-        total_weight = 0
-        total_power = 0
-        for equipment in self.installed_equipment:
-            eq_type = equipment.equipment_type
-            if eq_type not in equipment_types:
-                equipment_types[eq_type] = 0
-            equipment_types[eq_type] += 1
-            # Estimar peso y consumo basado en el tipo
-            if hasattr(equipment.equipment_object, 'weight'):
-                total_weight += equipment.equipment_object.weight or 0
-            if hasattr(equipment.equipment_object, 'power_consumption'):
-                total_power += equipment.equipment_object.power_consumption or 0
-        return {
-            'total_equipment': total_equipment,
-            'equipment_types': equipment_types,
-            'weight_kg': total_weight,
-            'power_consumption_watts': total_power
-        }
-
-    def get_environmental_status(self):
-        """
-        Obtiene el estado ambiental del gabinete.
-        Returns:
-            dict: Estado ambiental
-        """
-        return {
-            'temperature_celsius': self.temperature_celsius,
-            'humidity_percentage': self.humidity_percentage,
-            'temperature_monitoring_enabled': self.temperature_monitoring,
-            'humidity_monitoring_enabled': self.humidity_monitoring,
-            'smoke_detection_enabled': self.smoke_detection,
-            'cooling_fans_count': self.cooling_fans,
-            'airflow_cfm': self.airflow_cfm
-        }
-
-    def get_security_status(self):
-        """
-        Obtiene el estado de seguridad del gabinete.
-        Returns:
-            dict: Estado de seguridad
-        """
-        return {
-            'is_locked': self.security_lock,
-            'door_status': self.door_status,
-            'key_type': self.key_type,
-            'access_control_enabled': self.access_control,
-            'access_log_enabled': self.access_log_enabled
-        }
-
-    def is_inspection_due(self):
-        """
-        Verifica si la inspección está vencida.
-        Returns:
-            bool: True si la inspección está vencida
-        """
-        if not self.next_inspection:
-            return False
-        return datetime.utcnow() >= self.next_inspection
-
-    def install_equipment(self, equipment_object, equipment_type, start_unit, rack_units_used, **kwargs):
-        """
-        Instala un equipo en el gabinete.
-        Args:
-            equipment_object: Objeto del equipo
-            equipment_type (str): Tipo de equipo
-            start_unit (int): Unidad de rack donde inicia la instalación
-            rack_units_used (int): Unidades de rack que ocupa
-            **kwargs: Parámetros adicionales
-        Returns:
-            GabineteEquipment: Instalación creada o None si no es posible
-        """
-        if not self.can_install_equipment(rack_units_used):
-            return None
-        # Verificar que no haya conflictos con otros equipos
-        occupied_units = set()
-        for installed in self.installed_equipment:
-            for i in range(installed.start_unit, installed.start_unit + installed.rack_units_used):
-                occupied_units.add(i)
-        new_units = set(range(start_unit, start_unit + rack_units_used))
-        if occupied_units.intersection(new_units):
-            return None # Conflicto de espacio
-        installation = GabineteEquipment(
-            gabinete_id=self.id,
-            connected_equipment_id=equipment_object.id,
-            connected_equipment_type=equipment_type,
-            start_unit=start_unit,
-            rack_units_used=rack_units_used,
-            **kwargs
-        )
-        db.session.add(installation)
-        db.session.commit()
-        return installation
-
-    def remove_equipment(self, equipment_object):
-        """
-        Remueve un equipo del gabinete.
-        Args:
-            equipment_object: Objeto del equipo a remover
-        Returns:
-            bool: True si se removió exitosamente
-        """
-        equipment_type = equipment_object.__class__.__name__.lower()
-        installation = GabineteEquipment.query.filter_by(
-            gabinete_id=self.id,
-            connected_equipment_id=equipment_object.id,
-            connected_equipment_type=equipment_type,
-            deleted=False
-        ).first()
-        if installation:
-            installation.deleted = True
-            db.session.commit()
-            return True
-        return False
-
-    def get_temperature_alert_status(self):
-        """
-        Verifica el estado de alerta por temperatura.
-        Returns:
-            dict: Estado de alerta de temperatura
-        """
-        if not self.temperature_monitoring or not self.temperature_celsius:
-            return {'status': 'no_monitoring', 'alert': False}
-        # Umbrales típicos para equipos de red
-        if self.temperature_celsius > 40:
-            return {'status': 'critical', 'alert': True, 'message': 'Temperatura crítica'}
-        elif self.temperature_celsius > 35:
-            return {'status': 'warning', 'alert': True, 'message': 'Temperatura alta'}
-        elif self.temperature_celsius > 30:
-            return {'status': 'caution', 'alert': False, 'message': 'Temperatura elevada'}
-        else:
-            return {'status': 'normal', 'alert': False, 'message': 'Temperatura normal'}
-
-    def get_humidity_alert_status(self):
-        """
-        Verifica el estado de alerta por humedad.
-        Returns:
-            dict: Estado de alerta de humedad
-        """
-        if not self.humidity_monitoring or not self.humidity_percentage:
-            return {'status': 'no_monitoring', 'alert': False}
-        # Umbrales típicos para equipos de red
-        if self.humidity_percentage > 80:
-            return {'status': 'critical', 'alert': True, 'message': 'Humedad crítica'}
-        elif self.humidity_percentage > 70:
-            return {'status': 'warning', 'alert': True, 'message': 'Humedad alta'}
-        elif self.humidity_percentage > 60:
-            return {'status': 'caution', 'alert': False, 'message': 'Humedad elevada'}
-        elif self.humidity_percentage < 0:
-            return {'status': 'warning', 'alert': True, 'message': 'Humedad muy baja'}
-        elif self.humidity_percentage < 30:
-            return {'status': 'caution', 'alert': False, 'message': 'Humedad baja'}
-        else:
-            return {'status': 'normal', 'alert': False, 'message': 'Humedad normal'}
-
-    def update_capacity_utilization(self):
-        """
-        Actualiza el porcentaje de utilización de capacidad.
-        """
-        self.capacity_utilization = self.get_capacity_utilization_percentage()
-        db.session.commit()
-
     def get_system_health_score(self):
-        """
-        Calcula un puntaje de salud del sistema (0-100).
-        Returns:
-            int: Puntaje de salud del sistema
-        """
         score = 100
-        # Penalizar por alta utilización
         if self.capacity_utilization > 95:
             score -= 30
         elif self.capacity_utilization > 85:
             score -= 15
-        # Penalizar por temperatura alta
-        temp_status = self.get_temperature_alert_status()
-        if temp_status.get('status') == 'critical':
-            score -= 5
-        elif temp_status.get('status') == 'warning':
-            score -= 15
-        # Penalizar por humedad inadecuada
-        humidity_status = self.get_humidity_alert_status()
-        if humidity_status.get('status') in ['critical', 'warning']:
-            score -= 15
-        # Penalizar por inspección vencida
-        if self.is_inspection_due():
+        if hasattr(self, 'status') and self.status != EquipmentStatus.ACTIVO.value:  # ✅ Corregido =
             score -= 10
-        # ✅ Corregido: comparación, no asignación
-        if hasattr(self, 'status') and self.status != EquipmentStatus.ACTIVO.value:
-            score -= 10
-        # Penalizar por falta de heartbeat reciente
-        if hasattr(self, 'is_online') and not self.is_online():
-            score -= 15
-        # Penalizar por puerta abierta
-        if self.door_status == 'open':
-            score -= 5
         return max(0, min(100, score))
-
-    def get_maintenance_summary(self):
-        """
-        Obtiene un resumen de mantenimiento.
-        Returns:
-            dict: Resumen de mantenimiento
-        """
-        return {
-            'last_inspection': self.last_inspection.isoformat() if self.last_inspection else None,
-            'next_inspection': self.next_inspection.isoformat() if self.next_inspection else None,
-            'inspection_due': self.is_inspection_due(),
-            'maintenance_schedule': self.maintenance_schedule,
-            'cleaning_schedule': self.cleaning_schedule,
-            'responsible_person_id': self.responsible_person
-        }
 
     @classmethod
     def get_by_capacity_requirement(cls, required_units):
-        """
-        Obtiene gabinetes con capacidad suficiente.
-        Args:
-            required_units (int): Unidades de rack requeridas
-        Returns:
-            list: Lista de gabinetes con capacidad suficiente
-        """
-        gabinetes = cls.query.filter_by(
-            status=EquipmentStatus.ACTIVO.value,
-            deleted=False
-        ).all()
+        gabinetes = cls.query.filter_by(status=EquipmentStatus.ACTIVO.value, deleted=False).all()
         available = []
         for gabinete in gabinetes:
             if gabinete.can_install_equipment(required_units):
                 available.append(gabinete)
         return available
 
-    @classmethod
-    def get_by_type(cls, cabinet_type):
-        """
-        Obtiene gabinetes de un tipo específico.
-        Args:
-            cabinet_type (CabinetType): Tipo de gabinete
-        Returns:
-            list: Lista de gabinetes del tipo especificado
-        """
-        return cls.query.filter_by(cabinet_type=cabinet_type, deleted=False).all()
-
-    @classmethod
-    def get_environmental_monitoring_enabled(cls):
-        """
-        Obtiene gabinetes con monitoreo ambiental habilitado.
-        Returns:
-            list: Lista de gabinetes con monitoreo
-        """
-        return cls.query.filter(
-            db.or_(
-                cls.temperature_monitoring == True,
-                cls.humidity_monitoring == True,
-                cls.smoke_detection == True
-            ),
-            cls.deleted == False
-        ).all()
-
 
 class GabineteEquipment(BaseModel, db.Model):
-    """
-    Modelo de equipos instalados en gabinetes.
-    Attributes:
-        gabinete_id (int): ID del gabinete
-        connected_equipment_id (int): ID del equipo instalado
-        connected_equipment_type (str): Tipo del equipo instalado
-        start_unit (int): Unidad de rack donde inicia la instalación
-        rack_units_used (int): Unidades de rack que ocupa
-        rack_position (int): Posición en el rack (1-4 típico)
-        orientation (str): Orientación del equipo (front/back)
-        cable_management_used (bool): Si usa gestión de cables
-        weight_kg (float): Peso del equipo en kg
-        power_consumption_watts (float): Consumo de potencia en watts
-        ventilation_required (bool): Si requiere ventilación especial
-        access_required (bool): Si requiere acceso frecuente
-        priority_level (int): Nivel de prioridad (1=alta, 2=media, 3=baja)
-        installation_date (datetime): Fecha de instalación
-        installation_notes (str): Notas de instalación
-        maintenance_access (bool): Si requiere acceso para mantenimiento
-    """
-
     __tablename__ = 'gabinete_equipment'
+    id = Column(Integer, primary_key=True)  # ✅ Primary key añadida
 
-    # ✅ Corrección crítica: añadir primary key
-    id = Column(Integer, primary_key=True)
+    gabinete_id = Column(Integer, ForeignKey('gabinetes.id'), nullable=False)
+    connected_equipment_id = Column(Integer, nullable=True)
+    connected_equipment_type = Column(String(30), nullable=True)
+    start_unit = Column(Integer, nullable=False)
+    rack_units_used = Column(Integer, nullable=False)
+    orientation = Column(String(10), default="front", nullable=False)  # ✅ String(0) → String(10)
+    priority_level = Column(Integer, default=2, nullable=False)  # ✅ default=, → default=2
 
-    gabinete_id = Column(Integer, ForeignKey('gabinetes.id'), nullable=False,
-                         comment="ID del gabinete")
-    connected_equipment_id = Column(Integer, nullable=True,
-                                    comment="ID del equipo instalado")
-    connected_equipment_type = Column(String(30), nullable=True,
-                                      comment="Tipo del equipo instalado")
-
-    # Posición física
-    start_unit = Column(Integer, nullable=False,
-                        comment="Unidad de rack donde inicia (1=bottom)")
-    rack_units_used = Column(Integer, nullable=False,
-                             comment="Unidades de rack que ocupa")
-    rack_position = Column(Integer, nullable=True,
-                           comment="Posición específica en el rack")
-    orientation = Column(String(10), default="front", nullable=False,  # ✅ Corregido String(20) → String(10)
-                         comment="Orientación del equipo (front/back)")
-
-    # Características físicas
-    cable_management_used = Column(Boolean, default=False, nullable=False,
-                                   comment="Si usa gestión de cables del gabinete")
-    weight_kg = Column(Float, nullable=True,
-                       comment="Peso del equipo en kg")
-    power_consumption_watts = Column(Float, nullable=True,
-                                     comment="Consumo de potencia en watts")
-
-    # Requisitos especiales
-    ventilation_required = Column(Boolean, default=False, nullable=False,
-                                  comment="Si requiere ventilación especial")
-    access_required = Column(Boolean, default=False, nullable=False,
-                             comment="Si requiere acceso frecuente")
-    maintenance_access = Column(Boolean, default=True, nullable=False,
-                                comment="Si requiere acceso para mantenimiento")
-
-    # Gestión
-    priority_level = Column(Integer, default=2, nullable=False,  # ✅ Corregido default=, → default=2
-                            comment="Nivel de prioridad (1=alta, 2=media, 3=baja)")
-
-    # Fechas
-    installation_date = Column(DateTime, default=datetime.utcnow, nullable=False,
-                               comment="Fecha de instalación")
-
-    # Metadatos
-    installation_notes = Column(Text, nullable=True,
-                                comment="Notas de la instalación")
-
-    # Relaciones
+    installation_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    installation_notes = Column(Text, nullable=True)
     gabinete = relationship("Gabinete", back_populates="installed_equipment")
 
     def __repr__(self):
-        return f"<GabineteEquipment(gabinete={self.gabinete_id}, equipment={self.connected_equipment_type}_{self.connected_equipment_id}, units={self.start_unit}-{self.start_unit + self.rack_units_used - 1})>"
-
-    def get_end_unit(self):
-        """
-        Obtiene la unidad donde termina la instalación.
-        Returns:
-            int: Unidad final
-        """
-        return self.start_unit + self.rack_units_used - 1
-
-    def overlaps_with(self, other_installation):
-        """
-        Verifica si se superpone con otra instalación.
-        Args:
-            other_installation: Otra instalación para comparar
-        Returns:
-            bool: True si se superpone
-        """
-        self_end = self.get_end_unit()
-        other_end = other_installation.get_end_unit()
-        return not (self_end < other_installation.start_unit or
-                    other_end < self.start_unit)
-
-    @classmethod
-    def get_by_gabinete(cls, gabinete_id):
-        """
-        Obtiene los equipos instalados en un gabinete.
-        Args:
-            gabinete_id (int): ID del gabinete
-        Returns:
-            list: Lista de equipos instalados
-        """
-        return cls.query.filter_by(gabinete_id=gabinete_id, deleted=False).all()
-
-    @classmethod
-    def get_by_equipment(cls, equipment_id, equipment_type):
-        """
-        Obtiene la instalación de un equipo específico.
-        Args:
-            equipment_id (int): ID del equipo
-            equipment_type (str): Tipo del equipo
-        Returns:
-            GabineteEquipment: Instalación del equipo o None
-        """
-        return cls.query.filter_by(
-            connected_equipment_id=equipment_id,
-            connected_equipment_type=equipment_type,
-            deleted=False
-        ).first()
-
-    @classmethod
-    def get_available_units(cls, gabinete_id):
-        """
-        Obtiene las unidades disponibles en un gabinete.
-        Args:
-            gabinete_id (int): ID del gabinete
-        Returns:
-            list: Lista de unidades disponibles
-        """
-        gabinete = Cabinet.query.get(gabinete_id)
-        if not gabinete:
-            return []
-        installations = cls.query.filter_by(gabinete_id=gabinete_id, deleted=False).all()
-        total_units = gabinete.usable_rack_units or gabinete.rack_units
-        if not total_units:
-            return []
-        occupied_units = set()
-        for installation in installations:
-            for i in range(installation.start_unit, installation.get_end_unit() + 1):
-                occupied_units.add(i)
-        available = []
-        for unit in range(1, total_units + 1):
-            if unit not in occupied_units:
-                available.append(unit)
-        return available
+        return f"<GabineteEquipment(gabinete={self.gabinete_id}, equipment={self.connected_equipment_type}_{self.connected_equipment_id})>"
