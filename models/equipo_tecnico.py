@@ -15,14 +15,14 @@ from models import db
 import enum
 
 
-class TecnicoStatus(enum.Enum):
-"""Estados del personal técnico."""
-ACTIVO = "activo"
-INACTIVO = "inactivo"
-DISPONIBLE = "disponible"
-OCUPADO = "ocupado"
-VACACIONES = "vacaciones"
-LICENCIA = "licencia"
+class TecnicoStatus(enum.Enum): # LÍNEA 18
+    """Estados del personal técnico.""" # 🟢 CORRECCIÓN: Indentación aplicada
+    ACTIVO = "activo"
+    INACTIVO = "inactivo"
+    DISPONIBLE = "disponible"
+    OCUPADO = "ocupado"
+    VACACIONES = "vacaciones"
+    LICENCIA = "licencia"
 
 
 class EquipoTecnico(BaseModel, db.Model):
