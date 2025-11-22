@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
 from datetime import datetime
-#from forms import LoginForm, CamaraForm, CamaraEditForm
 from models import db, Usuario, Camara
 from config import get_config
 import os
@@ -28,18 +27,26 @@ def home():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = Usuario.query.filter_by(email=form.email.data.lower()).first()
-        if user and user.activo and check_password_hash(user.password_hash, form.password.data):
-            login_user(user, remember=form.remember.data)
+    if request.method == 'POST':
+        # ✅ Usar request.form directamente (sin LoginForm)
+        email = request.form.get('email', '').lower()
+        password = request.form.get('password', '')
+        
+        if not email or not password:
+            flash('Email y contraseña son requeridos', 'danger')
+            return render_template('login.html', user=None)
+        
+        user = Usuario.query.filter_by(email=email).first()
+        if user and user.activo and check_password_hash(user.password_hash, password):
+            login_user(user)
             user.ultimo_acceso = datetime.utcnow()
             db.session.commit()
             flash('¡Bienvenido!', 'success')
             return redirect(url_for('dashboard'))
         else:
             flash('Email o contraseña incorrectos', 'danger')
-    return render_template('login.html', form=form)
+    
+    return render_template('login.html', user=None)
 
 
 @app.route('/logout')
@@ -78,28 +85,31 @@ def nueva_camara():
         flash('No tienes permisos para crear cámaras', 'warning')
         return redirect(url_for('dashboard'))
     
-    form = CamaraForm()
-    if form.validate_on_submit():
+    if request.method == 'POST':
+        # ✅ Usar request.form directamente (sin CamaraForm)
         camara = Camara(
-            codigo=form.codigo.data,
-            nombre=form.nombre.data,
-            ip_address=form.ip.data,
-            marca=form.marca.data,
-            modelo=form.modelo.data,
-            tipo_camara=form.tipo_camara.data,
-            ubicacion=form.ubicacion.data,
-            estado=form.estado.data,
-            fecha_instalacion=form.fecha_instalacion.data,
-            latitud=form.latitud.data,
-            longitud=form.longitud.data,
-            observaciones=form.observaciones.data
+            codigo=request.form.get('codigo'),
+            nombre=request.form.get('nombre'),
+            ip_address=request.form.get('ip'),
+            marca=request.form.get('marca'),
+            modelo=request.form.get('modelo'),
+            tipo_camara=request.form.get('tipo_camara'),
+            ubicacion_id=request.form.get('ubicacion_id'),
+            estado=request.form.get('estado', 'Activo'),
+            fecha_alta=request.form.get('fecha_alta'),
+            latitud=request.form.get('latitud'),
+            longitud=request.form.get('longitud'),
+            observaciones=request.form.get('observaciones')
         )
         db.session.add(camara)
         db.session.commit()
         flash('Cámara creada exitosamente', 'success')
         return redirect(url_for('listar_camaras'))
     
-    return render_template('nueva_camara.html', form=form, user=current_user)
+    # GET: obtener ubicaciones para el select
+    from models import Ubicacion
+    ubicaciones = Ubicacion.query.all()
+    return render_template('camaras_form.html', camara=None, ubicaciones=ubicaciones, user=current_user)
 
 
 @app.route('/camaras/<int:id>/editar', methods=['GET', 'POST'])
@@ -110,15 +120,30 @@ def editar_camara(id):
         return redirect(url_for('dashboard'))
     
     camara = Camara.query.get_or_404(id)
-    form = CamaraEditForm(obj=camara, camara_id=id)
     
-    if form.validate_on_submit():
-        form.populate_obj(camara)
+    if request.method == 'POST':
+        # ✅ Actualizar desde request.form
+        camara.codigo = request.form.get('codigo')
+        camara.nombre = request.form.get('nombre')
+        camara.ip_address = request.form.get('ip')
+        camara.marca = request.form.get('marca')
+        camara.modelo = request.form.get('modelo')
+        camara.tipo_camara = request.form.get('tipo_camara')
+        camara.ubicacion_id = request.form.get('ubicacion_id')
+        camara.estado = request.form.get('estado', 'Activo')
+        camara.fecha_alta = request.form.get('fecha_alta')
+        camara.latitud = request.form.get('latitud')
+        camara.longitud = request.form.get('longitud')
+        camara.observaciones = request.form.get('observaciones')
+        
         db.session.commit()
         flash('Cámara actualizada exitosamente', 'success')
         return redirect(url_for('listar_camaras'))
     
-    return render_template('camaras_editar.html', form=form, camara=camara, user=current_user)
+    # GET: obtener ubicaciones para el select
+    from models import Ubicacion
+    ubicaciones = Ubicacion.query.all()
+    return render_template('camaras_form.html', camara=camara, ubicaciones=ubicaciones, user=current_user)
 
 
 @app.route('/camaras/<int:id>/eliminar', methods=['POST'])
