@@ -2,8 +2,7 @@ import pandas as pd
 from datetime import datetime
 from app import app, db
 from models import (Usuario, Ubicacion, Camara, Gabinete, Switch, PuertoSwitch,
-                   UPS, NVR, FuentePoder, CatalogoTipoFalla, Falla, 
-                   Mantenimiento, Equipo_Tecnico)
+                    Falla, Mantenimiento, Fotografia, EquipoTecnico)
 from werkzeug.security import generate_password_hash
 import os
 import re
