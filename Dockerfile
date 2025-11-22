@@ -4,27 +4,25 @@ FROM python:3.11-slim
 # Establecer directorio de trabajo
 WORKDIR /app
 
-# Instalar dependencias del sistema (gcc para psycopg2-binary)
+# Instalar dependencias del sistema (gcc para psycopg2-binary y bcrypt)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc && \
     rm -rf /var/lib/apt/lists/*
 
-# ✅ Primero copia requirements.txt (necesario para instalar dependencias)
+# Instalar dependencias de Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ✅ Luego copia la aplicación
+# Copiar aplicación principal
 COPY app.py .
 COPY Procfile .
 COPY migrate_data.py .
 
-# ✅ CORRECCIÓN CRÍTICA: copia la carpeta models/ completa (NO models.py)
+# ✅ CORRECCIÓN CRÍTICA: copiar carpeta models/ completa (NO models.py)
 COPY models ./models
 
-# Crear directorios necesarios
+# Crear y copiar assets
 RUN mkdir -p templates static uploads logs
-
-# Copiar assets
 COPY templates ./templates
 COPY static ./static
 
