@@ -43,6 +43,7 @@ class EquipoTecnico(BaseModel, db.Model):
     """
 
     __tablename__ = 'equipo_tecnico'
+    id = Column(Integer, primary_key=True, comment="ID único del técnico")
 
     # Campos principales basados en estructura Railway
     nombre = Column(String(100), nullable=False, index=True,
