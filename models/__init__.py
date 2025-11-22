@@ -31,7 +31,7 @@ class EquipmentType(enum.Enum):
 from .usuario import Usuario
 from .ubicacion import Ubicacion
 from .camara import Camara
-from .gabinete import Cabinet as Gabinete, GabineteEquipment
+from .gabinete import Gabinete, GabineteEquipment  # ✅ Sin Cabinet as Gabinete
 from .switch import Switch
 from .puertos_switch import PuertoSwitch
 from .nvr import NVR

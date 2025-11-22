@@ -1,11 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone # ✅ Corregido: Importar timezone
 import bcrypt
-from flask_login import UserMixin  # ✅ Añadido (crítico para Flask-Login)
+from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
 from . import db
 from models.base import BaseModelMixin
 
-class Usuario(UserMixin, BaseModelMixin, db.Model):  # ✅ UserMixin primero
+class Usuario(UserMixin, BaseModelMixin, db.Model):
     __tablename__ = 'usuarios'
     id = Column(Integer, primary_key=True)
 
@@ -20,7 +20,7 @@ class Usuario(UserMixin, BaseModelMixin, db.Model):  # ✅ UserMixin primero
     last_login = Column(DateTime, nullable=True)
     failed_login_attempts = Column(Integer, default=0)
     locked_until = Column(DateTime, nullable=True)
-    password_changed_at = Column(DateTime, default=datetime.utcnow)
+    password_changed_at = Column(DateTime, default=datetime.now(timezone.utc)) # ✅ Corregido
     must_change_password = Column(Boolean, default=False)
     preferences = Column(Text, nullable=True)
 
@@ -31,7 +31,7 @@ class Usuario(UserMixin, BaseModelMixin, db.Model):  # ✅ UserMixin primero
                 password.encode('utf-8'), 
                 bcrypt.gensalt()
             ).decode('utf-8')
-            self.password_changed_at = datetime.utcnow()
+            self.password_changed_at = datetime.now(timezone.utc) # ✅ Corregido
             self.must_change_password = False
         except Exception as e:
             raise Exception(f"Error estableciendo contraseña: {e}")
@@ -44,10 +44,11 @@ class Usuario(UserMixin, BaseModelMixin, db.Model):  # ✅ UserMixin primero
                 self.password_hash.encode('utf-8')
             )
         except Exception:
+            # Es importante no revelar el motivo de la falla por seguridad
             return False
 
     def is_locked(self):
-        return self.locked_until and self.locked_until > datetime.utcnow()
+        return self.locked_until and self.locked_until > datetime.now(timezone.utc) # ✅ Corregido
 
     def has_role(self, role):
         """Verificación jerárquica de roles"""
