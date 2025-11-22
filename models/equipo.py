@@ -1,4 +1,4 @@
-""""
+"""
 Modelo base para equipos de red y hardware.
 Proporciona funcionalidades comunes para todos los tipos de equipos.
 """

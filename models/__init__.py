@@ -37,11 +37,13 @@ from .puertos_switch import PuertoSwitch
 from .nvr import NVR
 from .ups import UPS
 from .fuente_poder import FuentePoder
+
 from .falla import Falla
 from .mantenimiento import Mantenimiento
 from .fotografia import Fotografia
 # from .equipo_tecnico import Equipo_Tecnico  # ❌ No existe en models.txt
-from .catalogo_tipo_falla import Catalogo_Tipo_Falla
+
+from .catalogo_tipo_falla import CatalogoTipoFalla
 
 # Exportar para imports directos
 __all__ = [
