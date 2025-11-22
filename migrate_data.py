@@ -3,7 +3,7 @@ from datetime import datetime
 from app import app, db
 from models import (Usuario, Ubicacion, Camara, Gabinete, Switch, PuertoSwitch,
                    UPS, NVR, FuentePoder, CatalogoTipoFalla, Falla, 
-                   Mantenimiento, EquipoTecnico)
+                   Mantenimiento, Equipo_Tecnico)
 from werkzeug.security import generate_password_hash
 import os
 import re
@@ -164,7 +164,7 @@ def migrar_datos():
         df = pd.read_excel(f'{base_path}Catalogo_Tipos_Fallas.xlsx')
         count = 0
         for _, row in df.iterrows():
-            tipo_falla = Catalogo_Tipo_Falla(
+            tipo_falla = CatalogoTipoFalla(
                 nombre=safe_str(row.get('Nombre')),
                 categoria=safe_str(row.get('Categoria')),
                 descripcion=safe_str(row.get('Descripcion')),
@@ -236,7 +236,7 @@ def migrar_datos():
         df = pd.read_excel(f'{base_path}Puertos_Switch.xlsx')
         count = 0
         for _, row in df.iterrows():
-            puerto = PuertoSwitch(  # ✅ Nombre corregido
+            puerto = PuertoSwitch(
                 switch_id=safe_int(row.get('ID_Switch')),
                 numero_puerto=safe_int(row.get('Numero_Puerto')),
                 camara_id=safe_int(row.get('ID_Camara')),
@@ -281,7 +281,7 @@ def migrar_datos():
         df = pd.read_excel(f'{base_path}NVR_DVR.xlsx')
         count = 0
         for _, row in df.iterrows():
-            nvr = NVR(  # ✅ Nombre corregido
+            nvr = NVR(
                 codigo=safe_str(row.get('Codigo')),
                 tipo=safe_str(row.get('Tipo', 'NVR')),
                 modelo=safe_str(row.get('Modelo')),
@@ -307,7 +307,7 @@ def migrar_datos():
         df = pd.read_excel(f'{base_path}Fuentes_Poder.xlsx')
         count = 0
         for _, row in df.iterrows():
-            fuente = FuentePoder(  # ✅ Nombre corregido
+            fuente = FuentePoder(
                 codigo=safe_str(row.get('Codigo')),
                 modelo=safe_str(row.get('Modelo')),
                 voltaje=safe_str(row.get('Voltaje')),
@@ -444,15 +444,15 @@ def migrar_datos():
             if fallas_informe:
                 # Mapear tipos de falla a IDs del catálogo
                 tipo_falla_map = {
-                    'Telas de araña': 1,  # Limpieza
-                    'Imagen borrosa': 1,   # Limpieza
-                    'Mica rallada': 2,     # Reparación
-                    'Desconectada': 3,     # Técnica
-                    'Mancha en lente': 1,  # Limpieza
-                    'Empañada': 1,        # Limpieza
-                    'Sin conexión': 3,    # Técnica
-                    'Intermitencia': 3,    # Técnica
-                    'Vandalismo/Destruida': 2  # Reparación
+                    'Telas de araña': 1,
+                    'Imagen borrosa': 1,
+                    'Mica rallada': 2,
+                    'Desconectada': 3,
+                    'Mancha en lente': 1,
+                    'Empañada': 1,
+                    'Sin conexión': 3,
+                    'Intermitencia': 3,
+                    'Vandalismo/Destruida': 2
                 }
                 
                 informe_insertadas = 0
@@ -486,7 +486,7 @@ def migrar_datos():
                             tipo_falla_id=tipo_falla_id,
                             descripcion=f"{falla_info['tipo_falla']} en {camara.nombre}",
                             prioridad=falla_info['prioridad'],
-                            fecha_reporte=datetime(2025, 10, 12),  # Fecha del informe
+                            fecha_reporte=datetime(2025, 10, 12),
                             reportado_por_id=admin_user.id,
                             estado='Pendiente',
                             observaciones=falla_info['observacion']
@@ -536,7 +536,7 @@ def migrar_datos():
         print("\n=== RESUMEN DE DATOS ===")
         print(f"Ubicaciones: {Ubicacion.query.count()}")
         print(f"Equipos Técnicos: {Equipo_Tecnico.query.count()}")
-        print(f"Tipos de Fallas: {Catalogo_Tipo_Falla.query.count()}")
+        print(f"Tipos de Fallas: {CatalogoTipoFalla.query.count()}")
         print(f"Gabinetes: {Gabinete.query.count()}")
         print(f"Switches: {Switch.query.count()}")
         print(f"Puertos Switch: {PuertoSwitch.query.count()}")
