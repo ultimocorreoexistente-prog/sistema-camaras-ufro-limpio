@@ -170,6 +170,7 @@ def test_camara(id):
 def forbidden(e):
     return render_template('error.html', code=403, message='Acceso denegado'), 403
 
+
 @app.errorhandler(404)
 def not_found(e):
     return render_template('error.html', code=404, message='Página no encontrada'), 404
