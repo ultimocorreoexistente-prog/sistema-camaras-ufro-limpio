@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <title>{{ 'Editar' if camara else 'Nueva' }} Cámara - Sistema UFRO</title>
 </head>
 {% extends "base.html" %}
 {% block title %}{{ 'Editar' if camara else 'Nueva' }} Cámara - Sistema UFRO{% endblock %}
@@ -22,7 +23,7 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">IP</label>
-                        <input type="text" name="ip" class="form-control" value="{{ camara.ip if camara else '' }}">
+                        <input type="text" name="ip" class="form-control" value="{{ camara.ip_address if camara else '' }}">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Modelo</label>
@@ -30,11 +31,12 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Fabricante</label>
-                        <input type="text" name="fabricante" class="form-control" value="{{ camara.fabricante if camara else '' }}">
+                        <input type="text" name="fabricante" class="form-control" value="{{ camara.marca if camara else '' }}">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Tipo de Cámara *</label>
                         <select name="tipo_camara" class="form-select" required>
+                            <option value="">Seleccione...</option>
                             <option value="Domo" {{ 'selected' if camara and camara.tipo_camara == 'Domo' else '' }}>Domo</option>
                             <option value="PTZ" {{ 'selected' if camara and camara.tipo_camara == 'PTZ' else '' }}>PTZ</option>
                             <option value="Bullet" {{ 'selected' if camara and camara.tipo_camara == 'Bullet' else '' }}>Bullet</option>
@@ -46,7 +48,7 @@
                             <option value="">Seleccione...</option>
                             {% for ub in ubicaciones %}
                             <option value="{{ ub.id }}" {{ 'selected' if camara and camara.ubicacion_id == ub.id else '' }}>
-                                {{ ub.campus }} - {{ ub.edificio }}
+                                {{ ub.nombre }}
                             </option>
                             {% endfor %}
                         </select>
@@ -62,7 +64,7 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Fecha Alta</label>
-                        <input type="date" name="fecha_alta" class="form-control" value="{{ camara.fecha_alta if camara and camara.fecha_alta else '' }}">
+                        <input type="date" name="fecha_alta" class="form-control" value="{{ camara.fecha_instalacion if camara else '' }}">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Latitud</label>
@@ -77,8 +79,10 @@
                         <textarea name="observaciones" class="form-control" rows="3">{{ camara.observaciones if camara else '' }}</textarea>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <a href="{{ url_for('camaras_list') }}" class="btn btn-secondary">Cancelar</a>
+                <div class="d-grid gap-2 d-md-block">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <a href="{{ url_for('camaras_list') }}" class="btn btn-secondary">Cancelar</a>
+                </div>
             </form>
         </div>
     </div>

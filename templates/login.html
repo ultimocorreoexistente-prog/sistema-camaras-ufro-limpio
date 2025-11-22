@@ -4,146 +4,104 @@
 
 {% block content %}
 <div class="container">
-<div class="row justify-content-center align-items-center min-vh-100">
-<div class="col-md-6 col-lg-4">
-<div class="card content-card shadow-lg border-0">
-<div class="card-body p-5">
-<!-- Header con logo UFRO -->
-<div class="text-center mb-4">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 75'%3E%3Crect width='150' height='75' fill='white' rx='8'/%3E%3Ctext x='75' y='45' text-anchor='middle' font-family='Arial' font-size='14' font-weight='bold' fill='%23003366'%3EUFRO%3C/text%3E%3C/svg%3E" alt="UFRO" class="mb-3" style="height: 80px;">
-<h3 class="fw-bold text-primary mb-0">Iniciar Sesión</h3>
-<p class="text-muted">Sistema de Gestión de Cámaras</p>
-</div>
+  <div class="row justify-content-center align-items-center min-vh-100">
+    <div class="col-md-6 col-lg-4">
+      <div class="card content-card shadow-lg border-0">
+        <div class="card-body p-5">
+          <!-- Header con logo UFRO -->
+          <div class="text-center mb-4">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 75'%3E%3Crect width='150' height='75' fill='white' rx='8'/%3E%3Ctext x='75' y='45' text-anchor='middle' font-family='Arial' font-size='14' font-weight='bold' fill='%23003366'%3EUFRO%3C/text%3E%3C/svg%3E" alt="UFRO" class="mb-3" style="height: 80px;">
+            <h3 class="fw-bold text-primary mb-0">Iniciar Sesión</h3>
+            <p class="text-muted">Sistema de Gestión de Cámaras</p>
+          </div>
 
-<!-- Mensajes de error -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-      <i class="bi bi-exclamation-triangle me-2"></i>
-      {% for category, msg in messages %}
-        {{ msg }}
-      {% endfor %}
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          <!-- Mensajes de error -->
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                {% for category, msg in messages %}
+                  {{ msg }}
+                {% endfor %}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endif %}
+          {% endwith %}
+
+          <!-- Formulario de login SIN form.hidden_tag() -->
+          <form method="post">
+            <!-- Campo Email -->
+            <div class="mb-3">
+              <label for="email" class="form-label">
+                <i class="bi bi-envelope me-2"></i>Correo Electrónico
+              </label>
+              <input type="email"
+                name="email"
+                id="email"
+                class="form-control form-control-lg"
+                placeholder="nombre.apellido@ufrontera.cl"
+                required autofocus>
+            </div>
+
+            <!-- Campo Contraseña -->
+            <div class="mb-3">
+              <label for="password" class="form-label">
+                <i class="bi bi-lock me-2"></i>Contraseña
+              </label>
+              <div class="input-group">
+                <input type="password"
+                  name="password"
+                  id="password"
+                  class="form-control form-control-lg"
+                  placeholder="Ingrese su contraseña"
+                  required autocomplete="current-password" spellcheck="false">
+                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                  <i class="bi bi-eye" id="toggleIcon"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Recordarme -->
+            <div class="mb-3">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
+                <label class="form-check-label" for="remember_me">Recordar mi sesión</label>
+              </div>
+            </div>
+
+            <!-- Botón de envío -->
+            <div class="d-grid gap-2 mb-3">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión
+              </button>
+            </div>
+          </form>
+
+          <!-- Footer -->
+          <div class="text-center mt-4">
+            <small class="text-muted">
+              <i class="bi bi-c-circle me-1"></i>
+              {{ year|default(2025) }} Universidad de La Frontera
+            </small>
+          </div>
+        </div>
+      </div>
     </div>
-  {% endif %}
-{% endwith %}
-
-<!-- Formulario de login -->
-<form method="post" novalidate>
-{{ form.hidden_tag() }}
-
-<!-- Campo Email -->
-<div class="mb-3">
-<label for="id_username" class="form-label">
-<i class="bi bi-envelope me-2"></i>Correo Electrónico
-</label>
-<input type="email"
-name="email"
-id="id_username"
-class="form-control form-control-lg {% if form.email.errors %}is-invalid{% endif %}"
-placeholder="nombre.apellido@ufrontera.cl"
-required autofocus>
-{% if form.email.errors %}
-<div class="invalid-feedback">
-  {% for error in form.email.errors %}
-    {{ error }}
-  {% endfor %}
-</div>
-{% endif %}
-</div>
-
-<!-- Campo Contraseña -->
-<div class="mb-3">
-<label for="id_password" class="form-label">
-<i class="bi bi-lock me-2"></i>Contraseña
-</label>
-<div class="input-group">
-<input type="password"
-name="password"
-id="id_password"
-class="form-control form-control-lg {% if form.password.errors %}is-invalid{% endif %}"
-placeholder="Ingrese su contraseña"
-required autocomplete="current-password" spellcheck="false">
-<button class="btn btn-outline-secondary"
-type="button"
-id="togglePassword">
-<i class="bi bi-eye" id="toggleIcon"></i>
-</button>
-</div>
-{% if form.password.errors %}
-<div class="invalid-feedback">
-  {% for error in form.password.errors %}
-    {{ error }}
-  {% endfor %}
-</div>
-{% endif %}
-</div>
-
-<!-- Recordarme -->
-<div class="mb-3">
-<div class="form-check">
-<input type="checkbox"
-class="form-check-input"
-id="remember_me"
-name="remember_me"
-{{ 'checked' if form.remember.data else '' }}>
-<label class="form-check-label" for="remember_me">
-Recordar mi sesión
-</label>
-</div>
-</div>
-
-<!-- Botón de envío -->
-<div class="d-grid gap-2 mb-3">
-<button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
-<i class="bi bi-box-arrow-in-right me-2"></i>
-Iniciar Sesión
-</button>
-</div>
-</form>
-
-<!-- Footer -->
-<div class="text-center mt-4">
-<small class="text-muted">
-<i class="bi bi-c-circle me-1"></i>
-{{ year|default(2025) }} Universidad de La Frontera
-</small>
-</div>
-</div>
-</div>
-</div>
-</div>
+  </div>
 </div>
 
 <script>
 // Toggle password visibility
 document.getElementById('togglePassword').addEventListener('click', function() {
-const password = document.getElementById('id_password');
-const icon = document.getElementById('toggleIcon');
-if (password.type === 'password') {
-password.type = 'text';
-icon.className = 'bi bi-eye-slash';
-} else {
-password.type = 'password';
-icon.className = 'bi bi-eye';
-}
-});
-
-// Validación en tiempo real
-document.getElementById('id_username').addEventListener('input', function() {
-const email = this.value;
-const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-if (email && !regex.test(email)) {
-this.setCustomValidity('Ingrese un correo válido (@ufrontera.cl)');
-} else {
-this.setCustomValidity('');
-}
+  const password = document.getElementById('password');
+  const icon = document.getElementById('toggleIcon');
+  if (password.type === 'password') {
+    password.type = 'text';
+    icon.className = 'bi bi-eye-slash';
+  } else {
+    password.type = 'password';
+    icon.className = 'bi bi-eye';
+  }
 });
 </script>
-
 {% endblock %}
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 0ba971642b479883ec317826911880ea1371b81e
