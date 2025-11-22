@@ -3,9 +3,8 @@ from datetime import datetime
 from app import app, db
 # 🟢 CORRECCIÓN 1: Importar 'metadata' para usar DROP CASCADE. Importar 'text' de sqlalchemy.
 from sqlalchemy import text, metadata
-from models import (Usuario, Ubicacion, Camara, Gabinete, Switch, PuertoSwitch,
-                    Falla, Mantenimiento, Fotografia, EquipoTecnico, # 🟢 CORRECCIÓN 1: Asegurando que es EquipoTecnico
-                    # 🟢 Añadir otros modelos que se usan en migrar_datos pero que no estaban en los imports originales
+from models import (Usuario, Ubicacion, Camara, Gabinete, Switch, PuertoSwitch, Falla, Mantenimiento, Fotografia, EquipoTecnico, # 🟢 CORRECCIÓN 1: Asegurando que es EquipoTecnico
+                    # Añadir otros modelos que se usan en migrar_datos pero que no estaban en los imports originales
                     CatalogoTipoFalla, UPS, NVR, FuentePoder 
                     ) 
 from werkzeug.security import generate_password_hash
