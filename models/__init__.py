@@ -41,9 +41,10 @@ from .fuente_poder import FuentePoder
 from .falla import Falla
 from .mantenimiento import Mantenimiento
 from .fotografia import Fotografia
-# from .equipo_tecnico import Equipo_Tecnico  # ❌ No existe en models.txt
+from .equipo_tecnico import EquipoTecnico # 🟢 CORRECCIÓN 1: Importar la clase EquipoTecnico
 
 from .catalogo_tipo_falla import CatalogoTipoFalla
+
 
 # Exportar para imports directos
 __all__ = [
@@ -63,20 +64,21 @@ __all__ = [
     'Falla',
     'Mantenimiento',
     'Fotografia',
-    # 'Equipo_Tecnico',  # ❌ Comentado
-    'Catalogo_Tipo_Falla'
+    'EquipoTecnico',       # 🟢 CORRECCIÓN 1: Exportar la clase EquipoTecnico
+    'CatalogoTipoFalla'   # 🟢 CORRECCIÓN 2: Corregir el nombre de la clase de catálogo
 ]
 
 # Funciones de inicialización
 def init_models():
-    return Usuario, Camara, Gabinete
+    # Asegúrate que EquipoTecnico esté en los modelos a inicializar si es necesario.
+    return Usuario, Camara, Gabinete, EquipoTecnico 
 
 def init_db(app):
     db.init_app(app)
     with app.app_context():
         db.create_all()
         if not Usuario.query.filter_by(email='Charles.Jelvez@ufrontera.cl').first():
-            from werkzeug.security import generate_password_hash  # ✅ RESTAURADO
+            from werkzeug.security import generate_password_hash
             
             admin = Usuario(
                 username='charles.jelvez',
