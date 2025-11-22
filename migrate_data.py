@@ -1,8 +1,8 @@
 import pandas as pd
 from datetime import datetime
 from app import app, db
-from models import (Usuario, Ubicacion, Camara, Gabinete, Switch, Puerto_Switch, 
-                   UPS, NVR_DVR, Fuente_Poder, Catalogo_Tipo_Falla, Falla, 
+from models import (Usuario, Ubicacion, Camara, Gabinete, Switch, PuertoSwitch,
+                   UPS, NVR, FuentePoder, Catalogo_Tipo_Falla, Falla, 
                    Mantenimiento, Equipo_Tecnico)
 from werkzeug.security import generate_password_hash
 import os
@@ -76,7 +76,6 @@ def extraer_fallas_informe():
         (r'([\w\-_\.]+)\s*\(DESCONECTADA\)', 'Desconectada', 'Alta'),
         (r'([\w\-_\.]+)\s*\(mancha en el lente\)', 'Mancha en lente', 'Baja'),
         (r'([\w\-_\.]+)\s*\(empañada\)', 'Empañada', 'Baja'),
-        (r'([\w\-_\.]+)\s*\(EMPAÑADA\)', 'Empañada', 'Baja'),
         (r'([\w\-_\.]+).*?sin conexión', 'Sin conexión', 'Alta'),
         (r'([\w\-_\.]+).*?intermitencia', 'Intermitencia', 'Media'),
         (r'Camera\s+(\d+).*?\(Borrosa\)', 'Imagen borrosa', 'Media'),
@@ -237,7 +236,7 @@ def migrar_datos():
         df = pd.read_excel(f'{base_path}Puertos_Switch.xlsx')
         count = 0
         for _, row in df.iterrows():
-            puerto = Puerto_Switch(
+            puerto = PuertoSwitch(  # ✅ Nombre corregido
                 switch_id=safe_int(row.get('ID_Switch')),
                 numero_puerto=safe_int(row.get('Numero_Puerto')),
                 camara_id=safe_int(row.get('ID_Camara')),
@@ -282,7 +281,7 @@ def migrar_datos():
         df = pd.read_excel(f'{base_path}NVR_DVR.xlsx')
         count = 0
         for _, row in df.iterrows():
-            nvr = NVR_DVR(
+            nvr = NVR(  # ✅ Nombre corregido
                 codigo=safe_str(row.get('Codigo')),
                 tipo=safe_str(row.get('Tipo', 'NVR')),
                 modelo=safe_str(row.get('Modelo')),
@@ -308,7 +307,7 @@ def migrar_datos():
         df = pd.read_excel(f'{base_path}Fuentes_Poder.xlsx')
         count = 0
         for _, row in df.iterrows():
-            fuente = Fuente_Poder(
+            fuente = FuentePoder(  # ✅ Nombre corregido
                 codigo=safe_str(row.get('Codigo')),
                 modelo=safe_str(row.get('Modelo')),
                 voltaje=safe_str(row.get('Voltaje')),
@@ -540,10 +539,10 @@ def migrar_datos():
         print(f"Tipos de Fallas: {Catalogo_Tipo_Falla.query.count()}")
         print(f"Gabinetes: {Gabinete.query.count()}")
         print(f"Switches: {Switch.query.count()}")
-        print(f"Puertos Switch: {Puerto_Switch.query.count()}")
+        print(f"Puertos Switch: {PuertoSwitch.query.count()}")
         print(f"UPS: {UPS.query.count()}")
-        print(f"NVR/DVR: {NVR_DVR.query.count()}")
-        print(f"Fuentes de Poder: {Fuente_Poder.query.count()}")
+        print(f"NVR: {NVR.query.count()}")
+        print(f"Fuentes de Poder: {FuentePoder.query.count()}")
         print(f"Cámaras: {Camara.query.count()}")
         print(f"Fallas: {Falla.query.count()}")
         print(f"Mantenimientos: {Mantenimiento.query.count()}")

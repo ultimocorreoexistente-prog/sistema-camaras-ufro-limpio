@@ -40,6 +40,8 @@ from .fuente_poder import FuentePoder
 from .falla import Falla
 from .mantenimiento import Mantenimiento
 from .fotografia import Fotografia
+from .equipo_tecnico import Equipo_Tecnico
+from .catalogo_tipo_falla import Catalogo_Tipo_Falla
 
 # Exportar para imports directos
 __all__ = [
@@ -52,12 +54,15 @@ __all__ = [
     'Gabinete',
     'GabineteEquipment',
     'Switch',
+    'PuertoSwitch',
     'NVR',
     'UPS',
     'FuentePoder',
     'Falla',
     'Mantenimiento',
-    'Fotografia'
+    'Fotografia',
+    'Equipo_Tecnico',
+    'Catalogo_Tipo_Falla'
 ]
 
 # Funciones de inicialización
