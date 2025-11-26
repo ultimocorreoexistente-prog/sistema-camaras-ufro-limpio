@@ -1,0 +1,608 @@
+{% extends "base.html" %}
+
+{% block title %}Reportar Nueva Falla{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-section {
+border: 1px solid #deee6;
+border-radius: 8px;
+margin-bottom: 1.5rem;
+}
+
+.form-section-header {
+background: #f8f9fa;
+border-bottom: 1px solid #deee6;
+padding: 1rem;
+border-radius: 8px 8px 0 0;
+}
+
+.form-section-body {
+padding: 1.5rem;
+}
+
+.gravedad-option {
+border: px solid transparent;
+border-radius: 8px;
+padding: 1rem;
+cursor: pointer;
+transition: all 0.3s ease;
+}
+
+.gravedad-option:hover {
+border-color: #007bff;
+background-color: #f8f9ff;
+}
+
+.gravedad-option.selected {
+border-color: #007bff;
+background-color: #e3ffd;
+}
+
+.gravedad-critical { border-left: 4px solid #dc3545; }
+.gravedad-alta { border-left: 4px solid #fd7e14; }
+.gravedad-media { border-left: 4px solid #ffc107; }
+.gravedad-baja { border-left: 4px solid #8a745; }
+
+.required-field::after {
+content: " *";
+color: #dc3545;
+}
+
+.upload-zone {
+border: px dashed #007bff;
+border-radius: 8px;
+padding: rem;
+text-align: center;
+background-color: #f8f9fa;
+transition: all 0.3s ease;
+}
+
+.upload-zone:hover {
+background-color: #e9ecef;
+border-color: #0056b3;
+}
+
+.upload-zone.dragover {
+background-color: #e3ffd;
+border-color: #196f3;
+}
+
+.step-indicator {
+display: flex;
+justify-content: space-between;
+margin-bottom: rem;
+}
+
+.step {
+flex: 1;
+text-align: center;
+padding: 0.5rem;
+border-bottom: px solid #deee6;
+color: #6c757d;
+}
+
+.step.active {
+color: #007bff;
+border-bottom-color: #007bff;
+}
+
+.step.completed {
+color: #8a745;
+border-bottom-color: #8a745;
+}
+
+.priority-preview {
+background: linear-gradient(135deg, #667eea 0%, #764ba 100%);
+color: white;
+border-radius: 8px;
+padding: 1rem;
+text-align: center;
+margin-top: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<h1 class="h3 mb-0">
+<i class="bi bi-plus-circle text-success"></i>
+Reportar Nueva Falla
+</h1>
+<p class="text-muted mb-0">Complete el formulario para reportar una nueva falla técnica</p>
+</div>
+<div>
+<a href="{{ url_for('fallas_listar') }}" class="btn btn-outline-secondary">
+<i class="bi bi-arrow-left"></i> Volver a la Lista
+</a>
+</div>
+</div>
+
+<-- Indicador de pasos -->
+<div class="step-indicator">
+<div class="step active" id="step1">
+<i class="bi bi-1-circle"></i>
+<div>Información Básica</div>
+</div>
+<div class="step" id="step">
+<i class="bi bi--circle"></i>
+<div>Detalles de la Falla</div>
+</div>
+<div class="step" id="step3">
+<i class="bi bi-3-circle"></i>
+<div>Revisión y Envío</div>
+</div>
+</div>
+
+<form method="POST" id="formFalla" enctype="multipart/form-data" novalidate>
+<div class="row">
+<-- Paso 1: Información Básica -->
+<div class="col-lg-8" id="seccion-paso1">
+<div class="form-section">
+<div class="form-section-header">
+<h5 class="mb-0">
+<i class="bi bi-info-circle"></i> Información Básica
+</h5>
+</div>
+<div class="form-section-body">
+<div class="row">
+<div class="col-md-6 mb-3">
+<label for="equipo_id" class="form-label required-field">Equipo Afectado</label>
+<select name="equipo_id" id="equipo_id" class="form-select" required>
+<option value="">Seleccionar equipo...</option>
+{% for equipo in equipos %}
+<option value="{{ equipo.id }}"
+data-tipo="{{ equipo.tipo or '' }}"
+data-ubicacion="{{ equipo.ubicacion or '' }}"
+{% if equipo.id == request.form.equipo_id %}selected{% endif %}>
+{{ equipo.nombre or 'Equipo ' + equipo.id|string }} ({{ equipo.tipo or 'Sin tipo' }})
+</option>
+{% endfor %}
+</select>
+<div class="invalid-feedback">Por favor seleccione un equipo.</div>
+</div>
+
+<div class="col-md-6 mb-3">
+<label for="gravedad" class="form-label required-field">Nivel de Gravedad</label>
+<select name="gravedad" id="gravedad" class="form-select" required>
+<option value="">Seleccionar gravedad...</option>
+<option value="critica" {% if request.form.gravedad == 'critica' %}selected{% endif %}>Crítica - Afecta operación completa</option>
+<option value="alta" {% if request.form.gravedad == 'alta' %}selected{% endif %}>Alta - Afecta funcionalidad principal</option>
+<option value="media" {% if request.form.gravedad == 'media' %}selected{% endif %}>Media - Afecta funcionalidad secundaria</option>
+<option value="baja" {% if request.form.gravedad == 'baja' %}selected{% endif %}>Baja - Problema menor</option>
+</select>
+<div class="invalid-feedback">Por favor seleccione el nivel de gravedad.</div>
+</div>
+</div>
+
+<div class="mb-3">
+<label for="descripcion" class="form-label required-field">Descripción de la Falla</label>
+<textarea name="descripcion" id="descripcion" class="form-control" rows="4"
+placeholder="Describa detalladamente el problema encontrado..." required>{{ request.form.descripcion or '' }}</textarea>
+<div class="invalid-feedback">Por favor proporcione una descripción de la falla.</div>
+<div class="form-text">
+<span id="char-count">0</span>/500 caracteres. Sea lo más específico posible.
+</div>
+</div>
+
+<div class="mb-3">
+<label for="comentarios" class="form-label">Comentarios Adicionales</label>
+<textarea name="comentarios" id="comentarios" class="form-control" rows="3"
+placeholder="Información adicional, observaciones, contexto...">{{ request.form.comentarios or '' }}</textarea>
+<div class="form-text">
+<span id="comentarios-count">0</span>/300 caracteres.
+</div>
+</div>
+</div>
+</div>
+
+<-- Vista previa del equipo seleccionado -->
+<div class="card mb-4 d-none" id="equipo-preview">
+<div class="card-header">
+<h6 class="mb-0">
+<i class="bi bi-camera-video"></i> Información del Equipo
+</h6>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<small><strong>Tipo:</strong> <span id="preview-tipo">-</span></small><br>
+<small><strong>Ubicación:</strong> <span id="preview-ubicacion">-</span></small>
+</div>
+<div class="col-md-6">
+<small><strong>Estado:</strong> <span class="badge bg-warning">Con falla</span></small><br>
+<small><strong>Última verificación:</strong> <span id="preview-ultima-verificacion">-</span></small>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Sidebar - Opciones de Gravedad -->
+<div class="col-lg-4" id="sidebar-paso1">
+<div class="card">
+<div class="card-header">
+<h6 class="mb-0">
+<i class="bi bi-exclamation-triangle"></i> Nivel de Gravedad
+</h6>
+</div>
+<div class="card-body">
+<div class="gravedad-option gravedad-critical mb-" data-gravedad="critica">
+<div class="d-flex align-items-center">
+<i class="bi bi-exclamation-octagon fs-4 me-3 text-danger"></i>
+<div>
+<h6 class="mb-1">Crítica</h6>
+<small class="text-muted">Sistema completamente fuera de servicio</small>
+</div>
+</div>
+</div>
+
+<div class="gravedad-option gravedad-alta mb-" data-gravedad="alta">
+<div class="d-flex align-items-center">
+<i class="bi bi-exclamation-triangle fs-4 me-3 text-warning"></i>
+<div>
+<h6 class="mb-1">Alta</h6>
+<small class="text-muted">Funcionalidad principal afectada</small>
+</div>
+</div>
+</div>
+
+<div class="gravedad-option gravedad-media mb-" data-gravedad="media">
+<div class="d-flex align-items-center">
+<i class="bi bi-info-circle fs-4 me-3 text-info"></i>
+<div>
+<h6 class="mb-1">Media</h6>
+<small class="text-muted">Funcionalidad secundaria afectada</small>
+</div>
+</div>
+</div>
+
+<div class="gravedad-option gravedad-baja" data-gravedad="baja">
+<div class="d-flex align-items-center">
+<i class="bi bi-check-circle fs-4 me-3 text-success"></i>
+<div>
+<h6 class="mb-1">Baja</h6>
+<small class="text-muted">Problema menor</small>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Paso : Adjuntos (Opcional) -->
+<div class="row d-none" id="seccion-paso">
+<div class="col-1">
+<div class="form-section">
+<div class="form-section-header">
+<h5 class="mb-0">
+<i class="bi bi-paperclip"></i> Evidencia Fotográfica (Opcional)
+</h5>
+</div>
+<div class="form-section-body">
+<div class="upload-zone" id="upload-zone">
+<i class="bi bi-cloud-upload fs-1 text-muted mb-3"></i>
+<h5>Arrastre archivos aquí o haga clic para seleccionar</h5>
+<p class="text-muted mb-3">
+Formatos aceptados: JPG, PNG, GIF (máx. 5MB cada uno)
+</p>
+<input type="file" name="evidencias" id="evidencias" class="d-none" multiple accept="image/*">
+<button type="button" class="btn btn-outline-primary" onclick="document.getElementById('evidencias').click()">
+<i class="bi bi-folder-open"></i> Seleccionar Archivos
+</button>
+</div>
+
+<div id="preview-evidencias" class="row mt-3"></div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Paso 3: Asignación y Revisión -->
+<div class="row d-none" id="seccion-paso3">
+<div class="col-lg-8">
+<div class="form-section">
+<div class="form-section-header">
+<h5 class="mb-0">
+<i class="bi bi-person-check"></i> Asignación (Opcional)
+</h5>
+</div>
+<div class="form-section-body">
+<div class="mb-3">
+<label for="tecnico_asignado_id" class="form-label">Asignar Técnico</label>
+<select name="tecnico_asignado_id" id="tecnico_asignado_id" class="form-select">
+<option value="">Asignación automática</option>
+{% for tecnico in tecnicos %}
+<option value="{{ tecnico.id }}" {% if tecnico.id|string == request.form.tecnico_asignado_id %}selected{% endif %}>
+{{ tecnico.nombre_completo }} ({{ tecnico.especialidad or 'General' }})
+</option>
+{% endfor %}
+</select>
+<div class="form-text">
+Si no selecciona un técnico, el sistema asignará automáticamente según disponibilidad y especialización.
+</div>
+</div>
+
+<div class="mb-3">
+<label for="fecha_estimada_resolucion" class="form-label">Fecha Estimada de Resolución</label>
+<input type="datetime-local" name="fecha_estimada_resolucion" id="fecha_estimada_resolucion"
+class="form-control" value="{{ request.form.fecha_estimada_resolucion or '' }}">
+<div class="form-text">
+Opcional. El sistema calculará automáticamente basada en la gravedad.
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="col-lg-4">
+<div class="card">
+<div class="card-header">
+<h6 class="mb-0">
+<i class="bi bi-eye"></i> Resumen de la Falla
+</h6>
+</div>
+<div class="card-body" id="resumen-falla">
+<div class="text-muted text-center">
+<i class="bi bi-eye-slash fs-1"></i>
+<p class="mt-">Complete los pasos anteriores para ver el resumen</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Navegación -->
+<div class="row mt-4">
+<div class="col-1">
+<div class="d-flex justify-content-between">
+<button type="button" class="btn btn-outline-secondary" id="btn-anterior" onclick="pasoAnterior()" disabled>
+<i class="bi bi-arrow-left"></i> Anterior
+</button>
+
+<button type="button" class="btn btn-primary" id="btn-siguiente" onclick="pasoSiguiente()">
+Siguiente <i class="bi bi-arrow-right"></i>
+</button>
+
+<button type="submit" class="btn btn-success d-none" id="btn-enviar">
+<i class="bi bi-check-circle"></i> Reportar Falla
+</button>
+</div>
+</div>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let pasoActual = 1;
+const maxPasos = 3;
+
+function pasoAnterior() {
+if (pasoActual > 1) {
+document.getElementById(`seccion-paso${pasoActual}`).classList.add('d-none');
+if (pasoActual === 3) {
+document.getElementById('sidebar-paso1').classList.remove('d-none');
+}
+pasoActual--;
+actualizarNavegacion();
+actualizarIndicadores();
+}
+}
+
+function pasoSiguiente() {
+if (validarPasoActual()) {
+if (pasoActual < maxPasos) {
+document.getElementById(`seccion-paso${pasoActual}`).classList.add('d-none');
+if (pasoActual === 1) {
+document.getElementById('sidebar-paso1').classList.add('d-none');
+document.getElementById('seccion-paso').classList.remove('d-none');
+} else if (pasoActual === ) {
+document.getElementById('seccion-paso3').classList.remove('d-none');
+actualizarResumen();
+}
+pasoActual++;
+actualizarNavegacion();
+actualizarIndicadores();
+}
+}
+}
+
+function actualizarNavegacion() {
+const btnAnterior = document.getElementById('btn-anterior');
+const btnSiguiente = document.getElementById('btn-siguiente');
+const btnEnviar = document.getElementById('btn-enviar');
+
+btnAnterior.disabled = pasoActual === 1;
+
+if (pasoActual === maxPasos) {
+btnSiguiente.classList.add('d-none');
+btnEnviar.classList.remove('d-none');
+} else {
+btnSiguiente.classList.remove('d-none');
+btnEnviar.classList.add('d-none');
+}
+}
+
+function actualizarIndicadores() {
+for (let i = 1; i <= maxPasos; i++) {
+const step = document.getElementById(`step${i}`);
+step.classList.remove('active', 'completed');
+
+if (i === pasoActual) {
+step.classList.add('active');
+} else if (i < pasoActual) {
+step.classList.add('completed');
+}
+}
+}
+
+function validarPasoActual() {
+const form = document.getElementById('formFalla');
+const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+let valid = true;
+
+inputs.forEach(input => {
+if (input.value.trim()) {
+input.classList.add('is-invalid');
+valid = false;
+} else {
+input.classList.remove('is-invalid');
+}
+});
+
+if (valid) {
+alert('Por favor complete todos los campos requeridos.');
+}
+
+return valid;
+}
+
+function actualizarResumen() {
+const equipoSelect = document.getElementById('equipo_id');
+const gravedadSelect = document.getElementById('gravedad');
+const descripcionTextarea = document.getElementById('descripcion');
+const tecnicoSelect = document.getElementById('tecnico_asignado_id');
+
+if (equipoSelect.value && gravedadSelect.value && descripcionTextarea.value) {
+const equipo = equipoSelect.options[equipoSelect.selectedIndex];
+const gravedad = gravedadSelect.options[gravedadSelect.selectedIndex];
+const tecnico = tecnicoSelect.options[tecnicoSelect.selectedIndex];
+
+const resumenHTML = `
+<div class="mb-3">
+<h6><i class="bi bi-camera-video"></i> Equipo</h6>
+<p class="mb-1"><strong>${equipo.text}</strong></p>
+<small class="text-muted">${equipo.dataset.tipo || 'Tipo no especificado'}</small>
+</div>
+
+<div class="mb-3">
+<h6><i class="bi bi-exclamation-triangle"></i> Gravedad</h6>
+<span class="badge bg-${gravedad.value === 'critica' ? 'danger' : gravedad.value === 'alta' ? 'warning' : gravedad.value === 'media' ? 'info' : 'success'} fs-6">
+${gravedad.text}
+</span>
+</div>
+
+<div class="mb-3">
+<h6><i class="bi bi-file-text"></i> Descripción</h6>
+<p class="mb-0"><small>${descripcionTextarea.value.substring(0, 150)}${descripcionTextarea.value.length > 150 ? '...' : ''}</small></p>
+</div>
+
+${tecnico.value ? `
+<div class="mb-3">
+<h6><i class="bi bi-person-check"></i> Técnico Asignado</h6>
+<p class="mb-0"><strong>${tecnico.text}</strong></p>
+</div>
+` : ''}
+`;
+
+document.getElementById('resumen-falla').innerHTML = resumenHTML;
+}
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+// Contador de caracteres
+const descripcion = document.getElementById('descripcion');
+const comentarios = document.getElementById('comentarios');
+const charCount = document.getElementById('char-count');
+const comentariosCount = document.getElementById('comentarios-count');
+
+descripcion.addEventListener('input', function() {
+charCount.textContent = this.value.length;
+if (this.value.length > 500) {
+this.value = this.value.substring(0, 500);
+charCount.textContent = 500;
+}
+});
+
+comentarios.addEventListener('input', function() {
+comentariosCount.textContent = this.value.length;
+if (this.value.length > 300) {
+this.value = this.value.substring(0, 300);
+comentariosCount.textContent = 300;
+}
+});
+
+// Selección visual de gravedad
+const gravedadOptions = document.querySelectorAll('.gravedad-option');
+const gravedadSelect = document.getElementById('gravedad');
+
+gravedadOptions.forEach(option => {
+option.addEventListener('click', function() {
+gravedadOptions.forEach(opt => opt.classList.remove('selected'));
+this.classList.add('selected');
+gravedadSelect.value = this.dataset.gravedad;
+});
+});
+
+// Preview del equipo seleccionado
+const equipoSelect = document.getElementById('equipo_id');
+const equipoPreview = document.getElementById('equipo-preview');
+
+equipoSelect.addEventListener('change', function() {
+if (this.value) {
+const option = this.options[this.selectedIndex];
+document.getElementById('preview-tipo').textContent = option.dataset.tipo || 'No especificado';
+document.getElementById('preview-ubicacion').textContent = option.dataset.ubicacion || 'No especificado';
+equipoPreview.classList.remove('d-none');
+} else {
+equipoPreview.classList.add('d-none');
+}
+});
+
+// Upload zone
+const uploadZone = document.getElementById('upload-zone');
+const evidenciasInput = document.getElementById('evidencias');
+const previewContainer = document.getElementById('preview-evidencias');
+
+uploadZone.addEventListener('click', () => evidenciasInput.click());
+
+uploadZone.addEventListener('dragover', (e) => {
+e.preventDefault();
+uploadZone.classList.add('dragover');
+});
+
+uploadZone.addEventListener('dragleave', () => {
+uploadZone.classList.remove('dragover');
+});
+
+uploadZone.addEventListener('drop', (e) => {
+e.preventDefault();
+uploadZone.classList.remove('dragover');
+evidenciasInput.files = e.dataTransfer.files;
+mostrarPreviewEvidencias();
+});
+
+evidenciasInput.addEventListener('change', mostrarPreviewEvidencias);
+
+function mostrarPreviewEvidencias() {
+previewContainer.innerHTML = '';
+const files = evidenciasInput.files;
+
+for (let i = 0; i < files.length; i++) {
+const file = files[i];
+if (file.type.startsWith('image/')) {
+const reader = new FileReader();
+reader.onload = (e) => {
+const col = document.createElement('div');
+col.className = 'col-md-3 mb-';
+col.innerHTML = `
+<div class="card">
+<img src="${e.target.result}" class="card-img-top" style="height: 150px; object-fit: cover;">
+<div class="card-body p-">
+<small class="text-muted">${file.name.substring(0, 0)}...</small>
+</div>
+</div>
+`;
+previewContainer.appendChild(col);
+};
+reader.readAsDataURL(file);
+}
+}
+}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}Fallas - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gestión de Fallas</h1>
+        {% if current_user.rol in ['admin', 'supervisor', 'tecnico'] %}
+        <a href="{{ url_for('fallas_nueva') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Reportar Nueva Falla
+        </a>
+        {% endif %}
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Equipo</th>
+                            <th>Descripción</th>
+                            <th>Prioridad</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th>Técnico</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for falla in fallas %}
+                        <tr>
+                            <td>{{ falla.id }}</td>
+                            <td>{{ falla.equipo_tipo }} #{{ falla.equipo_id }}</td>
+                            <td>{{ falla.descripcion[:50] }}...</td>
+                            <td><span class="badge bg-{{ 'danger' if falla.prioridad == 'Crítica' else 'warning' }}">{{ falla.prioridad }}</span></td>
+                            <td><span class="badge bg-{{ 'secondary' if falla.estado == 'Pendiente' else 'primary' }}">{{ falla.estado }}</span></td>
+                            <td>{{ falla.fecha_reporte.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ falla.tecnico_asignado.nombre_completo if falla.tecnico_asignado else 'Sin asignar' }}</td>
+                            <td><a href="{{ url_for('fallas_detalle', id=falla.id) }}" class="btn btn-sm btn-info">Ver</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

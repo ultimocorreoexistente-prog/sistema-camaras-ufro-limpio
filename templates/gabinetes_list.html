@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}Gabinetes - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Gestión de Gabinetes</h1>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr><th>Código</th><th>Nombre</th><th>Ubicación</th><th>Estado</th><th>Acciones</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for gabinete in gabinetes %}
+                        <tr>
+                            <td>{{ gabinete.codigo }}</td>
+                            <td>{{ gabinete.nombre }}</td>
+                            <td>{{ gabinete.ubicacion.campus if gabinete.ubicacion else 'N/A' }}</td>
+                            <td><span class="badge bg-{{ 'success' if gabinete.estado == 'Activo' else 'danger' }}">{{ gabinete.estado }}</span></td>
+                            <td>
+                                <a href="{{ url_for('gabinetes_mantencion', id=gabinete.id) }}" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-tools"></i> Mantención
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

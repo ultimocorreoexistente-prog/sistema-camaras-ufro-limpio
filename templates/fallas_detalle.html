@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}Falla #{{ falla.id }} - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Detalle de Falla #{{ falla.id }}</h1>
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Información de la Falla</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6"><strong>Estado:</strong> <span class="badge bg-{{ 'secondary' if falla.estado == 'Pendiente' else 'primary' }}">{{ falla.estado }}</span></div>
+                <div class="col-md-6"><strong>Prioridad:</strong> <span class="badge bg-{{ 'danger' if falla.prioridad == 'Crítica' else 'warning' }}">{{ falla.prioridad }}</span></div>
+                <div class="col-md-6 mt-2"><strong>Equipo:</strong> {{ falla.equipo_tipo }} #{{ falla.equipo_id }}</div>
+                <div class="col-md-6 mt-2"><strong>Fecha Reporte:</strong> {{ falla.fecha_reporte.strftime('%d/%m/%Y %H:%M') }}</div>
+                <div class="col-md-12 mt-3"><strong>Descripción:</strong><br>{{ falla.descripcion }}</div>
+            </div>
+        </div>
+    </div>
+    {% if current_user.rol in ['admin', 'supervisor'] and falla.estado == 'Pendiente' %}
+    <form method="POST" action="{{ url_for('fallas_asignar', id=falla.id) }}" class="mb-3">
+        <div class="input-group">
+            <select name="tecnico_id" class="form-select" required>
+                <option value="">Seleccionar técnico...</option>
+                {% for tecnico in tecnicos %}
+                <option value="{{ tecnico.id }}">{{ tecnico.nombre_completo }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Asignar Técnico</button>
+        </div>
+    </form>
+    {% endif %}
+    {% if falla.estado == 'Asignada' and (current_user.id == falla.tecnico_asignado_id or current_user.rol in ['admin', 'supervisor']) %}
+    <form method="POST" action="{{ url_for('fallas_iniciar', id=falla.id) }}">
+        <button type="submit" class="btn btn-info mb-3">Iniciar Reparación</button>
+    </form>
+    {% endif %}
+    {% if falla.estado == 'En Proceso' and (current_user.id == falla.tecnico_asignado_id or current_user.rol in ['admin', 'supervisor']) %}
+    <a href="{{ url_for('fallas_reparar', id=falla.id) }}" class="btn btn-success mb-3">Marcar como Reparada</a>
+    {% endif %}
+    {% if falla.estado == 'Reparada' and current_user.rol in ['admin', 'supervisor'] %}
+    <form method="POST" action="{{ url_for('fallas_cerrar', id=falla.id) }}">
+        <button type="submit" class="btn btn-success mb-3">Cerrar Falla</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

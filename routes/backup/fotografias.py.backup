@@ -1,0 +1,329 @@
+"""
+Rutas para gestión de fotografías
+Sistema CRUD completo con upload drag-and-drop, metadata y categorías
+"""
+
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, session
+from werkzeug.utils import secure_filename
+from werkzeug.exceptions import RequestEntityTooLarge
+import os
+import uuid
+from datetime import datetime
+import json
+from PIL import Image
+import mimetypes
+
+# Blueprint para las rutas de fotografías
+fotografias_bp = Blueprint('fotografias', __name__)
+
+# Configuración
+UPLOAD_FOLDER = 'static/uploads/fotografias'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}
+MAX_FILE_SIZE = 16 * 104 * 104 # 16MB
+
+# Simulación de base de datos (en producción usar SQLAlchemy)
+fotografias_db = {}
+categorias_db = ['Paisajes', 'Retratos', 'Eventos', 'Productos', 'Arquitectura', 'Naturaleza']
+
+def allowed_file(filename):
+    """Verifica si el archivo tiene una extensión permitida"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def get_file_metadata(file_path):
+    """Extrae metadata de la imagen"""
+    try:
+        with Image.open(file_path) as img:
+            metadata = {
+                'ancho': img.width,
+                'alto': img.height,
+                'formato': img.format,
+                'modo': img.mode,
+                'tamano_archivo': os.path.getsize(file_path)
+            }
+
+            # Intentar extraer información EXIF si está disponible
+            exif_data = None
+            if hasattr(img, '_getexif') and img._getexif():
+                exif_data = img._getexif()
+
+            if exif_data:
+                metadata['exif'] = {}
+                # Extraer campos comunes de EXIF
+                if 71 in exif_data: # Make
+                    metadata['exif']['marca_camara'] = exif_data[71]
+                if 7 in exif_data: # Model
+        metadata['exif']['modelo_camara'] = exif_data[7]
+        if 33434 in exif_data: # ExposureTime
+        metadata['exif']['tiempo_exposicion'] = exif_data[33434]
+        if 34855 in exif_data: # ISOSpeedRatings
+        metadata['exif']['iso'] = exif_data[34855]
+        if 36867 in exif_data: # DateTimeOriginal
+        metadata['exif']['fecha_captura'] = exif_data[36867]
+
+        return metadata
+    except Exception as e:
+        return {'error': f'Error al leer metadata: {str(e)}'}
+
+@fotografias_bp.route('/')
+def index():
+    """Página principal de fotografías"""
+    return redirect(url_for('fotografias.listar_fotografias'))
+
+@fotografias_bp.route('/fotografias')
+def listar_fotografias():
+    """Lista todas las fotografías con filtros"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 1
+    categoria = request.args.get('categoria', '')
+    busqueda = request.args.get('busqueda', '')
+
+    # Filtrar fotografías
+    fotos_filtradas = list(fotografias_db.values())
+
+        fotos_filtradas = [f for f in fotos_filtradas if f.get('categoria') == categoria]
+
+        fotos_filtradas = [f for f in fotos_filtradas if
+        busqueda.lower() in f.get('titulo', '').lower() or
+        busqueda.lower() in f.get('descripcion', '').lower()]
+
+        # Paginación
+        total_fotos = len(fotos_filtradas)
+        inicio = (page - 1) * per_page
+        fin = inicio + per_page
+        fotos_pagina = fotos_filtradas[inicio:fin]
+
+        return render_template('fotografias_listar.html',
+        fotografias=fotos_pagina,
+        pagina_actual=page,
+        total_paginas=(total_fotos + per_page - 1) // per_page,
+        total_fotografias=total_fotos,
+        categorias=categorias_db,
+        categoria_actual=categoria,
+        busqueda_actual=busqueda)
+
+        @fotografias_bp.route('/fotografias/nueva')
+@fotografias_bp.route('/fotografias/nueva')
+def nueva_fotografia():
+    """Formulario para subir nueva fotografía"""
+    return render_template('fotografias_subir.html', categorias=categorias_db)
+
+@fotografias_bp.route('/fotografias/upload', methods=['POST'])
+def upload_fotografia():
+    """Maneja el upload de fotografías con drag-and-drop"""
+    try:
+        # Manejo de múltiples archivos
+        files = request.files.getlist('files')
+
+        if not files or files[0].filename == '':
+        return jsonify({'error': 'No se seleccionaron archivos'}), 400
+
+        uploaded_files = []
+
+        for file in files:
+        if file and allowed_file(file.filename):
+        # Generar nombre único
+        file_extension = file.filename.rsplit('.', 1)[1].lower()
+        unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
+        filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+
+        # Verificar tamaño del archivo
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+
+        if file_size > MAX_FILE_SIZE:
+        return jsonify({'error': f'El archivo {file.filename} excede el tamaño máximo de 16MB'}), 400
+
+        # Guardar archivo
+        file.save(filepath)
+
+        # Extraer metadata
+        metadata = get_file_metadata(filepath)
+
+        # Crear registro
+        fotografia_id = str(uuid.uuid4())
+        fotografia = {
+        'id': fotografia_id,
+        'titulo': request.form.get('titulo', file.filename),
+        'descripcion': request.form.get('descripcion', ''),
+        'categoria': request.form.get('categoria', 'General'),
+        'archivo': unique_filename,
+        'url': url_for('static', filename=f'uploads/fotografias/{unique_filename}'),
+        'fecha_subida': datetime.now().isoformat(),
+        'metadata': metadata,
+        'tags': request.form.get('tags', '').split(',') if request.form.get('tags') else []
+        }
+
+        # Guardar en base de datos simulada
+        fotografias_db[fotografia_id] = fotografia
+
+        uploaded_files.append({
+        'id': fotografia_id,
+        'titulo': fotografia['titulo'],
+        'url': fotografia['url'],
+        'ancho': metadata.get('ancho'),
+        'alto': metadata.get('alto')
+        })
+    else:
+        return jsonify({'error': f'Archivo no permitido: {file.filename}'}), 400
+
+    return jsonify({
+    'success': True,
+    'message': f'{len(uploaded_files)} archivo(s) subido(s) correctamente',
+    'files': uploaded_files
+    })
+
+    except RequestEntityTooLarge:
+        return jsonify({'error': 'El archivo es demasiado grande'}), 413
+    except Exception as e:
+        return jsonify({'error': f'Error al subir archivo: {str(e)}'}), 500
+
+@fotografias_bp.route('/fotografias/<fotografia_id>')
+def ver_fotografia(fotografia_id):
+    """Ver detalle de una fotografía específica"""
+    fotografia = fotografias_db.get(fotografia_id)
+
+        flash('Fotografía no encontrada', 'error')
+        return redirect(url_for('fotografias.listar_fotografias'))
+
+        return render_template('fotografias_ver.html', fotografia=fotografia)
+
+        @fotografias_bp.route('/fotografias/<fotografia_id>/editar', methods=['GET', 'POST'])
+@fotografias_bp.route('/fotografias/<fotografia_id>/editar', methods=['GET', 'POST'])
+def editar_fotografia(fotografia_id):
+    """Editar información de una fotografía"""
+    fotografia = fotografias_db.get(fotografia_id)
+
+        flash('Fotografía no encontrada', 'error')
+        return redirect(url_for('fotografias.listar_fotografias'))
+
+        # Actualizar datos
+        fotografia['titulo'] = request.form.get('titulo', fotografia['titulo'])
+        fotografia['descripcion'] = request.form.get('descripcion', fotografia['descripcion'])
+        fotografia['categoria'] = request.form.get('categoria', fotografia['categoria'])
+        fotografia['tags'] = request.form.get('tags', '').split(',') if request.form.get('tags') else []
+        fotografia['fecha_modificacion'] = datetime.now().isoformat()
+
+        flash('Fotografía actualizada correctamente', 'success')
+        return redirect(url_for('fotografias.ver_fotografia', fotografia_id=fotografia_id))
+
+        return render_template('fotografias_editar.html',
+        fotografia=fotografia,
+        categorias=categorias_db)
+
+        @fotografias_bp.route('/fotografias/<fotografia_id>/eliminar', methods=['POST'])
+@fotografias_bp.route('/fotografias/<fotografia_id>/eliminar', methods=['POST'])
+def eliminar_fotografia(fotografia_id):
+    """Eliminar una fotografía"""
+    fotografia = fotografias_db.get(fotografia_id)
+
+        return jsonify({'error': 'Fotografía no encontrada'}), 404
+
+    try:
+        # Eliminar archivo físico
+        filepath = os.path.join(UPLOAD_FOLDER, fotografia['archivo'])
+        if os.path.exists(filepath):
+        os.remove(filepath)
+
+        # Eliminar de base de datos
+        del fotografias_db[fotografia_id]
+
+        return jsonify({'success': True, 'message': 'Fotografía eliminada correctamente'})
+
+    except Exception as e:
+        return jsonify({'error': f'Error al eliminar: {str(e)}'}), 500
+
+@fotografias_bp.route('/fotografias/<fotografia_id>/metadata')
+def obtener_metadata(fotografia_id):
+    """API para obtener metadata de una fotografía"""
+    fotografia = fotografias_db.get(fotografia_id)
+
+        return jsonify({'error': 'Fotografía no encontrada'}), 404
+
+        return jsonify({
+        'id': fotografia_id,
+        'metadata': fotografia.get('metadata', {}),
+        'titulo': fotografia.get('titulo'),
+        'categoria': fotografia.get('categoria'),
+        'fecha_subida': fotografia.get('fecha_subida')
+        })
+
+        @fotografias_bp.route('/api/fotografias/buscar')
+@fotografias_bp.route('/api/fotografias/buscar')
+def buscar_fotografias():
+    """API para búsqueda de fotografías"""
+    query = request.args.get('q', '')
+    categoria = request.args.get('categoria', '')
+
+    resultados = []
+
+    for foto in fotografias_db.values():
+    # Filtro por texto
+        if (query.lower() not in foto.get('titulo', '').lower() and
+    query.lower() not in foto.get('descripcion', '').lower() and
+    not any(query.lower() in tag.lower() for tag in foto.get('tags', []))):
+    continue
+
+    # Filtro por categoría
+        continue
+
+        resultados.append({
+        'id': foto['id'],
+        'titulo': foto['titulo'],
+        'categoria': foto.get('categoria'),
+        'url': foto['url'],
+        'fecha_subida': foto.get('fecha_subida')
+        })
+
+        return jsonify(resultados)
+
+        @fotografias_bp.route('/api/fotografias/categorias')
+@fotografias_bp.route('/api/fotografias/categorias')
+def obtener_categorias():
+    """API para obtener categorías disponibles"""
+    # Contar fotos por categoría
+    categorias_con_contador = {}
+    for categoria in categorias_db:
+    contador = len([f for f in fotografias_db.values() if f.get('categoria') == categoria])
+    categorias_con_contador[categoria] = contador
+
+    # Agregar categoría "Sin categoría" si existe
+    sin_categoria = len([f for f in fotografias_db.values() if not f.get('categoria')])
+        categorias_con_contador['Sin categoría'] = sin_categoria
+
+        return jsonify(categorias_con_contador)
+
+        @fotografias_bp.route('/fotografias/upload/dragdrop')
+@fotografias_bp.route('/fotografias/upload/dragdrop')
+def upload_dragdrop():
+    """Vista especial para upload con drag-and-drop"""
+    return render_template('fotografias_dragdrop.html')
+
+    # Endpoint para procesar archivos arrastrados
+@fotografias_bp.route('/fotografias/process-dropped', methods=['POST'])
+def process_dropped_files():
+    """Procesa archivos arrastrados al navegador"""
+    try:
+        data = request.get_json()
+        files_data = data.get('files', [])
+
+        processed_files = []
+
+        for file_info in files_data:
+        # Aquí normalmente procesarías archivos subidos via JavaScript
+        # Por simplicidad, simulamos el procesamiento
+        processed_files.append({
+        'filename': file_info.get('name'),
+        'size': file_info.get('size'),
+        'type': file_info.get('type'),
+        'status': 'processed'
+        })
+
+        return jsonify({
+        'success': True,
+        'processed_files': processed_files,
+        'message': f'{len(processed_files)} archivo(s) procesado(s)'
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Error procesando archivos: {str(e)}'}), 500

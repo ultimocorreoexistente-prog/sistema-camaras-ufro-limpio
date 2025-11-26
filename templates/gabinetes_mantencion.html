@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+
+{% block title %}Mantención Gabinete {{ gabinete.codigo }} - Sistema UFRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Mantención y Reparación - Gabinete {{ gabinete.codigo }}</h1>
+        <a href="{{ url_for('gabinetes_list') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+    
+    <!-- Información del Gabinete -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Información del Gabinete</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>Código:</strong> {{ gabinete.codigo }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Nombre:</strong> {{ gabinete.nombre or 'N/A' }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Ubicación:</strong> 
+                    {% if gabinete.ubicacion %}
+                    {{ gabinete.ubicacion.campus }} - {{ gabinete.ubicacion.edificio }}
+                    {% endif %}
+                </div>
+                <div class="col-md-3">
+                    <strong>Estado:</strong>
+                    <span class="badge bg-{{ 'success' if gabinete.estado == 'Activo' else 'danger' }}">
+                        {{ gabinete.estado }}
+                    </span>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <strong>Observaciones:</strong> {{ gabinete.observaciones or 'Sin observaciones' }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Switches en este Gabinete -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-hdd-network"></i> Switches en este Gabinete ({{ switches|length }})
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if switches %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Modelo</th>
+                            <th>IP</th>
+                            <th>Puertos Totales</th>
+                            <th>Puertos Usados</th>
+                            <th>Puertos Disponibles</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for switch in switches %}
+                        <tr>
+                            <td><strong>{{ switch.codigo }}</strong></td>
+                            <td>{{ switch.modelo }}</td>
+                            <td>{{ switch.ip }}</td>
+                            <td>{{ switch.puertos_totales }}</td>
+                            <td>{{ switch.puertos_usados or 0 }}</td>
+                            <td>{{ switch.puertos_disponibles or 0 }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if switch.estado == 'Activo' else 'danger' }}">
+                                    {{ switch.estado }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="/switches/{{ switch.id }}" class="btn btn-sm btn-primary">Ver Detalle</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No hay switches en este gabinete</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- NVR/DVR en este Gabinete -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-camera-reels"></i> NVR/DVR en este Gabinete ({{ nvrs|length }})
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if nvrs %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Tipo</th>
+                            <th>Modelo</th>
+                            <th>Marca</th>
+                            <th>Canales Totales</th>
+                            <th>Canales Usados</th>
+                            <th>IP</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for nvr in nvrs %}
+                        <tr>
+                            <td><strong>{{ nvr.codigo }}</strong></td>
+                            <td>{{ nvr.tipo }}</td>
+                            <td>{{ nvr.modelo }}</td>
+                            <td>{{ nvr.marca }}</td>
+                            <td>{{ nvr.canales_totales }}</td>
+                            <td>{{ nvr.canales_usados or 0 }}</td>
+                            <td>{{ nvr.ip }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if nvr.estado == 'Activo' else 'danger' }}">
+                                    {{ nvr.estado }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="/nvr/{{ nvr.id }}" class="btn btn-sm btn-primary">Ver Detalle</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No hay NVR/DVR en este gabinete</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- UPS en este Gabinete -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+                <i class="bi bi-lightning-charge"></i> UPS en este Gabinete ({{ ups_list|length }})
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if ups_list %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Modelo</th>
+                            <th>Marca</th>
+                            <th>Capacidad (VA)</th>
+                            <th>Número de Baterías</th>
+                            <th>Equipos que Alimenta</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ups in ups_list %}
+                        <tr>
+                            <td><strong>{{ ups.codigo }}</strong></td>
+                            <td>{{ ups.modelo }}</td>
+                            <td>{{ ups.marca }}</td>
+                            <td>{{ ups.capacidad_va }} VA</td>
+                            <td>{{ ups.numero_baterias }}</td>
+                            <td>{{ ups.equipos_que_alimenta or 'N/A' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if ups.estado == 'Activo' else 'danger' }}">
+                                    {{ ups.estado }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="/ups/{{ ups.id }}" class="btn btn-sm btn-primary">Ver Detalle</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No hay UPS en este gabinete</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Fuentes de Poder en este Gabinete -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-plug"></i> Fuentes de Poder en este Gabinete ({{ fuentes|length }})
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if fuentes %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Modelo</th>
+                            <th>Voltaje</th>
+                            <th>Amperaje</th>
+                            <th>Equipos que Alimenta</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fuente in fuentes %}
+                        <tr>
+                            <td><strong>{{ fuente.codigo }}</strong></td>
+                            <td>{{ fuente.modelo }}</td>
+                            <td>{{ fuente.voltaje }}</td>
+                            <td>{{ fuente.amperaje }}</td>
+                            <td>{{ fuente.equipos_que_alimenta or 'N/A' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if fuente.estado == 'Activo' else 'danger' }}">
+                                    {{ fuente.estado }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="/fuentes/{{ fuente.id }}" class="btn btn-sm btn-primary">Ver Detalle</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No hay fuentes de poder en este gabinete</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Historial de Mantenimientos y Reparaciones -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-clock-history"></i> Historial de Mantenimientos y Reparaciones
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if mantenimientos %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th>Técnico</th>
+                            <th>Tiempo (hrs)</th>
+                            <th>Costo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mant in mantenimientos %}
+                        <tr>
+                            <td>{{ mant.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'primary' if mant.tipo == 'Preventivo' else 'warning' }}">
+                                    {{ mant.tipo }}
+                                </span>
+                            </td>
+                            <td>{{ mant.descripcion }}</td>
+                            <td>
+                                {% if mant.tecnico %}
+                                {{ mant.tecnico.nombre_completo }}
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ mant.tiempo_ejecucion_horas or 'N/A' }}</td>
+                            <td>${{ mant.costo or 0 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No hay mantenimientos registrados para este gabinete</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Botón para Registrar Nuevo Mantenimiento -->
+    {% if current_user.rol in ['admin', 'supervisor', 'tecnico'] %}
+    <div class="text-center mb-4">
+        <a href="{{ url_for('mantenimientos_nuevo') }}?equipo_tipo=Gabinete&equipo_id={{ gabinete.id }}" class="btn btn-lg btn-success">
+            <i class="bi bi-tools"></i> Registrar Nuevo Mantenimiento/Reparación
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

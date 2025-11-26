@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Cámaras - Sistema de Cámaras UFRO{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-camera-video me-2"></i>Gestión de Cámaras</h1>
+            {% if user.rol in ['admin', 'superadmin'] %}
+            <a href="{{ url_for('nueva_camara') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Nueva Cámara
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-12">
+        <div class="card content-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-list me-2"></i>Lista de Cámaras</h5>
+            </div>
+            <div class="card-body">
+                {% if camaras %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Ubicación</th>
+                                    <th>IP Address</th>
+                                    <th>Estado</th>
+                                    <th>Tipo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for camara in camaras %}
+                                <tr>
+                                    <td>{{ camara.id }}</td>
+                                    <td><strong>{{ camara.nombre }}</strong></td>
+                                    <td>{{ camara.ubicacion or '-' }}</td>
+                                    <td>{{ camara.ip_address or '-' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if camara.estado == 'activa' else 'warning' if camara.estado == 'mantenimiento' else 'danger' }}">
+                                            {{ camara.estado|title }}
+                                        </span>
+                                    </td>
+                                    <td>{{ camara.tipo_camara or '-' }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ url_for('editar_camara', id=camara.id) }}" 
+                                               class="btn btn-outline-primary btn-sm" 
+                                               title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" 
+                                                    class="btn btn-outline-danger btn-sm" 
+                                                    title="Eliminar"
+                                                    onclick="eliminarCamara({{ camara.id }}, '{{ camara.nombre|e }}')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-camera-video text-muted" style="font-size: 4rem;"></i>
+                        <h4 class="text-muted mt-3">No hay cámaras registradas</h4>
+                        <p class="text-muted">Comienza agregando tu primera cámara al sistema.</p>
+                        {% if user.rol in ['admin', 'superadmin'] %}
+                        <a href="{{ url_for('nueva_camara') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i>Agregar Primera Cámara
+                        </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para eliminar -->
+<div class="modal fade" id="eliminarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar la cámara <strong id="camaraNombre"></strong>?</p>
+                <p class="text-muted"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formEliminar" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let camaraIdParaEliminar = null;
+function eliminarCamara(id, nombre) {
+    camaraIdParaEliminar = id;
+    document.getElementById('camaraNombre').textContent = nombre;
+    const form = document.getElementById('formEliminar');
+    form.action = `/camaras/${id}/eliminar`;
+    new bootstrap.Modal(document.getElementById('eliminarModal')).show();
+}
+</script>
+{% endblock %}

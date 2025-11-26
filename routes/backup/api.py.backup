@@ -1,0 +1,602 @@
+"""
+Rutas de APIs para datos JSON
+"""
+from flask import jsonify, request
+from sqlalchemy import func, desc, and_, or_
+from datetime import datetime, timedelta
+from .. import api_bp
+from .auth import token_required
+from models import (
+Camara, Nvr, Switch, Ups, Fuente, Gabinete,
+Falla, Mantenimiento, Usuario, db
+)
+from utils.filters import build_filters
+from utils.validators import validate_json, validate_pagination
+
+@api_bp.route('/equipos', methods=['GET'])
+@token_required
+def get_equipos_api(current_user):
+    """
+    API para obtener todos los equipos con filtros y paginación
+    """
+    try:
+        # Parámetros de consulta
+        tipo = request.args.get('tipo', '')
+        estado = request.args.get('estado', '')
+        ubicacion = request.args.get('ubicacion', '')
+        search = request.args.get('search', '')
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 0, type=int)
+
+        # Validar paginación
+        if per_page > 100:
+    per_page = 100
+
+        # Mapear tipos de equipo a modelos
+        tipos_equipo = {
+            'camara': Camara,
+            'nvr': Nvr,
+            'switch': Switch,
+            'ups': Ups,
+            'fuente': Fuente,
+            'gabinete': Gabinete
+        }
+
+        # Si se especifica un tipo específico
+        if tipo in tipos_equipo:
+    modelo = tipos_equipo[tipo]
+            query = modelo.query.filter_by(activo=True)
+
+            # Aplicar filtros
+            if estado:
+    query = query.filter(getattr(modelo, 'estado') == estado)
+            if ubicacion:
+    query = query.filter(getattr(modelo, 'ubicacion').like(f'%{ubicacion}%'))
+            if search:
+    query = query.filter(
+                    or_(
+                        getattr(modelo, 'nombre').like(f'%{search}%'),
+                        getattr(modelo, 'descripcion').like(f'%{search}%') if hasattr(modelo, 'descripcion') else False
+                    )
+                )
+
+            # Paginación
+            pagination = query.paginate(
+                page=page, per_page=per_page, error_out=False
+            )
+
+            equipos = [{
+                'id': e.id,
+                'tipo': tipo,
+                'nombre': e.nombre,
+                'descripcion': getattr(e, 'descripcion', ''),
+                'modelo': getattr(e, 'modelo', ''),
+                'marca': getattr(e, 'marca', ''),
+                'ubicacion': getattr(e, 'ubicacion', ''),
+                'estado': getattr(e, 'estado', ''),
+                'ip_address': getattr(e, 'ip_address', ''),
+                'fecha_instalacion': getattr(e, 'fecha_instalacion', None).isoformat() if getattr(e, 'fecha_instalacion', None) else None,
+                'created_at': e.created_at.isoformat(),
+                'updated_at': e.updated_at.isoformat() if hasattr(e, 'updated_at') else None,
+                'activo': e.activo
+            } for e in pagination.items]
+
+            return jsonify({
+                'success': True,
+                'data': equipos,
+                'pagination': {
+                    'page': pagination.page,
+                    'per_page': pagination.per_page,
+                    'total': pagination.total,
+                    'has_next': pagination.has_next,
+                    'has_prev': pagination.has_prev
+                },
+                'filters': {
+                    'tipo': tipo,
+                    'estado': estado,
+                    'ubicacion': ubicacion,
+                    'search': search
+                }
+            })
+
+            return jsonify({'error': 'Tipo de equipo no especificado'}), 400
+    else:
+        # Obtener todos los tipos de equipo
+        todos_equipos = []
+        total_count = 0
+
+        for tipo_equipo, modelo in tipos_equipo.items():
+    query = modelo.query.filter_by(activo=True)
+
+            # Filtros por tipo
+            if tipo_equipo in ['camara', 'nvr'] and estado:
+    query = query.filter(getattr(modelo, 'estado') == estado)
+
+            # Filtro de ubicación
+            if ubicacion:
+    query = query.filter(getattr(modelo, 'ubicacion').like(f'%{ubicacion}%'))
+
+            # Búsqueda
+            if search:
+    query = query.filter(
+                    or_(
+                        getattr(modelo, 'nombre').like(f'%{search}%'),
+                        getattr(modelo, 'descripcion').like(f'%{search}%') if hasattr(modelo, 'descripcion') else False
+                    )
+                )
+
+            # Obtener equipos
+            equipos_tipo = query.limit(50).all() # Limitar por tipo para evitar sobrecarga
+
+            for e in equipos_tipo:
+    todos_equipos.append({
+                    'id': e.id,
+                    'tipo': tipo_equipo,
+                    'nombre': e.nombre,
+                    'descripcion': getattr(e, 'descripcion', ''),
+                    'modelo': getattr(e, 'modelo', ''),
+                    'marca': getattr(e, 'marca', ''),
+                    'ubicacion': getattr(e, 'ubicacion', ''),
+                    'estado': getattr(e, 'estado', ''),
+                    'ip_address': getattr(e, 'ip_address', ''),
+                    'fecha_instalacion': getattr(e, 'fecha_instalacion', None).isoformat() if getattr(e, 'fecha_instalacion', None) else None,
+                    'created_at': e.created_at.isoformat(),
+                    'updated_at': e.updated_at.isoformat() if hasattr(e, 'updated_at') else None,
+                    'activo': e.activo
+                })
+
+        total_count += query.count()
+
+        # Aplicar paginación manual a la lista combinada
+        start = (page - 1) * per_page
+        end = start + per_page
+        equipos = todos_equipos[start:end]
+
+        pagination = type('obj', (object,), {
+        'page': page,
+        'pages': (total_count + per_page - 1) // per_page,
+        'per_page': per_page,
+        'total': total_count,
+        'has_next': end < len(todos_equipos),
+        'has_prev': start > 0
+        })()
+
+        return jsonify({
+        'equipos': equipos,
+        'pagination': {
+        'page': pagination.page,
+        'pages': pagination.pages,
+        'per_page': pagination.per_page,
+        'total': pagination.total,
+        'has_next': pagination.has_next,
+        'has_prev': pagination.has_prev
+        },
+        'filters': {
+        'tipo': tipo,
+        'estado': estado,
+        'ubicacion': ubicacion,
+        'search': search
+        }
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Error al obtener equipos: {str(e)}'}), 500
+
+@api_bp.route('/fallas', methods=['GET'])
+@token_required
+def get_fallas_api(current_user):
+    """
+    API para obtener fallas con filtros y paginación
+    """
+    try:
+        # Parámetros de consulta
+        estado = request.args.get('estado', '')
+        prioridad = request.args.get('prioridad', '')
+        tipo = request.args.get('tipo', '')
+        asignado_a = request.args.get('asignado_a', '')
+        search = request.args.get('search', '')
+        fecha_desde = request.args.get('fecha_desde', '')
+        fecha_hasta = request.args.get('fecha_hasta', '')
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 0, type=int)
+
+        query = Falla.query
+
+        # Aplicar filtros
+        if estado:
+    query = query.filter(Falla.estado == estado)
+        if prioridad:
+    query = query.filter(Falla.prioridad == prioridad)
+        if tipo:
+    query = query.filter(Falla.tipo == tipo)
+        if asignado_a:
+    query = query.filter(Falla.asignado_a_id == asignado_a)
+        if search:
+    query = query.filter(
+        or_(
+        Falla.titulo.like(f'%{search}%'),
+        Falla.descripcion.like(f'%{search}%')
+        )
+        )
+        if fecha_desde:
+    query = query.filter(Falla.fecha_creacion >= fecha_desde)
+        if fecha_hasta:
+    query = query.filter(Falla.fecha_creacion <= fecha_hasta)
+
+        # Ordenar por fecha de creación descendente
+        query = query.order_by(Falla.fecha_creacion.desc())
+
+        # Paginación
+        pagination = query.paginate(
+        page=page, per_page=per_page, error_out=False
+        )
+
+        fallas = [{
+        'id': f.id,
+        'titulo': f.titulo,
+        'descripcion': f.descripcion,
+        'prioridad': f.prioridad,
+        'estado': f.estado,
+        'tipo': f.tipo,
+        'equipo_id': f.equipo_id,
+        'equipo_nombre': getattr(f, f.tipo, {}).get('nombre') if f.equipo else None,
+        'fecha_creacion': f.fecha_creacion.isoformat(),
+        'fecha_actualizacion': f.fecha_actualizacion.isoformat() if f.fecha_actualizacion else None,
+        'fecha_resolucion': f.fecha_resolucion.isoformat() if f.fecha_resolucion else None,
+        'asignado_a': {
+        'id': f.asignado_a.id if f.asignado_a else None,
+        'nombre': f.asignado_a.nombre if f.asignado_a else None,
+        'apellido': f.asignado_a.apellido if f.asignado_a else None
+        },
+        'creado_por': {
+        'id': f.creado_por.id if f.creado_por else None,
+        'nombre': f.creado_por.nombre if f.creado_por else None,
+        'apellido': f.creado_por.apellido if f.creado_por else None
+        },
+        'comentarios': len(f.comentarios) if hasattr(f, 'comentarios') else 0
+        } for f in pagination.items]
+
+        return jsonify({
+        'fallas': fallas,
+        'pagination': {
+        'page': pagination.page,
+        'pages': pagination.pages,
+        'per_page': pagination.per_page,
+        'total': pagination.total,
+        'has_next': pagination.has_next,
+        'has_prev': pagination.has_prev
+        }
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Error al obtener fallas: {str(e)}'}), 500
+
+@api_bp.route('/mantenimientos', methods=['GET'])
+@token_required
+def get_mantenimientos_api(current_user):
+    """
+    API para obtener mantenimientos con filtros y paginación
+    """
+    try:
+        # Parámetros de consulta
+        estado = request.args.get('estado', '')
+        tipo = request.args.get('tipo', '')
+        tipo_equipo = request.args.get('tipo_equipo', '')
+        asignado_a = request.args.get('asignado_a', '')
+        search = request.args.get('search', '')
+        fecha_desde = request.args.get('fecha_desde', '')
+        fecha_hasta = request.args.get('fecha_hasta', '')
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 0, type=int)
+
+        query = Mantenimiento.query
+
+        # Aplicar filtros
+        if estado:
+    query = query.filter(Mantenimiento.estado == estado)
+        if tipo:
+    query = query.filter(Mantenimiento.tipo == tipo)
+        if tipo_equipo:
+    query = query.filter(Mantenimiento.tipo_equipo == tipo_equipo)
+        if asignado_a:
+    query = query.filter(Mantenimiento.asignado_a_id == asignado_a)
+        if search:
+    query = query.filter(
+        or_(
+        Mantenimiento.titulo.like(f'%{search}%'),
+        Mantenimiento.descripcion.like(f'%{search}%')
+        )
+        )
+        if fecha_desde:
+    query = query.filter(Mantenimiento.fecha_programada >= fecha_desde)
+        if fecha_hasta:
+    query = query.filter(Mantenimiento.fecha_programada <= fecha_hasta)
+
+        # Ordenar por fecha programada descendente
+        query = query.order_by(Mantenimiento.fecha_programada.desc())
+
+        # Paginación
+        pagination = query.paginate(
+        page=page, per_page=per_page, error_out=False
+        )
+
+        mantenimientos = [{
+        'id': m.id,
+        'titulo': m.titulo,
+        'descripcion': m.descripcion,
+        'tipo': m.tipo,
+        'tipo_equipo': m.tipo_equipo,
+        'equipo_id': m.equipo_id,
+        'equipo_nombre': getattr(m, f'_{m.tipo_equipo}', {}).get('nombre') if m.equipo else None,
+        'estado': m.estado,
+        'prioridad': getattr(m, 'prioridad', 'media'),
+        'fecha_programada': m.fecha_programada.isoformat(),
+        'fecha_ejecucion': m.fecha_ejecucion.isoformat() if m.fecha_ejecucion else None,
+        'tiempo_estimado': getattr(m, 'tiempo_estimado', None),
+        'costo': getattr(m, 'costo', None),
+        'notas': getattr(m, 'notas', ''),
+        'asignado_a': {
+        'id': m.asignado_a.id if m.asignado_a else None,
+        'nombre': m.asignado_a.nombre if m.asignado_a else None,
+        'apellido': m.asignado_a.apellido if m.asignado_a else None
+        },
+        'ejecutado_por': {
+        'id': m.ejecutado_por.id if m.ejecutado_por else None,
+        'nombre': m.ejecutado_por.nombre if m.ejecutado_por else None,
+        'apellido': m.ejecutado_por.apellido if m.ejecutado_por else None
+        },
+        'created_at': m.created_at.isoformat()
+        } for m in pagination.items]
+
+        return jsonify({
+        'mantenimientos': mantenimientos,
+        'pagination': {
+        'page': pagination.page,
+        'pages': pagination.pages,
+        'per_page': pagination.per_page,
+        'total': pagination.total,
+        'has_next': pagination.has_next,
+        'has_prev': pagination.has_prev
+        }
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Error al obtener mantenimientos: {str(e)}'}), 500
+
+@api_bp.route('/usuarios', methods=['GET'])
+@token_required
+def get_usuarios_api(current_user):
+    """
+    API para obtener usuarios (solo información básica)
+    """
+    try:
+        # Parámetros de consulta
+        search = request.args.get('search', '')
+        rol = request.args.get('rol', '')
+        activo = request.args.get('activo', True, type=bool)
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 50, type=int)
+
+        query = Usuario.query.filter_by(activo=activo)
+
+        # Aplicar filtros
+        if search:
+    query = query.filter(
+        or_(
+        Usuario.nombre.like(f'%{search}%'),
+        Usuario.apellido.like(f'%{search}%'),
+        Usuario.email.like(f'%{search}%')
+        )
+        )
+        if rol:
+    query = query.filter(Usuario.rol_id == rol)
+
+        # Ordenar por nombre
+        query = query.order_by(Usuario.nombre.asc(), Usuario.apellido.asc())
+
+        # Paginación
+        pagination = query.paginate(
+        page=page, per_page=per_page, error_out=False
+        )
+
+        usuarios = [{
+        'id': u.id,
+        'nombre': u.nombre,
+        'apellido': u.apellido,
+        'email': u.email,
+        'rol': u.rol.nombre if u.rol else None,
+        'activo': u.activo,
+        'ultimo_acceso': u.ultimo_acceso.isoformat() if u.ultimo_acceso else None,
+        'created_at': u.created_at.isoformat()
+        } for u in pagination.items]
+
+        return jsonify({
+        'usuarios': usuarios,
+        'pagination': {
+        'page': pagination.page,
+        'pages': pagination.pages,
+        'per_page': pagination.per_page,
+        'total': pagination.total,
+        'has_next': pagination.has_next,
+        'has_prev': pagination.has_prev
+        }
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Error al obtener usuarios: {str(e)}'}), 500
+
+@api_bp.route('/estadisticas', methods=['GET'])
+@token_required
+def get_estadisticas_api(current_user):
+    """
+    API para obtener estadísticas detalladas del sistema
+    """
+    try:
+        # Estadísticas de fallas por tipo
+        fallas_por_tipo = db.session.query(
+        Falla.tipo, func.count(Falla.id)
+        ).group_by(Falla.tipo).all()
+
+        # Estadísticas de fallas por estado
+        fallas_por_estado = db.session.query(
+        Falla.estado, func.count(Falla.id)
+        ).group_by(Falla.estado).all()
+
+        # Estadísticas de fallas por prioridad
+        fallas_por_prioridad = db.session.query(
+        Falla.prioridad, func.count(Falla.id)
+        ).group_by(Falla.prioridad).all()
+
+        # Estadísticas de mantenimientos por tipo
+        mantenimientos_por_tipo = db.session.query(
+        Mantenimiento.tipo, func.count(Mantenimiento.id)
+        ).group_by(Mantenimiento.tipo).all()
+
+        # Estadísticas de mantenimientos por estado
+        mantenimientos_por_estado = db.session.query(
+        Mantenimiento.estado, func.count(Mantenimiento.id)
+        ).group_by(Mantenimiento.estado).all()
+
+        # Equipos por ubicación
+        equipos_por_ubicacion = []
+        for tipo, modelo in [
+        ('camara', Camara),
+        ('nvr', Nvr),
+        ('switch', Switch),
+        ('ups', Ups),
+        ('fuente', Fuente),
+        ('gabinete', Gabinete)
+        ]:
+    ubicaciones = db.session.query(
+        getattr(modelo, 'ubicacion'),
+        func.count(getattr(modelo, 'id'))
+        ).filter_by(activo=True).group_by(getattr(modelo, 'ubicacion')).all()
+
+        for ubicacion, count in ubicaciones:
+        if ubicacion:
+    equipos_por_ubicacion.append({
+        'tipo': tipo,
+        'ubicacion': ubicacion,
+        'cantidad': count
+        })
+
+        # Fallas en los últimos 30 días
+        fecha_limite = datetime.utcnow() - timedelta(days=30)
+        fallas_recientes = db.session.query(
+        func.date(Falla.fecha_creacion),
+        func.count(Falla.id)
+        ).filter(
+        Falla.fecha_creacion >= fecha_limite
+        ).group_by(func.date(Falla.fecha_creacion)).all()
+
+        return jsonify({
+        'fallas_por_tipo': [{'tipo': t, 'cantidad': c} for t, c in fallas_por_tipo],
+        'fallas_por_estado': [{'estado': e, 'cantidad': c} for e, c in fallas_por_estado],
+        'fallas_por_prioridad': [{'prioridad': p, 'cantidad': c} for p, c in fallas_por_prioridad],
+        'mantenimientos_por_tipo': [{'tipo': t, 'cantidad': c} for t, c in mantenimientos_por_tipo],
+        'mantenimientos_por_estado': [{'estado': e, 'cantidad': c} for e, c in mantenimientos_por_estado],
+        'equipos_por_ubicacion': equipos_por_ubicacion,
+        'fallas_recientes': [{'fecha': f, 'cantidad': c} for f, c in fallas_recientes]
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Error al obtener estadísticas: {str(e)}'}), 500
+
+@api_bp.route('/buscar', methods=['GET'])
+@token_required
+def buscar_api(current_user):
+    """
+    API de búsqueda global en el sistema
+    """
+    try:
+    query = request.args.get('q', '')
+        tipo = request.args.get('tipo', '') # falla, mantenimiento, equipo
+        limit = request.args.get('limit', 0, type=int)
+
+        if limit > 50:
+    limit = 50
+
+        resultados = []
+
+        if not tipo or tipo == 'equipos':
+        # Buscar en equipos
+        for tipo_equipo, modelo in [
+        ('camara', Camara),
+        ('nvr', Nvr),
+        ('switch', Switch),
+        ('ups', Ups),
+        ('fuente', Fuente),
+        ('gabinete', Gabinete)
+        ]:
+    equipos = modelo.query.filter(
+        modelo.activo == True,
+        or_(
+        modelo.nombre.like(f'%{query}%'),
+        modelo.descripcion.like(f'%{query}%') if hasattr(modelo, 'descripcion') else False
+        )
+        ).limit(limit // 6).all()
+
+        for e in equipos:
+    resultados.append({
+        'tipo': 'equipo',
+        'subtipo': tipo_equipo,
+        'id': e.id,
+        'titulo': e.nombre,
+        'descripcion': getattr(e, 'descripcion', ''),
+        'url': f'/{tipo_equipo}s/{e.id}',
+        'relevancia': 1.0
+        })
+
+        if not tipo or tipo == 'fallas':
+        # Buscar en fallas
+        fallas = Falla.query.filter(
+        or_(
+        Falla.titulo.like(f'%{query}%'),
+        Falla.descripcion.like(f'%{query}%')
+        )
+        ).order_by(Falla.fecha_creacion.desc()).limit(limit // 3).all()
+
+        for f in fallas:
+    resultados.append({
+        'tipo': 'falla',
+        'id': f.id,
+        'titulo': f.titulo,
+        'descripcion': f.descripcion[:100] + '...' if len(f.descripcion) > 100 else f.descripcion,
+        'prioridad': f.prioridad,
+        'estado': f.estado,
+        'url': f'/fallas/{f.id}',
+        'relevancia': 1.0 if f.prioridad == 'critica' else 0.8
+        })
+
+        if not tipo or tipo == 'mantenimientos':
+        # Buscar en mantenimientos
+        mantenimientos = Mantenimiento.query.filter(
+        or_(
+        Mantenimiento.titulo.like(f'%{query}%'),
+        Mantenimiento.descripcion.like(f'%{query}%')
+        )
+        ).order_by(Mantenimiento.fecha_programada.desc()).limit(limit // 3).all()
+
+        for m in mantenimientos:
+    resultados.append({
+        'tipo': 'mantenimiento',
+        'id': m.id,
+        'titulo': m.titulo,
+        'descripcion': m.descripcion[:100] + '...' if len(m.descripcion) > 100 else m.descripcion,
+        'tipo_equipo': m.tipo_equipo,
+        'estado': m.estado,
+        'url': f'/mantenimientos/{m.id}',
+        'relevancia': 1.0
+        })
+
+        # Ordenar por relevancia y título
+        resultados.sort(key=lambda x: (-x['relevancia'], x['titulo']))
+
+        return jsonify({
+        'resultados': resultados[:limit],
+        'total': len(resultados),
+        'query': query
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Error en búsqueda: {str(e)}'}), 500

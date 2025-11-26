@@ -1,0 +1,56 @@
+ El volumen de la unidad C no tiene etiqueta.
+ El n£mero de serie del volumen es: 424E-DF92
+
+ Directorio de C:\Users\Usuario\sistema-camaras-ufro-limpio\models
+
+26-11-2025  12:24    <DIR>          .
+26-11-2025  12:24    <DIR>          ..
+26-11-2025  11:21            10.176 base.py
+26-11-2025  11:21             3.750 camara.py
+26-11-2025  11:21             1.635 camaras.py
+26-11-2025  11:21             7.593 catalogo_tipo_falla.py
+26-11-2025  11:21            24.980 datos_iniciales.py
+26-11-2025  11:27             7.832 ejemplo_equipo_tecnico.py
+26-11-2025  11:27             7.079 ejemplo_network_connections.py
+26-11-2025  11:21             7.083 ejemplo_puertos_switch.py
+26-11-2025  11:21            19.909 ejemplo_uso.py
+17-11-2025  13:20    <DIR>          enums
+26-11-2025  11:21            13.305 equipo.py
+26-11-2025  11:21            13.496 equipo.py.bak
+26-11-2025  11:21            17.113 equipo_tecnico.py
+26-11-2025  11:21             3.883 falla.py
+26-11-2025  11:21             1.229 falla_comentario.py
+26-11-2025  11:21             5.748 fia_logic.py
+26-11-2025  11:21             4.181 fotografia.py
+26-11-2025  11:21             8.468 fuente.py
+26-11-2025  11:21            32.608 fuente_poder.py
+26-11-2025  11:21            33.006 gabinete.py
+26-11-2025  11:21            10.352 historial_estado_equipo.py
+26-11-2025  11:21            16.989 install.py
+26-11-2025  11:21             8.559 mantenimiento.py
+26-11-2025  11:21             2.629 models.txt
+26-11-2025  11:21            12.437 network_connections.py
+26-11-2025  11:21            25.977 nvr.py
+26-11-2025  11:21             8.391 puertos_switch.py
+26-11-2025  11:21             8.270 README.md
+26-11-2025  11:21             7.265 README_catalogo_tipo_falla.md
+26-11-2025  11:27             7.786 README_EQUIPO_TECNICO.md
+26-11-2025  11:21             7.790 README_network_connections.md
+26-11-2025  11:21             6.991 README_PUERTOS_SWITCH.md
+26-11-2025  11:21             6.652 RESUMEN_COMPLETADO.md
+26-11-2025  11:21             5.781 RESUMEN_PUERTO_SWITCH_COMPLETADO.md
+26-11-2025  11:21            42.898 switch.py
+26-11-2025  11:21             4.049 test_catalogo_tipo_falla.py
+26-11-2025  11:21             7.008 test_puertos_switch.py
+26-11-2025  15:51                 0 txt
+26-11-2025  11:21             3.333 ubicacion.py
+26-11-2025  11:21            35.181 ups.py
+26-11-2025  11:21             5.384 usuario.py
+26-11-2025  11:21               723 usuario_log.py
+26-11-2025  11:21             9.552 usuario_logs.py
+26-11-2025  11:21               165 usuario_roles.py
+26-11-2025  11:27            10.053 _datos_iniciales.py
+26-11-2025  15:48             1.393 __init__.py
+26-11-2025  12:24    <DIR>          __pycache__
+              45 archivos        478.682 bytes
+               4 dirs  67.879.784.448 bytes libres

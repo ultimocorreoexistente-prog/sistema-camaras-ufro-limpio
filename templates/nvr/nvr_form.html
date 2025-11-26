@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if nvr else 'Crear' }} NVR - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1>
+<i class="bi bi-{{ 'pencil' if nvr else 'plus-circle' }}"></i>
+{{ 'Editar' if nvr else 'Nuevo' }} Equipo NVR
+</h1>
+<a href="{{ url_for('nvr_listar') }}" class="btn btn-outline-secondary">
+<i class="bi bi-arrow-left"></i> Volver a la lista
+</a>
+</div>
+
+<div class="row">
+<div class="col-lg-8">
+<form method="POST" id="nvrForm">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-info-circle"></i> Información del Equipo
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="marca" class="form-label">Marca *</label>
+<select name="marca" id="marca" class="form-select" required>
+<option value="">Seleccionar marca</option>
+<option value="Hikvision" {% if nvr and nvr.marca == 'Hikvision' %}selected{% endif %}>Hikvision</option>
+<option value="Dahua" {% if nvr and nvr.marca == 'Dahua' %}selected{% endif %}>Dahua</option>
+<option value="Axis" {% if nvr and nvr.marca == 'Axis' %}selected{% endif %}>Axis</option>
+<option value="Bosch" {% if nvr and nvr.marca == 'Bosch' %}selected{% endif %}>Bosch</option>
+<option value="Intelbras" {% if nvr and nvr.marca == 'Intelbras' %}selected{% endif %}>Intelbras</option>
+<option value="Otro" {% if nvr and nvr.marca == 'Otro' %}selected{% endif %}>Otro</option>
+</select>
+<div class="form-text">Marca del fabricante del equipo NVR</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="modelo" class="form-label">Modelo *</label>
+<input type="text" name="modelo" id="modelo" class="form-control"
+value="{{ nvr.modelo if nvr else '' }}" required
+placeholder="Ej: DS-7608NI-Q1">
+<div class="form-text">Modelo específico del equipo</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="ip" class="form-label">Dirección IP *</label>
+<input type="text" name="ip" id="ip" class="form-control"
+value="{{ nvr.ip if nvr else '' }}" required
+placeholder="19.168.1.100"
+pattern="^(?:(?:5[0-5]|[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:5[0-5]|[0-4][0-9]|[01]?[0-9][0-9]?)$">
+<div class="form-text">Dirección IP del equipo en la red</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="canales" class="form-label">Número de Canales *</label>
+<select name="canales" id="canales" class="form-select" required>
+<option value="">Seleccionar canales</option>
+<option value="4" {% if nvr and nvr.canales == 4 %}selected{% endif %}>4 canales</option>
+<option value="8" {% if nvr and nvr.canales == 8 %}selected{% endif %}>8 canales</option>
+<option value="16" {% if nvr and nvr.canales == 16 %}selected{% endif %}>16 canales</option>
+<option value="3" {% if nvr and nvr.canales == 3 %}selected{% endif %}>3 canales</option>
+<option value="64" {% if nvr and nvr.canales == 64 %}selected{% endif %}>64 canales</option>
+</select>
+<div class="form-text">Cantidad máxima de cámaras conectables</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="almacenamiento" class="form-label">Almacenamiento (TB)</label>
+<input type="number" name="almacenamiento" id="almacenamiento" class="form-control"
+value="{{ nvr.almacenamiento if nvr else '' }}"
+min="0" step="0.1" placeholder=".0">
+<div class="form-text">Capacidad de almacenamiento en terabytes</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="estado" class="form-label">Estado *</label>
+<select name="estado" id="estado" class="form-select" required>
+<option value="">Seleccionar estado</option>
+<option value="activo" {% if nvr and nvr.estado == 'activo' %}selected{% endif %}>Activo</option>
+<option value="inactivo" {% if nvr and nvr.estado == 'inactivo' %}selected{% endif %}>Inactivo</option>
+<option value="mantenimiento" {% if nvr and nvr.estado == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+</select>
+<div class="form-text">Estado operativo actual del equipo</div>
+</div>
+</div>
+</div>
+
+{% if nvr %}
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label class="form-label">Fecha de registro</label>
+<input type="text" class="form-control"
+value="{{ nvr.created_at.strftime('%d/%m/%Y %H:%M') if nvr.created_at else 'No disponible' }}"
+readonly>
+<div class="form-text">Fecha cuando fue registrado el equipo</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label class="form-label">Última actualización</label>
+<input type="text" class="form-control"
+value="{{ nvr.updated_at.strftime('%d/%m/%Y %H:%M') if nvr.updated_at else 'No disponible' }}"
+readonly>
+<div class="form-text">Fecha de la última modificación</div>
+</div>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+
+<-- Información adicional -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-gear"></i> Configuración Adicional
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-1">
+<div class="mb-3">
+<label for="observaciones" class="form-label">Observaciones</label>
+<textarea name="observaciones" id="observaciones" class="form-control"
+rows="3" placeholder="Notas adicionales sobre el equipo...">{{ nvr.observaciones if nvr else '' }}</textarea>
+<div class="form-text">Información adicional sobre el equipo</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Botones de acción -->
+<div class="card mt-4">
+<div class="card-body">
+<div class="d-flex justify-content-between">
+<div>
+{% if nvr %}
+<button type="button" class="btn btn-danger"
+onclick="confirmarEliminacion({{ nvr.id }})">
+<i class="bi bi-trash"></i> Eliminar Equipo
+</button>
+{% endif %}
+</div>
+<div>
+<a href="{{ url_for('nvr_listar') }}" class="btn btn-secondary me-">
+<i class="bi bi-x"></i> Cancelar
+</a>
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-{{ 'save' if nvr else 'plus-circle' }}"></i>
+{{ 'Actualizar' if nvr else 'Crear' }} Equipo
+</button>
+</div>
+</div>
+</div>
+</div>
+</form>
+</div>
+
+<-- Panel lateral con información -->
+<div class="col-lg-4">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-lightbulb"></i> Consejos
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<h6><i class="bi bi-wifi text-primary"></i> Conectividad</h6>
+<p class="small text-muted">Asegúrate de que la dirección IP esté disponible en la red y no esté en conflicto con otros dispositivos.</p>
+</div>
+<div class="mb-3">
+<h6><i class="bi bi-hdd text-success"></i> Almacenamiento</h6>
+<p class="small text-modus">El almacenamiento debe ser suficiente para el número de cámaras y el tiempo de retención deseado.</p>
+</div>
+<div>
+<h6><i class="bi bi-exclamation-triangle text-warning"></i> Estado</h6>
+<p class="small text-muted">Cambia el estado a "Mantenimiento" durante actualizaciones o reparaciones.</p>
+</div>
+</div>
+</div>
+
+{% if nvr %}
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-link-45deg"></i> Enlaces Útiles
+</h5>
+</div>
+<div class="card-body">
+<div class="d-grid gap-">
+<a href="http://{{ nvr.ip }}" target="_blank" class="btn btn-outline-primary">
+<i class="bi bi-box-arrow-up-right"></i> Acceder al NVR
+</a>
+<button class="btn btn-outline-info" onclick="verificarConectividad()">
+<i class="bi bi-check-circle"></i> Verificar Conectividad
+</button>
+</div>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('nvrForm').addEventListener('submit', function(e) {
+const submitBtn = document.querySelector('button[type="submit"]');
+submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+submitBtn.disabled = true;
+});
+
+function confirmarEliminacion(nvrId) {
+if (confirm('¿Estás seguro de que deseas eliminar este equipo NVR? Esta acción no se puede deshacer.')) {
+fetch(`/nvr/eliminar/${nvrId}`, {
+method: 'DELETE',
+headers: {
+'Content-Type': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+window.location.href = "{{ url_for('nvr_listar') }}";
+} else {
+alert('Error al eliminar el equipo: ' + data.message);
+}
+})
+.catch(error => {
+console.error('Error:', error);
+alert('Error de conexión al eliminar el equipo');
+});
+}
+}
+
+function verificarConectividad() {
+const ip = document.getElementById('ip').value;
+if (ip) {
+alert('Por favor, ingresa una dirección IP válida');
+return;
+}
+
+// Simular verificación de conectividad
+alert(`Verificando conectividad con ${ip}...\n\nResultado: Conexión exitosa`);
+}
+</script>
+{% endblock %}

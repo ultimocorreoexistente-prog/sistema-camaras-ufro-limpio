@@ -1,0 +1,27 @@
+ El volumen de la unidad C no tiene etiqueta.
+ El n£mero de serie del volumen es: 424E-DF92
+
+ Directorio de C:\Users\Usuario\sistema-camaras-ufro-limpio\scripts
+
+24-11-2025  14:13    <DIR>          .
+24-11-2025  14:13    <DIR>          ..
+15-11-2025  12:10             1.746 config_example.py
+15-11-2025  12:10               925 create_superadmin.py
+15-11-2025  12:10             6.098 datos_iniciales.py
+15-11-2025  12:10             1.746 debug_models.py
+15-11-2025  12:10            14.190 ejecutar_migracion_completa.py
+15-11-2025  12:11    <DIR>          examples
+15-11-2025  12:10             2.373 get_schema.py
+15-11-2025  12:10               482 init.sh
+09-11-2025  12:10             1.139 init.sh.bak
+15-11-2025  12:10             3.169 init_database.py
+15-11-2025  12:10            23.698 limpiar_datos.py
+15-11-2025  12:10            23.131 migrar_datos.py
+15-11-2025  12:10            10.279 README.md
+15-11-2025  12:10             6.959 scripts_consolidate_railway_db_gitbash.py
+15-11-2025  12:10            22.622 test_migracion.py
+24-11-2025  14:13                 0 txt
+15-11-2025  12:10            22.736 validar_datos.py
+15-11-2025  12:10               172 __init__.py
+              17 archivos        141.465 bytes
+               3 dirs  101.902.282.752 bytes libres

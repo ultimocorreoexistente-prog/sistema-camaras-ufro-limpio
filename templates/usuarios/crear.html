@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Usuario - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+<div class="row">
+<div class="col-1">
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<h><i class="bi bi-person-plus"></i> Crear Nuevo Usuario</h>
+<nav aria-label="breadcrumb">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('usuarios_listar') }}">Gestión Usuarios</a></li>
+<li class="breadcrumb-item active">Crear Usuario</li>
+</ol>
+</nav>
+</div>
+<a href="{{ url_for('usuarios_listar') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Volver a Lista
+</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+{{ message }}
+<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="row justify-content-center">
+<div class="col-lg-8">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-person-badge"></i> Información del Nuevo Usuario
+</h5>
+</div>
+<div class="card-body">
+<form method="POST" action="{{ url_for('usuarios_crear') }}" novalidate>
+<div class="row">
+<-- Información Personal -->
+<div class="col-md-6">
+<h6 class="text-muted mb-3">
+<i class="bi bi-person"></i> Información Personal
+</h6>
+
+<div class="mb-3">
+<label for="nombre" class="form-label">
+Nombre Completo <span class="text-danger">*</span>
+</label>
+<input type="text" class="form-control" id="nombre" name="nombre"
+placeholder="Ej: Juan Pérez González" required>
+<div class="form-text">Nombre completo como aparecerá en el sistema</div>
+</div>
+
+<div class="mb-3">
+<label for="email" class="form-label">
+Correo Electrónico <span class="text-danger">*</span>
+</label>
+<input type="email" class="form-control" id="email" name="email"
+placeholder="usuario@ufrontera.cl" required>
+<div class="form-text">Será usado como nombre de usuario para login</div>
+</div>
+
+<div class="mb-3">
+<label for="telefono" class="form-label">Teléfono</label>
+<input type="tel" class="form-control" id="telefono" name="telefono"
+placeholder="+56 9 134 5678">
+<div class="form-text">Número de contacto (opcional)</div>
+</div>
+
+<div class="mb-3">
+<label for="departamento" class="form-label">Departamento</label>
+<select class="form-select" id="departamento" name="departamento">
+<option value="">Seleccionar departamento</option>
+<option value="Tecnología">Tecnología</option>
+<option value="Seguridad">Seguridad</option>
+<option value="Infraestructura">Infraestructura</option>
+<option value="Mantenimiento">Mantenimiento</option>
+<option value="Administración">Administración</option>
+<option value="Otro">Otro</option>
+</select>
+<div class="form-text">Departamento al que pertenece (opcional)</div>
+</div>
+</div>
+
+<-- Seguridad y Permisos -->
+<div class="col-md-6">
+<h6 class="text-muted mb-3">
+<i class="bi bi-shield-lock"></i> Seguridad y Permisos
+</h6>
+
+<div class="mb-3">
+<label for="password" class="form-label">
+Contraseña <span class="text-danger">*</span>
+</label>
+<div class="input-group">
+<input type="password" class="form-control" id="password" name="password"
+placeholder="Mínimo 8 caracteres" required>
+<button class="btn btn-outline-secondary" type="button"
+onclick="togglePassword('password')" title="Mostrar/ocultar contraseña">
+<i class="bi bi-eye" id="password-icon"></i>
+</button>
+</div>
+<div class="form-text">La contraseña debe tener al menos 8 caracteres</div>
+</div>
+
+<div class="mb-3">
+<label for="password_confirm" class="form-label">
+Confirmar Contraseña <span class="text-danger">*</span>
+</label>
+<input type="password" class="form-control" id="password_confirm" name="password_confirm"
+placeholder="Repetir contraseña" required>
+<div class="form-text">Debe coincidir con la contraseña anterior</div>
+</div>
+
+<div class="mb-3">
+<label for="rol" class="form-label">
+Rol del Usuario <span class="text-danger">*</span>
+</label>
+<select class="form-select" id="rol" name="rol" required>
+<option value="">Seleccionar rol</option>
+<option value="VISUALIZADOR">VISUALIZADOR - Solo lectura</option>
+<option value="TECNICO">TÉCNICO - Gestión de fallas asignadas</option>
+<option value="SUPERVISOR">SUPERVISOR - Supervisión y asignación</option>
+<option value="ADMIN">ADMIN - Gestión completa de equipos</option>
+<option value="SUPERADMIN">SUPERADMIN - Control total del sistema</option>
+</select>
+<div class="form-text">Define los permisos del usuario en el sistema</div>
+</div>
+
+<-- Información sobre roles -->
+<div class="alert alert-info" id="rol-info" style="display: none;">
+<h6 class="alert-heading">Información del Rol</h6>
+<p class="mb-0" id="rol-description"></p>
+</div>
+</div>
+</div>
+
+<hr class="my-4">
+
+<div class="d-flex justify-content-end gap-">
+<a href="{{ url_for('usuarios_listar') }}" class="btn btn-secondary">
+<i class="bi bi-x-circle"></i> Cancelar
+</a>
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-person-plus"></i> Crear Usuario
+</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Función para mostrar/ocultar contraseña
+function togglePassword(fieldId) {
+const field = document.getElementById(fieldId);
+const icon = document.getElementById(fieldId + '-icon');
+
+if (field.type === 'password') {
+field.type = 'text';
+icon.className = 'bi bi-eye-slash';
+} else {
+field.type = 'password';
+icon.className = 'bi bi-eye';
+}
+}
+
+// Validación de contraseñas coincidentes
+document.getElementById('password_confirm').addEventListener('input', function() {
+const password = document.getElementById('password').value;
+const confirm = this.value;
+
+if (confirm && password == confirm) {
+this.setCustomValidity('Las contraseñas no coinciden');
+this.classList.add('is-invalid');
+} else {
+this.setCustomValidity('');
+this.classList.remove('is-invalid');
+if (confirm) {
+this.classList.add('is-valid');
+}
+}
+});
+
+// Información dinámica sobre roles
+const roleDescriptions = {
+'VISUALIZADOR': 'Solo puede visualizar información del sistema. No puede realizar modificaciones.',
+'TECNICO': 'Puede gestionar las fallas asignadas a él, subir fotografías y actualizar estados de reparación.',
+'SUPERVISOR': 'Puede asignar fallas a técnicos, cerrar fallas y acceder a reportes departamentales.',
+'ADMIN': 'Puede gestionar equipos, crear/modificar inventario y acceder a reportes avanzados.',
+'SUPERADMIN': 'Control total del sistema incluyendo gestión de usuarios y configuración general.'
+};
+
+document.getElementById('rol').addEventListener('change', function() {
+const selectedRole = this.value;
+const infoDiv = document.getElementById('rol-info');
+const descriptionP = document.getElementById('rol-description');
+
+if (selectedRole && roleDescriptions[selectedRole]) {
+descriptionP.textContent = roleDescriptions[selectedRole];
+infoDiv.style.display = 'block';
+} else {
+infoDiv.style.display = 'none';
+}
+});
+
+// Validación del formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+const password = document.getElementById('password').value;
+const confirm = document.getElementById('password_confirm').value;
+
+if (password == confirm) {
+e.preventDefault();
+alert('Las contraseñas no coinciden. Por favor, revíselas.');
+return false;
+}
+
+if (password.length < 8) {
+e.preventDefault();
+alert('La contraseña debe tener al menos 8 caracteres.');
+return false;
+}
+});
+
+// Auto-focus en el primer campo
+document.addEventListener('DOMContentLoaded', function() {
+document.getElementById('nombre').focus();
+});
+</script>
+{% endblock %}

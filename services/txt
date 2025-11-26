@@ -1,0 +1,18 @@
+ El volumen de la unidad C no tiene etiqueta.
+ El n£mero de serie del volumen es: 424E-DF92
+
+ Directorio de C:\Users\Usuario\sistema-camaras-ufro-limpio\services
+
+24-11-2025  14:14    <DIR>          .
+24-11-2025  14:14    <DIR>          ..
+15-11-2025  12:10             7.630 auth_service.py
+15-11-2025  12:10            18.847 excel_service.py
+15-11-2025  12:10            12.632 foto_service.py
+15-11-2025  12:10            14.384 mapa_service.py
+15-11-2025  12:10            18.834 notificacion_service.py
+15-11-2025  12:10            21.980 reporte_service.py
+15-11-2025  12:10            15.013 topologia_service.py
+24-11-2025  14:14                 0 txt
+15-11-2025  12:10               631 __init__.py
+               9 archivos        109.951 bytes
+               2 dirs  101.900.455.936 bytes libres

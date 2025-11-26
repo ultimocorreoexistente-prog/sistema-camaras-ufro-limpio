@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}Mantenimientos - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Registro de Mantenimientos</h1>
+        {% if current_user.rol in ['admin', 'supervisor', 'tecnico'] %}
+        <a href="{{ url_for('mantenimientos_nuevo') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nuevo Mantenimiento
+        </a>
+        {% endif %}
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr><th>Fecha</th><th>Tipo</th><th>Equipo</th><th>Descripción</th><th>Técnico</th><th>Costo</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for mant in mantenimientos %}
+                        <tr>
+                            <td>{{ mant.fecha.strftime('%d/%m/%Y') }}</td>
+                            <td><span class="badge bg-primary">{{ mant.tipo }}</span></td>
+                            <td>{{ mant.equipo_tipo }} #{{ mant.equipo_id }}</td>
+                            <td>{{ mant.descripcion[:50] }}...</td>
+                            <td>{{ mant.tecnico.nombre_completo if mant.tecnico else 'N/A' }}</td>
+                            <td>${{ mant.costo or 0 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,452 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Falla #{{ falla.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.falla-header {
+background: linear-gradient(135deg, #667eea 0%, #764ba 100%);
+color: white;
+border-radius: 8px;
+}
+
+.timeline {
+position: relative;
+padding-left: 30px;
+}
+
+.timeline::before {
+content: '';
+position: absolute;
+left: 15px;
+top: 0;
+bottom: 0;
+width: px;
+background: #deee6;
+}
+
+.timeline-item {
+position: relative;
+margin-bottom: 0px;
+}
+
+.timeline-item::before {
+content: '';
+position: absolute;
+left: -px;
+top: 5px;
+width: 1px;
+height: 1px;
+border-radius: 50%;
+background: #007bff;
+border: 3px solid white;
+box-shadow: 0 0 0 px #007bff;
+}
+
+.timeline-item.completado::before {
+background: #8a745;
+box-shadow: 0 0 0 px #8a745;
+}
+
+.equipo-info {
+background: #f8f9fa;
+border-left: 4px solid #007bff;
+}
+
+.solucion-section {
+background: #d4edda;
+border: 1px solid #c3e6cb;
+border-radius: 8px;
+}
+
+.costo-badge {
+background: linear-gradient(45deg, #8a745, #0c997);
+color: white;
+padding: 8px 16px;
+border-radius: 0px;
+font-weight: bold;
+}
+
+.gravedad-critical { color: #dc3545; font-weight: bold; }
+.gravedad-alta { color: #fd7e14; font-weight: bold; }
+.gravedad-media { color: #ffc107; font-weight: bold; }
+.gravedad-baja { color: #8a745; font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block content %}
+<-- Header de la falla -->
+<div class="falla-header p-4 mb-4">
+<div class="row align-items-center">
+<div class="col-md-8">
+<h1 class="h mb-">
+<i class="bi bi-exclamation-triangle"></i>
+Falla #{{ falla.id }}
+</h1>
+<p class="mb-0 opacity-75">{{ falla.descripcion }}</p>
+</div>
+<div class="col-md-4 text-end">
+<div class="d-flex flex-column align-items-end gap-">
+<div>
+<span class="badge bg-{% if falla.estado == 'reportada' %}secondary{% elif falla.estado == 'en_proceso' %}warning{% elif falla.estado == 'resuelta' %}success{% else %}info{% endif %} fs-6">
+{{ falla.estado.replace('_', ' ').title() }}
+</span>
+</div>
+<div>
+<span class="badge bg-{% if falla.gravedad == 'critica' %}danger{% elif falla.gravedad == 'alta' %}warning{% elif falla.gravedad == 'media' %}info{% else %}success{% endif %} fs-6">
+Gravedad: {{ falla.gravedad.title() }}
+</span>
+</div>
+{% if falla.costo %}
+<div class="costo-badge">
+<i class="bi bi-currency-dollar"></i> ${{ "{:,.f}".format(falla.costo) }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<-- Información Principal -->
+<div class="col-lg-8">
+<-- Descripción de la falla -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-file-text"></i> Descripción Detallada
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<strong>Descripción:</strong>
+<p class="mt-1">{{ falla.descripcion }}</p>
+</div>
+
+{% if falla.equipo %}
+<div class="equipo-info p-3 rounded mb-3">
+<h6 class="mb-">
+<i class="bi bi-camera-video"></i> Equipo Afectado
+</h6>
+<div class="row">
+<div class="col-md-6">
+<small><strong>Nombre:</strong> {{ falla.equipo.nombre or 'N/A' }}</small><br>
+<small><strong>Tipo:</strong> {{ falla.equipo.tipo or 'N/A' }}</small>
+</div>
+<div class="col-md-6">
+<small><strong>Ubicación:</strong> {{ falla.equipo.ubicacion or 'N/A' }}</small><br>
+<small><strong>IP:</strong> {{ falla.equipo.ip_address or 'N/A' }}</small>
+</div>
+</div>
+</div>
+{% endif %}
+
+<-- Fechas -->
+<div class="row">
+<div class="col-md-6">
+<small class="text-muted">
+<i class="bi bi-calendar-plus"></i> <strong>Fecha Reporte:</strong><br>
+{{ falla.fecha_reporte.strftime('%d/%m/%Y %H:%M') if falla.fecha_reporte else 'N/A' }}
+</small>
+</div>
+{% if falla.fecha_resolucion %}
+<div class="col-md-6">
+<small class="text-muted">
+<i class="bi bi-calendar-check"></i> <strong>Fecha Resolución:</strong><br>
+{{ falla.fecha_resolucion.strftime('%d/%m/%Y %H:%M') if falla.fecha_resolucion else 'N/A' }}
+</small>
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<-- Solución -->
+{% if falla.solucion %}
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-check-circle"></i> Solución Aplicada
+</h5>
+</div>
+<div class="card-body">
+<div class="solucion-section p-3">
+<p class="mb-0">{{ falla.solucion }}</p>
+</div>
+</div>
+</div>
+{% endif %}
+
+<-- Historial y Timeline -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-clock-history"></i> Historial de Cambios
+</h5>
+</div>
+<div class="card-body">
+<div class="historial-falla">
+<div class="timeline">
+<-- Timeline de ejemplo - Se puede expandir con datos reales -->
+<div class="timeline-item completado">
+<div class="d-flex justify-content-between">
+<div>
+<strong>Falla Reportada</strong>
+<p class="text-muted mb-1">{{ falla.descripcion }}</p>
+<small class="text-muted">
+Reportado por: {{ falla.usuario_reporta.nombre_completo if falla.usuario_reporta else 'Sistema' }}
+</small>
+</div>
+<small class="text-muted">
+{{ falla.fecha_reporte.strftime('%d/%m/%Y %H:%M') if falla.fecha_reporte else 'N/A' }}
+</small>
+</div>
+</div>
+
+{% if falla.tecnico_asignado %}
+<div class="timeline-item">
+<div class="d-flex justify-content-between">
+<div>
+<strong>Técnico Asignado</strong>
+<p class="text-muted mb-1">{{ falla.tecnico_asignado.nombre_completo }}</p>
+</div>
+<small class="text-muted">
+{{ falla.fecha_asignacion.strftime('%d/%m/%Y %H:%M') if falla.fecha_asignacion else 'N/A' }}
+</small>
+</div>
+</div>
+{% endif %}
+
+{% if falla.estado in ['en_proceso', 'resuelta', 'cerrada'] %}
+<div class="timeline-item {% if falla.estado in ['resuelta', 'cerrada'] %}completado{% endif %}">
+<div class="d-flex justify-content-between">
+<div>
+<strong>Trabajo en Proceso</strong>
+<p class="text-muted mb-1">Técnico comenzó a trabajar en la falla</p>
+</div>
+<small class="text-muted">
+{{ falla.fecha_inicio_trabajo.strftime('%d/%m/%Y %H:%M') if falla.fecha_inicio_trabajo else 'N/A' }}
+</small>
+</div>
+</div>
+{% endif %}
+
+{% if falla.solucion and falla.estado in ['resuelta', 'cerrada'] %}
+<div class="timeline-item completado">
+<div class="d-flex justify-content-between">
+<div>
+<strong>Problema Resuelto</strong>
+<p class="text-muted mb-1">{{ falla.solucion[:100] }}{% if falla.solucion|length > 100 %}...{% endif %}</p>
+<small class="text-muted">Solución aplicada exitosamente</small>
+</div>
+<small class="text-muted">
+{{ falla.fecha_resolucion.strftime('%d/%m/%Y %H:%M') if falla.fecha_resolucion else 'N/A' }}
+</small>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+
+<-- Comentarios/Notas adicionales -->
+{% if falla.comentarios %}
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-chat-left-text"></i> Comentarios Adicionales
+</h5>
+</div>
+<div class="card-body">
+<p>{{ falla.comentarios }}</p>
+</div>
+</div>
+{% endif %}
+</div>
+
+<-- Sidebar -->
+<div class="col-lg-4">
+<-- Información del Técnico -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-person-gear"></i> Asignación
+</h5>
+</div>
+<div class="card-body">
+{% if falla.tecnico_asignado %}
+<div class="text-center">
+<div class="avatar-circle bg-primary text-white mx-auto mb-3" style="width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+{{ falla.tecnico_asignado.nombre_completo[0] if falla.tecnico_asignado.nombre_completo else 'T' }}
+</div>
+<h6>{{ falla.tecnico_asignado.nombre_completo }}</h6>
+<p class="text-muted mb-0">{{ falla.tecnico_asignado.email }}</p>
+</div>
+{% else %}
+<div class="text-center text-muted">
+<i class="bi bi-person-x fs-1"></i>
+<p class="mt-">Sin técnico asignado</p>
+</div>
+{% endif %}
+</div>
+</div>
+
+<-- Acciones Rápidas -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-lightning"></i> Acciones
+</h5>
+</div>
+<div class="card-body">
+<div class="d-grid gap-">
+{% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'TECNICO'] %}
+<a href="{{ url_for('fallas_editar', falla_id=falla.id) }}" class="btn btn-primary">
+<i class="bi bi-pencil"></i> Editar Falla
+</a>
+{% endif %}
+
+{% if falla.estado = 'resuelta' and falla.estado = 'cerrada' %}
+<a href="{{ url_for('fallas_reparar', falla_id=falla.id) }}" class="btn btn-success">
+<i class="bi bi-tools"></i> Registrar Reparación
+</a>
+{% endif %}
+
+{% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR'] %}
+<button class="btn btn-outline-danger" onclick="confirmarCierre({{ falla.id }})">
+<i class="bi bi-x-circle"></i> Cerrar Falla
+</button>
+{% endif %}
+
+<button class="btn btn-outline-info" onclick="imprimirDetalle()">
+<i class="bi bi-printer"></i> Imprimir
+</button>
+</div>
+</div>
+</div>
+
+<-- Estadísticas de la falla -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-bar-chart"></i> Estadísticas
+</h5>
+</div>
+<div class="card-body">
+{% set tiempo_transcurrido = (datetime.now() - falla.fecha_reporte).days if falla.fecha_reporte else 0 %}
+<div class="row text-center">
+<div class="col-6">
+<h4 class="text-primary">{{ tiempo_transcurrido }}</h4>
+<small class="text-muted">Días transcurridos</small>
+</div>
+<div class="col-6">
+{% if falla.fecha_resolucion and falla.fecha_reporte %}
+{% set tiempo_resolucion = (falla.fecha_resolucion - falla.fecha_reporte).days %}
+<h4 class="text-success">{{ tiempo_resolucion }}</h4>
+<small class="text-muted">Días para resolver</small>
+{% else %}
+<h4 class="text-warning">-</h4>
+<small class="text-muted">Pendiente</small>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+
+<-- Fallas relacionadas -->
+{% if fallas_relacionadas %}
+<div class="card">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-link"></i> Fallas Relacionadas
+</h5>
+</div>
+<div class="card-body">
+{% for falla_rel in fallas_relacionadas[:3] %}
+<div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+<h6 class="mb-1">
+<a href="{{ url_for('fallas_detalle', falla_id=falla_rel.id) }}" class="text-decoration-none">
+#{{ falla_rel.id }} - {{ falla_rel.descripcion[:40] }}{% if falla_rel.descripcion|length > 40 %}...{% endif %}
+</a>
+</h6>
+<small class="text-muted">
+{{ falla_rel.fecha_reporte.strftime('%d/%m/%Y') if falla_rel.fecha_reporte else 'N/A' }}
+| {{ falla_rel.gravedad.title() }}
+</small>
+</div>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+
+<-- Modal de confirmación para cerrar falla -->
+<div class="modal fade" id="modalCerrarFalla" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title">Confirmar Cierre</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<p>¿Está seguro que desea cerrar esta falla?</p>
+<p class="text-muted">Esta acción no se puede deshacer.</p>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button type="button" class="btn btn-danger" onclick="cerrarFalla()">Sí, Cerrar Falla</button>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let fallaId = {{ falla.id }};
+
+function confirmarCierre(id) {
+fallaId = id;
+new bootstrap.Modal(document.getElementById('modalCerrarFalla')).show();
+}
+
+function cerrarFalla() {
+fetch(`/fallas/${fallaId}/cerrar`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+location.reload();
+} else {
+alert('Error al cerrar la falla: ' + data.message);
+}
+})
+.catch(error => {
+console.error('Error:', error);
+alert('Error al cerrar la falla');
+});
+}
+
+function imprimirDetalle() {
+window.print();
+}
+
+// Auto-refresh cada 60 segundos para verificar cambios de estado
+setInterval(function() {
+fetch(`/api/fallas/${fallaId}/estado`)
+.then(response => response.json())
+.then(data => {
+if (data.estado_actualizado) {
+location.reload();
+}
+})
+.catch(error => console.log('Error verificando estado:', error));
+}, 60000);
+</script>
+{% endblock %}

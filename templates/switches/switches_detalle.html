@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}{{ switch.modelo }} - Switch Detail{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1>
+<i class="bi bi-hdd-network"></i>
+Switch de Red - {{ switch.marca }} {{ switch.modelo }}
+</h1>
+<div>
+<a href="{{ url_for('switches_listar') }}" class="btn btn-outline-secondary">
+<i class="bi bi-arrow-left"></i> Volver a la lista
+</a>
+<a href="{{ url_for('switches_editar', switch_id=switch.id) }}" class="btn btn-warning">
+<i class="bi bi-pencil"></i> Editar
+</a>
+</div>
+</div>
+
+<div class="row">
+<-- Información principal -->
+<div class="col-lg-8">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-info-circle"></i> Información del Switch
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<table class="table table-borderless">
+<tr>
+<td><strong>Marca:</strong></td>
+<td>{{ switch.marca }}</td>
+</tr>
+<tr>
+<td><strong>Modelo:</strong></td>
+<td>{{ switch.modelo }}</td>
+</tr>
+<tr>
+<td><strong>Número de Puertos:</strong></td>
+<td><span class="badge bg-info">{{ switch.puertos }} puertos</span></td>
+</tr>
+<tr>
+<td><strong>Velocidad:</strong></td>
+<td><i class="bi bi-speedometer text-success"></i> {{ switch.velocidad }}</td>
+</tr>
+</table>
+</div>
+<div class="col-md-6">
+<table class="table table-borderless">
+<tr>
+<td><strong>Ubicación:</strong></td>
+<td><i class="bi bi-geo-alt text-primary"></i> {{ switch.ubicacion }}</td>
+</tr>
+<tr>
+<td><strong>Estado:</strong></td>
+<td>
+{% if switch.estado == 'activo' %}
+<span class="badge bg-success">Activo</span>
+{% elif switch.estado == 'inactivo' %}
+<span class="badge bg-danger">Inactivo</span>
+{% elif switch.estado == 'mantenimiento' %}
+<span class="badge bg-warning">Mantenimiento</span>
+{% elif switch.estado == 'falla' %}
+<span class="badge bg-danger">Con fallas</span>
+{% endif %}
+</td>
+</tr>
+<tr>
+<td><strong>Fecha de registro:</strong></td>
+<td>{{ switch.created_at.strftime('%d/%m/%Y %H:%M') if switch.created_at else 'No disponible' }}</td>
+</tr>
+<tr>
+<td><strong>Última actualización:</strong></td>
+<td>{{ switch.updated_at.strftime('%d/%m/%Y %H:%M') if switch.updated_at else 'No disponible' }}</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+
+<-- Estado de los puertos -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-portrait"></i> Estado de Puertos
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+{% for i in range(switch.puertos) %}
+<div class="col-md-3 col-sm-4 col-6 mb-3">
+<div class="card border-{{ 'success' if i % 3 == 0 else 'secondary' if i % 3 == 1 else 'warning' }}">
+<div class="card-body p- text-center">
+<i class="bi bi-ethernet text-{{ 'success' if i % 3 == 0 else 'secondary' if i % 3 == 1 else 'warning' }}"></i>
+<div class="mt-1">
+<small class="fw-bold">Puerto {{ i + 1 }}</small>
+<br>
+<small class="text-muted">
+{% if i % 3 == 0 %}
+Conectado
+{% elif i % 3 == 1 %}
+Desconectado
+{% else %}
+Ocupado
+{% endif %}
+</small>
+</div>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+<div class="row mt-3">
+<div class="col-1">
+<small class="text-muted">
+<i class="bi bi-info-circle"></i>
+Los puertos se actualizan automáticamente según el estado real del switch
+</small>
+</div>
+</div>
+</div>
+</div>
+
+<-- Estadísticas de tráfico -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-graph-up"></i> Estadísticas de Tráfico
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-4">
+<div class="text-center">
+<h4 class="text-primary">156 Mbps</h4>
+<p class="text-muted">Ancho de banda usado</p>
+</div>
+</div>
+<div class="col-md-4">
+<div class="text-center">
+<h4 class="text-success">89%</h4>
+<p class="text-muted">Eficiencia</p>
+</div>
+</div>
+<div class="col-md-4">
+<div class="text-center">
+<h4 class="text-warning">{{ switch.puertos - 3 }}</h4>
+<p class="text-muted">Puertos activos</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Panel lateral -->
+<div class="col-lg-4">
+<-- Estado del switch -->
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-cpu"></i> Estado del Sistema
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<div class="d-flex justify-content-between">
+<span>CPU</span>
+<span>3%</span>
+</div>
+<div class="progress">
+<div class="progress-bar bg-success" role="progressbar" style="width: 3%"></div>
+</div>
+</div>
+<div class="mb-3">
+<div class="d-flex justify-content-between">
+<span>Memoria</span>
+<span>67%</span>
+</div>
+<div class="progress">
+<div class="progress-bar bg-warning" role="progressbar" style="width: 67%"></div>
+</div>
+</div>
+<div>
+<div class="d-flex justify-content-between">
+<span>Temperatura</span>
+<span>45°C</span>
+</div>
+<div class="progress">
+<div class="progress-bar bg-info" role="progressbar" style="width: 45%"></div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Acciones rápidas -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-lightning"></i> Acciones Rápidas
+</h5>
+</div>
+<div class="card-body">
+<div class="d-grid gap-">
+<button class="btn btn-primary" onclick="reiniciarSwitch({{ switch.id }})">
+<i class="bi bi-arrow-repeat"></i> Reiniciar
+</button>
+<button class="btn btn-warning" onclick="escaneoRed()">
+<i class="bi bi-search"></i> Escaneo de Red
+</button>
+<button class="btn btn-info" onclick="verConfiguracion()">
+<i class="bi bi-gear"></i> Ver Configuración
+</button>
+<button class="btn btn-success" onclick="exportarLogs()">
+<i class="bi bi-download"></i> Exportar Logs
+</button>
+</div>
+</div>
+</div>
+
+<-- Información de ubicación -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-geo-alt"></i> Ubicación
+</h5>
+</div>
+<div class="card-body">
+<div class="text-center">
+<i class="bi bi-geo-alt text-primary" style="font-size: 3rem;"></i>
+<h5 class="mt-">{{ switch.ubicacion }}</h5>
+<p class="text-muted">Edificio de Comunicaciones</p>
+<button class="btn btn-outline-primary btn-sm" onclick="verEnMapa()">
+<i class="bi bi-map"></i> Ver en Mapa
+</button>
+</div>
+</div>
+</div>
+
+<-- Estado de conectividad -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-wifi"></i> Conectividad
+</h5>
+</div>
+<div class="card-body">
+<div class="text-center">
+{% if switch.estado == 'activo' %}
+<i class="bi bi-wifi text-success" style="font-size: rem;"></i>
+<p class="mt-"><span class="badge bg-success">Conectado</span></p>
+{% else %}
+<i class="bi bi-wifi text-danger" style="font-size: rem;"></i>
+<p class="mt-"><span class="badge bg-danger">Desconectado</span></p>
+{% endif %}
+<small class="text-muted">Estado de la red</small>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function reiniciarSwitch(switchId) {
+if (confirm('¿Estás seguro de reiniciar el switch?')) {
+alert('Reiniciando switch...');
+}
+}
+
+function escaneoRed() {
+alert('Ejecutando escaneo de red...');
+}
+
+function verConfiguracion() {
+alert('Abriendo configuración del switch...');
+}
+
+function exportarLogs() {
+alert('Exportando logs del switch...');
+}
+
+function verEnMapa() {
+alert('Abriendo ubicación en el mapa...');
+}
+</script>
+{% endblock %}

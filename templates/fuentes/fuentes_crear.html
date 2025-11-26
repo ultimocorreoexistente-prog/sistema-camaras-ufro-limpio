@@ -1,0 +1,71 @@
+{% extends "fuentes/fuentes_form.html" %}
+
+{% block title %}Nueva Fuente de Poder - Sistema Cámaras UFRO{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Configuraciones específicas para crear nueva fuente
+document.getElementById('estado').value = 'activo';
+
+// Sugerir nombre basado en ubicación
+const edificio = document.getElementById('edificio');
+const nombre = document.getElementById('nombre');
+
+function actualizarNombreSugerido() {
+if (edificio.value && nombre.value) {
+nombre.value = `FUENTE-${edificio.value.toUpperCase().replace(/\s+/g, '-')}`;
+}
+}
+
+edificio.addEventListener('input', actualizarNombreSugerido);
+
+// Auto-completar campus basado en edificio común
+const edificiosCampus = {
+'A': 'Campus Principal',
+'B': 'Campus Principal',
+'C': 'Campus Principal',
+'D': 'Campus Principal',
+'Sur': 'Campus Sur',
+'Norte': 'Campus Norte',
+'Centro': 'Campus Centro'
+};
+
+Object.keys(edificiosCampus).forEach(edif => {
+if (edificio.value.toLowerCase().includes(edif.toLowerCase())) {
+document.getElementById('campus').value = edificiosCampus[edif];
+}
+});
+
+// Validación de valores recomendados por marca
+document.getElementById('marca').addEventListener('change', function() {
+mostrarEspecificacionesMarca(this.value);
+});
+
+function mostrarEspecificacionesMarca(marca) {
+const especificaciones = {
+'Mean Well': {
+eficiencia: '90-95%',
+proteccion: 'IP40/IP65',
+garantia: '3 años'
+},
+'Phoenix Contact': {
+eficiencia: '88-9%',
+proteccion: 'IP0/IP40',
+garantia: '5 años'
+},
+'Siemens': {
+eficiencia: '85-90%',
+proteccion: 'IP0',
+garantia: ' años'
+}
+};
+
+if (especificaciones[marca]) {
+console.log('Especificaciones para', marca, ':', especificaciones[marca]);
+}
+}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if ups else 'Nuevo' }} UPS - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">{{ 'Editar' if ups else 'Nuevo' }} UPS</h1>
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Código *</label>
+                        <input type="text" name="codigo" class="form-control" value="{{ ups.codigo if ups else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Modelo *</label>
+                        <input type="text" name="modelo" class="form-control" value="{{ ups.modelo if ups else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Marca *</label>
+                        <input type="text" name="marca" class="form-control" value="{{ ups.marca if ups else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Capacidad (VA) *</label>
+                        <input type="number" name="capacidad_va" class="form-control" value="{{ ups.capacidad_va if ups else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Número de Baterías</label>
+                        <input type="number" name="numero_baterias" class="form-control" value="{{ ups.numero_baterias if ups else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Gabinete Asociado</label>
+                        <select name="gabinete_asociado" class="form-select">
+                            <option value="">Seleccione...</option>
+                            {% for gabinete in gabinetes %}
+                            <option value="{{ gabinete.codigo }}" {{ 'selected' if ups and ups.gabinete_asociado == gabinete.codigo else '' }}>
+                                {{ gabinete.codigo }} - {{ gabinete.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Ubicación *</label>
+                        <select name="ubicacion_id" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                            {% for ub in ubicaciones %}
+                            <option value="{{ ub.id }}" {{ 'selected' if ups and ups.ubicacion_id == ub.id else '' }}>
+                                {{ ub.campus }} - {{ ub.edificio }} - {{ ub.piso }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Estado</label>
+                        <select name="estado" class="form-select">
+                            <option value="Operativo" {{ 'selected' if ups and ups.estado == 'Operativo' else '' }}>Operativo</option>
+                            <option value="Mantenimiento" {{ 'selected' if ups and ups.estado == 'Mantenimiento' else '' }}>Mantenimiento</option>
+                            <option value="Fuera de Servicio" {{ 'selected' if ups and ups.estado == 'Fuera de Servicio' else '' }}>Fuera de Servicio</option>
+                            <option value="Baja" {{ 'selected' if ups and ups.estado == 'Baja' else '' }}>Baja</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Fecha Instalación</label>
+                        <input type="date" name="fecha_instalacion" class="form-control" value="{{ ups.fecha_instalacion if ups and ups.fecha_instalacion else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Última Mantención</label>
+                        <input type="date" name="ultima_mantencion" class="form-control" value="{{ ups.ultima_mantencion if ups and ups.ultima_mantencion else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Costo Última Mantención</label>
+                        <input type="number" step="0.01" name="costo_ultima_mantencion" class="form-control" value="{{ ups.costo_ultima_mantencion if ups else '' }}">
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Equipos que Alimenta</label>
+                        <textarea name="equipos_alimenta" class="form-control" rows="2">{{ ups.equipos_alimenta if ups else '' }}</textarea>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Observaciones</label>
+                        <textarea name="observaciones" class="form-control" rows="3">{{ ups.observaciones if ups else '' }}</textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a href="{{ url_for('ups_list') }}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

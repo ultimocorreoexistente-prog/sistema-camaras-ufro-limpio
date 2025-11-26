@@ -1,0 +1,229 @@
+{% extends "mantenimientos/mantenimientos_form.html" %}
+
+{% block title %}Nuevo Mantenimiento - Sistema Cámaras UFRO{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Configuraciones específicas para crear nuevo mantenimiento
+document.getElementById('estado').value = 'programado';
+document.getElementById('prioridad').value = 'media';
+
+// Auto-completar equipos basado en ubicación
+const ubicacionEquipo = document.getElementById('ubicacion_equipo');
+const equipoAfectado = document.getElementById('equipo_afectado');
+
+// Lista de equipos comunes por ubicación
+const equiposPorUbicacion = {
+'Campus Principal': {
+'Edificio A': ['Cámara-A-01', 'Cámara-A-0', 'Switch-A-01', 'NVR-A-01'],
+'Edificio B': ['Cámara-B-01', 'Cámara-B-0', 'Switch-B-01', 'NVR-B-01'],
+'Edificio C': ['Cámara-C-01', 'Cámara-C-0', 'Switch-C-01', 'NVR-C-01']
+},
+'Campus Sur': {
+'Edificio D': ['Cámara-D-01', 'Cámara-D-0', 'Switch-D-01', 'NVR-D-01'],
+'Edificio E': ['Cámara-E-01', 'Cámara-E-0', 'Switch-E-01', 'NVR-E-01']
+},
+'Campus Norte': {
+'Edificio F': ['Cámara-F-01', 'Cámara-F-0', 'Switch-F-01', 'NVR-F-01']
+}
+};
+
+function actualizarSugerenciasEquipos() {
+const ubicacion = ubicacionEquipo.value;
+equipoAfectado.innerHTML = '<option value="">Seleccionar equipo...</option>';
+
+// Buscar equipos en la ubicación
+Object.keys(equiposPorUbicacion).forEach(campus => {
+if (ubicacion.includes(campus)) {
+Object.keys(equiposPorUbicacion[campus]).forEach(edificio => {
+if (ubicacion.includes(edificio)) {
+equiposPorUbicacion[campus][edificio].forEach(equipo => {
+const option = document.createElement('option');
+option.value = equipo;
+option.textContent = equipo;
+equipoAfectado.appendChild(option);
+});
+}
+});
+}
+});
+}
+
+ubicacionEquipo.addEventListener('input', actualizarSugerenciasEquipos);
+
+// Auto-asignar técnico basado en especialidad
+const tipoMantenimiento = document.getElementById('tipo');
+const tecnicoResponsable = document.getElementById('tecnico_responsable');
+
+const tecnicosPorEspecialidad = {
+'preventivo': ['1', '3'], // Técnicos especializados en mantenimiento preventivo
+'correctivo': ['', '4'], // Técnicos especializados en reparaciones
+'predictivo': ['5'], // Técnicos con certificación en IoT/sensores
+'correctivo_urgente': [''] // Técnico de emergencias
+};
+
+tipoMantenimiento.addEventListener('change', function() {
+const especialidad = this.value;
+if (tecnicosPorEspecialidad[especialidad] && tecnicosPorEspecialidad[especialidad].length > 0) {
+// Auto-seleccionar primer técnico disponible de esa especialidad
+tecnicoResponsable.value = tecnicosPorEspecialidad[especialidad][0];
+}
+});
+
+// Configurar fechas inteligentes
+configurarFechasInteligentes();
+
+function configurarFechasInteligentes() {
+const fechaProgramada = document.getElementById('fecha_programada');
+const tipoMantenimiento = document.getElementById('tipo');
+const prioridad = document.getElementById('prioridad');
+
+function ajustarFechaProgramada() {
+const tipo = tipoMantenimiento.value;
+const prio = prioridad.value;
+const ahora = new Date();
+
+let horasAdelanto = 4; // Default: 4 horas
+
+if (tipo === 'correctivo_urgente') {
+horasAdelanto = ; // horas para urgentes
+} else if (tipo === 'correctivo') {
+horasAdelanto = prio === 'alta' ? 4 : 4; // 4h para alta, 4h para media/baja
+} else if (tipo === 'preventivo') {
+horasAdelanto = prio === 'alta' ? 48 : 168; // días para alta, 1 semana para media/baja
+} else if (tipo === 'predictivo') {
+horasAdelanto = 7; // 3 días
+}
+
+const fechaSugerida = new Date(ahora.getTime() + (horasAdelanto * 60 * 60 * 1000));
+
+if (fechaProgramada.value) {
+fechaProgramada.value = fechaSugerida.toISOString().slice(0, 16);
+}
+}
+
+tipoMantenimiento.addEventListener('change', ajustarFechaProgramada);
+prioridad.addEventListener('change', ajustarFechaProgramada);
+}
+
+// Sugerir descripción basada en tipo y equipo
+function sugerirDescripcion() {
+const tipo = document.getElementById('tipo').value;
+const equipo = document.getElementById('equipo_afectado').value;
+const descripcion = document.getElementById('descripcion');
+
+const plantillas = {
+'preventivo': `Mantenimiento preventivo de ${equipo}:
+- Inspección visual general
+- Limpieza de lentes/cámaras
+- Verificación de conexiones
+- Revisión de alimentación eléctrica
+- Prueba de funcionamiento básico
+- Actualización de firmware si es necesario`,
+
+'correctivo': `Reparación de ${equipo}:
+- Diagnóstico del problema reportado
+- Identificación de componente defectuoso
+- Reemplazo de pieza(s) dañada(s)
+- Pruebas de funcionamiento
+- Verificación de estabilidad del sistema`,
+
+'correctivo_urgente': `Atención urgente de ${equipo}:
+- Respuesta inmediata al incidente
+- Diagnóstico rápido del problema
+- Implementación de solución temporal si es necesario
+- Reparación definitiva
+- Verificación del servicio restaurado`,
+
+'predictivo': `Mantenimiento predictivo de ${equipo}:
+- Análisis de datos de sensores
+- Evaluación de patrones de comportamiento
+- Predicción de fallas potenciales
+- Programación de mantenimiento preventivo
+- Optimización de rendimiento`
+};
+
+if (plantillas[tipo] && descripcion.value) {
+descripcion.value = plantillas[tipo];
+}
+}
+
+document.getElementById('tipo').addEventListener('change', sugerirDescripcion);
+document.getElementById('equipo_afectado').addEventListener('change', sugerirDescripcion);
+
+// Validaciones específicas para creación
+validarParaCreacion();
+
+function validarParaCreacion() {
+// Verificar disponibilidad del técnico
+document.getElementById('tecnico_responsable').addEventListener('change', function() {
+verificarDisponibilidadTecnico(this.value, document.getElementById('fecha_programada').value);
+});
+
+// Verificar conflictos de programación
+document.getElementById('fecha_programada').addEventListener('change', function() {
+verificarConflictosProgramacion(this.value);
+});
+}
+
+function verificarDisponibilidadTecnico(tecnicoId, fecha) {
+if (tecnicoId && fecha) {
+fetch(`/tecnicos/${tecnicoId}/disponibilidad?fecha=${encodeURIComponent(fecha)}`, {
+method: 'GET',
+headers: {
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.disponible) {
+alert('Advertencia: El técnico tiene otro mantenimiento programado en esta fecha.');
+}
+})
+.catch(error => {
+console.error('Error verificando disponibilidad:', error);
+});
+}
+}
+
+function verificarConflictosProgramacion(fecha) {
+if (fecha) {
+fetch(`/mantenimientos/verificar-conflictos?fecha=${encodeURIComponent(fecha)}`, {
+method: 'GET',
+headers: {
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.conflictos && data.conflictos.length > 0) {
+console.log('Conflictos detectados:', data.conflictos);
+}
+})
+.catch(error => {
+console.error('Error verificando conflictos:', error);
+});
+}
+}
+
+// Prevenir doble envío del formulario
+let formularioEnviado = false;
+document.getElementById('mantenimientoForm').addEventListener('submit', function(e) {
+if (formularioEnviado) {
+e.preventDefault();
+return false;
+}
+formularioEnviado = true;
+
+// Agregar timestamp de creación
+const timestamp = document.createElement('input');
+timestamp.type = 'hidden';
+timestamp.name = 'timestamp_creacion';
+timestamp.value = new Date().toISOString();
+this.appendChild(timestamp);
+});
+});
+</script>
+{% endblock %}

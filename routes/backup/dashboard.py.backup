@@ -1,0 +1,407 @@
+"""
+Rutas del Dashboard Principal
+"""
+from flask import jsonify, request
+from datetime import datetime, timedelta
+from sqlalchemy import func, desc, and_, or_
+from .. import dashboard_bp
+from .auth import token_required
+from models import (
+Camara, Nvr, Switch, Ups, Fuente, Gabinete,
+Falla, Mantenimiento, Usuario, db
+)
+from utils.filters import build_filters
+from utils.decorators import require_permission
+
+@dashboard_bp.route('/stats', methods=['GET'])
+@token_required
+def get_dashboard_stats(current_user):
+    """
+    Obtener estadísticas generales del dashboard
+    """
+    try:
+    # Contadores principales
+        stats = {
+        'equipos': {
+        'camaras': {
+        'total': Camara.query.filter_by(activo=True).count(),
+        'con_fallas': Camara.query.filter(
+        Camara.activo == True,
+        Camara.id.in_(
+        db.session.query(Falla.equipo_id).filter(
+        Falla.tipo == 'camara',
+        Falla.estado.in_(['abierta', 'en_proceso'])
+        )
+        )
+        ).count(),
+        'ultima_actualizacion': None
+        },
+        'nvr': {
+        'total': Nvr.query.filter_by(activo=True).count(),
+        'con_fallas': Nvr.query.filter(
+        Nvr.activo == True,
+        Nvr.id.in_(
+        db.session.query(Falla.equipo_id).filter(
+        Falla.tipo == 'nvr',
+        Falla.estado.in_(['abierta', 'en_proceso'])
+        )
+        )
+        ).count()
+        },
+        'switches': {
+        'total': Switch.query.filter_by(activo=True).count(),
+        'con_fallas': Switch.query.filter(
+        Switch.activo == True,
+        Switch.id.in_(
+        db.session.query(Falla.equipo_id).filter(
+        Falla.tipo == 'switch',
+        Falla.estado.in_(['abierta', 'en_proceso'])
+        )
+        )
+        ).count()
+        },
+        'ups': {
+        'total': Ups.query.filter_by(activo=True).count(),
+        'con_fallas': Ups.query.filter(
+        Ups.activo == True,
+        Ups.id.in_(
+        db.session.query(Falla.equipo_id).filter(
+        Falla.tipo == 'ups',
+        Falla.estado.in_(['abierta', 'en_proceso'])
+        )
+        )
+        ).count()
+        },
+        'fuentes': {
+        'total': Fuente.query.filter_by(activo=True).count(),
+        'con_fallas': Fuente.query.filter(
+        Fuente.activo == True,
+        Fuente.id.in_(
+        db.session.query(Falla.equipo_id).filter(
+        Falla.tipo == 'fuente',
+        Falla.estado.in_(['abierta', 'en_proceso'])
+        )
+        )
+        ).count()
+        },
+        'gabinetes': {
+        'total': Gabinete.query.filter_by(activo=True).count(),
+        'con_fallas': Gabinete.query.filter(
+        Gabinete.activo == True,
+        Gabinete.id.in_(
+        db.session.query(Falla.equipo_id).filter(
+        Falla.tipo == 'gabinete',
+        Falla.estado.in_(['abierta', 'en_proceso'])
+        )
+        )
+        ).count()
+        }
+        },
+        'fallas': {
+        'total': Falla.query.count(),
+        'abiertas': Falla.query.filter_by(estado='abierta').count(),
+        'en_proceso': Falla.query.filter_by(estado='en_proceso').count(),
+        'cerradas': Falla.query.filter_by(estado='cerrada').count(),
+        'criticas': Falla.query.filter_by(prioridad='critica').count()
+        },
+        'mantenimientos': {
+        'total': Mantenimiento.query.count(),
+        'pendientes': Mantenimiento.query.filter_by(estado='pendiente').count(),
+        'en_proceso': Mantenimiento.query.filter_by(estado='en_proceso').count(),
+        'completados': Mantenimiento.query.filter_by(estado='completado').count()
+        }
+        }
+
+        return jsonify(stats)
+
+    except Exception as e:
+    return jsonify({'error': f'Error al obtener estadísticas: {str(e)}'}), 500
+
+@dashboard_bp.route('/fallas-recientes', methods=['GET'])
+@token_required
+def get_recientes_fallas(current_user):
+    """
+    Obtener fallas recientes
+    """
+    try:
+    page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+
+        fallas = Falla.query.order_by(Falla.fecha_creacion.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+        )
+
+        return jsonify({
+        'fallas': [{
+        'id': f.id,
+        'titulo': f.titulo,
+        'descripcion': f.descripcion,
+        'prioridad': f.prioridad,
+        'estado': f.estado,
+        'tipo': f.tipo,
+        'fecha_creacion': f.fecha_creacion.isoformat(),
+        'equipo': {
+        'id': f.equipo_id,
+        'nombre': getattr(f, f'tipo', {}).get('nombre') if f.equipo else None
+        } if f.equipo else None,
+        'asignado_a': {
+        'nombre': f.asignado_a.nombre if f.asignado_a else None,
+        'apellido': f.asignado_a.apellido if f.asignado_a else None
+        } if f.asignado_a else None
+        } for f in fallas.items],
+        'pagination': {
+        'page': fallas.page,
+        'pages': fallas.pages,
+        'per_page': fallas.per_page,
+        'total': fallas.total,
+        'has_next': fallas.has_next,
+        'has_prev': fallas.has_prev
+        }
+        })
+
+    except Exception as e:
+    return jsonify({'error': f'Error al obtener fallas recientes: {str(e)}'}), 500
+
+@dashboard_bp.route('/mantenimientos-proximos', methods=['GET'])
+@token_required
+def get_proximos_mantenimientos(current_user):
+    """
+    Obtener mantenimientos próximos
+    """
+    try:
+    # Mantenimientos en los próximos 30 días
+        fecha_limite = datetime.utcnow() + timedelta(days=30)
+
+        mantenimientos = Mantenimiento.query.filter(
+        Mantenimiento.fecha_programada <= fecha_limite,
+        Mantenimiento.estado.in_(['pendiente', 'en_proceso'])
+        ).order_by(Mantenimiento.fecha_programada.asc()).limit(10).all()
+
+        return jsonify({
+        'mantenimientos': [{
+        'id': m.id,
+        'titulo': m.titulo,
+        'tipo': m.tipo,
+        'descripcion': m.descripcion,
+        'estado': m.estado,
+        'fecha_programada': m.fecha_programada.isoformat(),
+        'equipo': {
+        'id': m.equipo_id,
+        'tipo': m.tipo_equipo,
+        'nombre': getattr(m, f'_{m.tipo_equipo}', {}).get('nombre') if m.equipo else None
+        } if m.equipo else None,
+        'asignado_a': {
+        'nombre': m.asignado_a.nombre if m.asignado_a else None,
+        'apellido': m.asignado_a.apellido if m.asignado_a else None
+        } if m.asignado_a else None
+        } for m in mantenimientos]
+        })
+
+    except Exception as e:
+    return jsonify({'error': f'Error al obtener mantenimientos próximos: {str(e)}'}), 500
+
+@dashboard_bp.route('/alertas', methods=['GET'])
+@token_required
+def get_alertas(current_user):
+    """
+    Obtener alertas críticas del sistema
+    """
+    try:
+    alertas = []
+
+        # Fallas críticas abiertas
+        fallas_criticas = Falla.query.filter(
+            Falla.prioridad == 'critica',
+            Falla.estado.in_(['abierta', 'en_proceso'])
+        ).order_by(Falla.fecha_creacion.desc()).limit(5).all()
+
+        for f in fallas_criticas:
+            alertas.append({
+                'tipo': 'falla_critica',
+                'id': f.id,
+                'titulo': f.titulo,
+                'mensaje': f'Falla crítica en {f.tipo}: {f.titulo}',
+                'prioridad': 'critica',
+                'fecha': f.fecha_creacion.isoformat(),
+                'equipo_id': f.equipo_id,
+                'equipo_tipo': f.tipo
+        })
+
+        # Mantenimientos vencidos o próximos (3 días)
+        fecha_vencimiento = datetime.utcnow() + timedelta(days=3)
+        mantenimientos_vencidos = Mantenimiento.query.filter(
+            Mantenimiento.fecha_programada <= fecha_vencimiento,
+            Mantenimiento.estado == 'pendiente'
+        ).order_by(Mantenimiento.fecha_programada.asc()).limit(3).all()
+
+        for m in mantenimientos_vencidos:
+            if m.fecha_programada < datetime.utcnow():
+    tipo_alerta = 'mantenimiento_vencido'
+                mensaje = f'Mantenimiento vencido: {m.titulo}'
+                prioridad = 'alta'
+    else:
+    tipo_alerta = 'mantenimiento_proximo'
+    mensaje = f'Mantenimiento próximo: {m.titulo}'
+    prioridad = 'media'
+
+    alertas.append({
+    'tipo': tipo_alerta,
+    'id': m.id,
+    'titulo': m.titulo,
+    'mensaje': mensaje,
+    'prioridad': prioridad,
+    'fecha': m.fecha_programada.isoformat(),
+    'equipo_id': m.equipo_id,
+    'equipo_tipo': m.tipo_equipo
+    })
+
+    # Equipos sin mantenimiento en más de 6 meses
+    fecha_limite_mantenimiento = datetime.utcnow() - timedelta(days=180)
+    equipos_sin_mantenimiento = []
+
+    # Verificar cámaras
+    camaras_sin_mantenimiento = db.session.query(Camara).outerjoin(
+    Mantenimiento, and_(
+    Mantenimiento.equipo_id == Camara.id,
+    Mantenimiento.tipo_equipo == 'camara'
+    )
+    ).filter(
+    Camara.activo == True,
+    or_(
+    Mantenimiento.id.is_(None),
+    Mantenimiento.fecha_ejecucion < fecha_limite_mantenimiento
+    )
+    ).limit(3).all()
+
+    for c in camaras_sin_mantenimiento:
+            alertas.append({
+    'tipo': 'sin_mantenimiento',
+    'id': c.id,
+    'titulo': c.nombre,
+    'mensaje': f'Cámara sin mantenimiento en más de 6 meses',
+    'prioridad': 'media',
+    'fecha': datetime.utcnow().isoformat(),
+    'equipo_id': c.id,
+    'equipo_tipo': 'camara'
+    })
+
+    # Ordenar alertas por prioridad y fecha
+    alertas.sort(key=lambda x: (
+    0 if x['prioridad'] == 'critica' else
+    1 if x['prioridad'] == 'alta' else 2,
+    x['fecha']
+    ), reverse=True)
+
+    return jsonify({
+    'alertas': alertas[:10], # Limitar a 10 alertas
+    'total': len(alertas)
+    })
+
+    except Exception as e:
+    return jsonify({'error': f'Error al obtener alertas: {str(e)}'}), 500
+
+@dashboard_bp.route('/actividad-reciente', methods=['GET'])
+@token_required
+def get_actividad_reciente(current_user):
+    """
+    Obtener actividad reciente del sistema
+    """
+    try:
+    actividades = []
+
+        # Últimas fallas creadas
+        fallas_recientes = Falla.query.order_by(Falla.fecha_creacion.desc()).limit(5).all()
+
+        for f in fallas_recientes:
+            actividades.append({
+        'tipo': 'falla_creada',
+        'titulo': f'Nueva falla: {f.titulo}',
+        'descripcion': f'Falla {f.prioridad} en {f.tipo}',
+        'fecha': f.fecha_creacion.isoformat(),
+        'usuario': {
+        'nombre': f.creado_por.nombre if f.creado_por else 'Sistema',
+        'apellido': f.creado_por.apellido if f.creado_por else ''
+        }
+        })
+
+        # Últimos mantenimientos completados
+        mantenimientos_recientes = Mantenimiento.query.filter(
+        Mantenimiento.estado == 'completado'
+        ).order_by(Mantenimiento.fecha_ejecucion.desc()).limit(5).all()
+
+        for m in mantenimientos_recientes:
+            actividades.append({
+        'tipo': 'mantenimiento_completado',
+        'titulo': f'Mantenimiento completado: {m.titulo}',
+        'descripcion': f'{m.tipo} ejecutado en {m.tipo_equipo}',
+        'fecha': m.fecha_ejecucion.isoformat(),
+        'usuario': {
+        'nombre': m.ejecutado_por.nombre if m.ejecutado_por else 'Sistema',
+        'apellido': m.ejecutado_por.apellido if m.ejecutado_por else ''
+        }
+        })
+
+        # Ordenar por fecha
+        actividades.sort(key=lambda x: x['fecha'], reverse=True)
+
+        return jsonify({
+        'actividades': actividades[:10], # Últimas 10 actividades
+        'total': len(actividades)
+        })
+
+    except Exception as e:
+    return jsonify({'error': f'Error al obtener actividad reciente: {str(e)}'}), 500
+
+@dashboard_bp.route('/resumen-equipos', methods=['GET'])
+@token_required
+def get_resumen_equipos(current_user):
+    """
+    Obtener resumen por tipo de equipo
+    """
+    try:
+    resumen = []
+
+        # Estadísticas por tipo de equipo
+        tipos_equipo = [
+        ('camara', Camara, 'camaras'),
+        ('nvr', Nvr, 'nvr'),
+        ('switch', Switch, 'switches'),
+        ('ups', Ups, 'ups'),
+        ('fuente', Fuente, 'fuentes'),
+        ('gabinete', Gabinete, 'gabinetes')
+        ]
+
+        for tipo, modelo, nombre in tipos_equipo:
+            total = modelo.query.filter_by(activo=True).count()
+
+        # Contar equipos con fallas abiertas
+        con_fallas = modelo.query.filter(
+        modelo.activo == True,
+        modelo.id.in_(
+        db.session.query(Falla.equipo_id).filter(
+        Falla.tipo == tipo,
+        Falla.estado.in_(['abierta', 'en_proceso'])
+        )
+        )
+        ).count()
+
+        # Último mantenimiento
+        ultimo_mantenimiento = db.session.query(Mantenimiento).filter(
+        Mantenimiento.tipo_equipo == tipo,
+        Mantenimiento.estado == 'completado'
+        ).order_by(Mantenimiento.fecha_ejecucion.desc()).first()
+
+        resumen.append({
+        'tipo': tipo,
+        'nombre': nombre,
+        'total': total,
+        'con_fallas': con_fallas,
+        'funcionando': total - con_fallas,
+        'porcentaje_funcionamiento': round(((total - con_fallas) / total * 100) if total > 0 else 0, 1),
+        'ultimo_mantenimiento': ultimo_mantenimiento.fecha_ejecucion.isoformat() if ultimo_mantenimiento else None
+        })
+
+        return jsonify(resumen)
+
+    except Exception as e:
+    return jsonify({'error': f'Error al obtener resumen de equipos: {str(e)}'}), 500

@@ -1,0 +1,968 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if falla else 'Nueva' }} Falla{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-section {
+border: 1px solid #deee6;
+border-radius: 8px;
+margin-bottom: 1.5rem;
+background: white;
+}
+
+.form-section-header {
+background: #f8f9fa;
+border-bottom: 1px solid #deee6;
+padding: 1rem;
+border-radius: 8px 8px 0 0;
+display: flex;
+align-items: center;
+justify-content: between;
+}
+
+.form-section-body {
+padding: 1.5rem;
+}
+
+.form-section.collapsed .form-section-body {
+display: none;
+}
+
+.form-section.collapsed .form-section-header .toggle-icon {
+transform: rotate(-90deg);
+}
+
+.required-field::after {
+content: " *";
+color: #dc3545;
+font-weight: bold;
+}
+
+.gravedad-option {
+border: px solid transparent;
+border-radius: 8px;
+padding: 1rem;
+cursor: pointer;
+transition: all 0.3s ease;
+margin-bottom: 0.5rem;
+}
+
+.gravedad-option:hover {
+border-color: #007bff;
+background-color: #f8f9ff;
+}
+
+.gravedad-option.selected {
+border-color: #007bff;
+background-color: #e3ffd;
+}
+
+.gravedad-option.disabled {
+opacity: 0.5;
+cursor: not-allowed;
+}
+
+.gravedad-option.disabled:hover {
+border-color: transparent;
+background-color: transparent;
+}
+
+.gravedad-critical { border-left: 4px solid #dc3545; }
+.gravedad-alta { border-left: 4px solid #fd7e14; }
+.gravedad-media { border-left: 4px solid #ffc107; }
+.gravedad-baja { border-left: 4px solid #8a745; }
+
+.estado-option {
+border: px solid #deee6;
+border-radius: 8px;
+padding: 1rem;
+cursor: pointer;
+transition: all 0.3s ease;
+margin-bottom: 0.5rem;
+}
+
+.estado-option:hover {
+border-color: #007bff;
+background-color: #f8f9ff;
+}
+
+.estado-option.selected {
+border-color: #007bff;
+background-color: #e3ffd;
+}
+
+.estado-option.disabled {
+opacity: 0.5;
+cursor: not-allowed;
+}
+
+.form-errors {
+background: #f8d7da;
+border: 1px solid #f5c6cb;
+border-radius: 8px;
+padding: 1rem;
+margin-bottom: 1rem;
+}
+
+.form-errors ul {
+margin-bottom: 0;
+padding-left: 1.5rem;
+}
+
+.form-errors li {
+color: #71c4;
+}
+
+.form-help {
+background: #d1ecf1;
+border: 1px solid #bee5eb;
+border-radius: 8px;
+padding: 1rem;
+margin-bottom: 1rem;
+}
+
+.form-help i {
+color: #0c5460;
+}
+
+.upload-zone {
+border: px dashed #007bff;
+border-radius: 8px;
+padding: rem;
+text-align: center;
+background-color: #f8f9fa;
+transition: all 0.3s ease;
+cursor: pointer;
+}
+
+.upload-zone:hover {
+background-color: #e9ecef;
+border-color: #0056b3;
+}
+
+.upload-zone.dragover {
+background-color: #e3ffd;
+border-color: #196f3;
+}
+
+.upload-zone.has-files {
+border-color: #8a745;
+background-color: #d4edda;
+}
+
+.form-actions {
+background: #f8f9fa;
+border-top: 1px solid #deee6;
+padding: 1.5rem;
+border-radius: 0 0 8px 8px;
+position: sticky;
+bottom: 0;
+z-index: 100;
+}
+
+.toggle-icon {
+transition: transform 0.3s ease;
+margin-left: auto;
+}
+
+.char-counter {
+font-size: 0.875rem;
+color: #6c757d;
+}
+
+.char-counter.warning {
+color: #ffc107;
+font-weight: bold;
+}
+
+.char-counter.danger {
+color: #dc3545;
+font-weight: bold;
+}
+
+.quick-stats {
+background: linear-gradient(135deg, #667eea 0%, #764ba 100%);
+color: white;
+border-radius: 8px;
+padding: 1rem;
+margin-bottom: 1rem;
+}
+
+.quick-stats .stat-item {
+text-align: center;
+padding: 0.5rem;
+}
+
+.quick-stats .stat-value {
+font-size: 1.5rem;
+font-weight: bold;
+display: block;
+}
+
+.quick-stats .stat-label {
+font-size: 0.875rem;
+opacity: 0.9;
+}
+
+.validation-summary {
+display: none;
+background: #f8d7da;
+border: 1px solid #f5c6cb;
+border-radius: 8px;
+padding: 1rem;
+margin-bottom: 1rem;
+}
+
+.validation-summary.show {
+display: block;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+<-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<h1 class="h3 mb-0">
+{% if falla %}
+<i class="bi bi-pencil-square text-primary"></i>
+Editar Falla #{{ falla.id }}
+{% else %}
+<i class="bi bi-plus-circle text-success"></i>
+Nueva Falla
+{% endif %}
+</h1>
+<p class="text-muted mb-0">
+{% if falla %}
+{{ falla.descripcion[:80] }}{% if falla.descripcion|length > 80 %}...{% endif %}
+{% else %}
+Complete el formulario para reportar una nueva falla técnica
+{% endif %}
+</p>
+</div>
+<div class="d-flex gap-">
+{% if falla %}
+<a href="{{ url_for('fallas_detalle', falla_id=falla.id) }}" class="btn btn-outline-secondary">
+<i class="bi bi-arrow-left"></i> Volver
+</a>
+{% else %}
+<a href="{{ url_for('fallas_listar') }}" class="btn btn-outline-secondary">
+<i class="bi bi-arrow-left"></i> Lista de Fallas
+</a>
+{% endif %}
+</div>
+</div>
+
+<-- Estadísticas rápidas -->
+{% if falla %}
+<div class="quick-stats">
+<div class="row">
+<div class="col-md-3 stat-item">
+<span class="stat-value">{{ (datetime.now() - falla.fecha_reporte).days if falla.fecha_reporte else 0 }}</span>
+<span class="stat-label">Días transcurridos</span>
+</div>
+<div class="col-md-3 stat-item">
+<span class="stat-value">${{ "{:,.0f}".format(falla.costo) if falla.costo else 0 }}</span>
+<span class="stat-label">Costo actual</span>
+</div>
+<div class="col-md-3 stat-item">
+<span class="stat-value">{{ falla.estado.replace('_', ' ').title() }}</span>
+<span class="stat-label">Estado actual</span>
+</div>
+<div class="col-md-3 stat-item">
+<span class="stat-value">{{ falla.gravedad.title() }}</span>
+<span class="stat-label">Nivel de gravedad</span>
+</div>
+</div>
+</div>
+{% endif %}
+
+<-- Mensajes de error de validación -->
+{% if form.errors %}
+<div class="validation-summary show" id="validation-summary">
+<h6 class="mb-">
+<i class="bi bi-exclamation-triangle"></i>
+Por favor corrija los siguientes errores:
+</h6>
+<ul class="mb-0">
+{% for field, errors in form.errors.items() %}
+<li><strong>{{ field }}:</strong> {{ errors|join(', ') }}</li>
+{% endfor %}
+</ul>
+</div>
+{% endif %}
+
+<form method="POST" id="formFalla" enctype="multipart/form-data" novalidate>
+{{ form.hidden_tag() }}
+
+<div class="row">
+<-- Columna principal -->
+<div class="col-lg-8">
+<-- Información básica -->
+<div class="form-section" id="seccion-basica">
+<div class="form-section-header" onclick="toggleSection('seccion-basica')">
+<h5 class="mb-0">
+<i class="bi bi-info-circle"></i> Información Básica
+</h5>
+<i class="bi bi-chevron-down toggle-icon"></i>
+</div>
+<div class="form-section-body">
+<div class="row">
+<div class="col-md-6 mb-3">
+{{ form.equipo_id.label(class="form-label required-field") }}
+{{ form.equipo_id(class="form-select", required=True) }}
+<div class="invalid-feedback">Por favor seleccione un equipo.</div>
+{% if form.equipo_id.errors %}
+<div class="text-danger small mt-1">{{ form.equipo_id.errors[0] }}</div>
+{% endif %}
+</div>
+
+<div class="col-md-6 mb-3">
+{{ form.gravedad.label(class="form-label required-field") }}
+{{ form.gravedad(class="form-select", required=True) }}
+<div class="invalid-feedback">Por favor seleccione el nivel de gravedad.</div>
+{% if form.gravedad.errors %}
+<div class="text-danger small mt-1">{{ form.gravedad.errors[0] }}</div>
+{% endif %}
+</div>
+</div>
+
+{% if falla %}
+<div class="row">
+<div class="col-md-6 mb-3">
+{{ form.estado.label(class="form-label required-field") }}
+{{ form.estado(class="form-select", required=True) }}
+<div class="invalid-feedback">Por favor seleccione el estado.</div>
+{% if form.estado.errors %}
+<div class="text-danger small mt-1">{{ form.estado.errors[0] }}</div>
+{% endif %}
+</div>
+
+<div class="col-md-6 mb-3">
+{{ form.costo.label(class="form-label") }}
+<div class="input-group">
+<span class="input-group-text">$</span>
+{{ form.costo(class="form-control", placeholder="0.00") }}
+</div>
+{% if form.costo.errors %}
+<div class="text-danger small mt-1">{{ form.costo.errors[0] }}</div>
+{% endif %}
+</div>
+</div>
+{% endif %}
+
+<div class="mb-3">
+{{ form.descripcion.label(class="form-label required-field") }}
+{{ form.descripcion(class="form-control", rows="4", placeholder="Describa detalladamente el problema encontrado...") }}
+<div class="char-counter" id="descripcion-counter">0/500 caracteres</div>
+<div class="invalid-feedback">Por favor proporcione una descripción de la falla.</div>
+{% if form.descripcion.errors %}
+<div class="text-danger small mt-1">{{ form.descripcion.errors[0] }}</div>
+{% endif %}
+</div>
+
+<div class="mb-3">
+{{ form.solucion.label(class="form-label") }}
+{{ form.solucion(class="form-control", rows="4", placeholder="Describa la solución aplicada para resolver la falla...") }}
+<div class="char-counter" id="solucion-counter">0/500 caracteres</div>
+{% if form.solucion.errors %}
+<div class="text-danger small mt-1">{{ form.solucion.errors[0] }}</div>
+{% endif %}
+</div>
+
+<div class="mb-3">
+{{ form.comentarios.label(class="form-label") }}
+{{ form.comentarios(class="form-control", rows="3", placeholder="Información adicional, observaciones, contexto...") }}
+<div class="char-counter" id="comentarios-counter">0/300 caracteres</div>
+{% if form.comentarios.errors %}
+<div class="text-danger small mt-1">{{ form.comentarios.errors[0] }}</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<-- Asignación y fechas -->
+<div class="form-section" id="seccion-asignacion">
+<div class="form-section-header" onclick="toggleSection('seccion-asignacion')">
+<h5 class="mb-0">
+<i class="bi bi-person-check"></i> Asignación y Fechas
+</h5>
+<i class="bi bi-chevron-down toggle-icon"></i>
+</div>
+<div class="form-section-body">
+<div class="row">
+<div class="col-md-6 mb-3">
+{{ form.tecnico_asignado_id.label(class="form-label") }}
+{{ form.tecnico_asignado_id(class="form-select") }}
+{% if form.tecnico_asignado_id.errors %}
+<div class="text-danger small mt-1">{{ form.tecnico_asignado_id.errors[0] }}</div>
+{% endif %}
+</div>
+
+<div class="col-md-6 mb-3">
+{{ form.fecha_estimada_resolucion.label(class="form-label") }}
+{{ form.fecha_estimada_resolucion(class="form-control") }}
+{% if form.fecha_estimada_resolucion.errors %}
+<div class="text-danger small mt-1">{{ form.fecha_estimada_resolucion.errors[0] }}</div>
+{% endif %}
+</div>
+</div>
+
+{% if falla and falla.fecha_resolucion %}
+<div class="row">
+<div class="col-md-6">
+<small class="text-muted">
+<i class="bi bi-calendar-check"></i> <strong>Fecha Resolución:</strong><br>
+{{ falla.fecha_resolucion.strftime('%d/%m/%Y %H:%M') }}
+</small>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+
+<-- Evidencias -->
+<div class="form-section" id="seccion-evidencias">
+<div class="form-section-header" onclick="toggleSection('seccion-evidencias')">
+<h5 class="mb-0">
+<i class="bi bi-paperclip"></i> Evidencias Fotográficas
+</h5>
+<i class="bi bi-chevron-down toggle-icon"></i>
+</div>
+<div class="form-section-body">
+<div class="form-help mb-3">
+<i class="bi bi-info-circle me-"></i>
+Las evidencias fotográficas ayudan a documentar mejor la falla y facilitan el proceso de reparación.
+</div>
+
+<div class="upload-zone" id="upload-zone">
+<i class="bi bi-cloud-upload fs-1 text-muted mb-3"></i>
+<h5>Arrastre archivos aquí o haga clic para seleccionar</h5>
+<p class="text-muted mb-3">
+Formatos aceptados: JPG, PNG, GIF (máx. 5MB cada uno)
+</p>
+<input type="file" name="evidencias" id="evidencias" class="d-none" multiple accept="image/*">
+<button type="button" class="btn btn-outline-primary" onclick="document.getElementById('evidencias').click()">
+<i class="bi bi-folder-open"></i> Seleccionar Archivos
+</button>
+</div>
+
+<div id="preview-evidencias" class="row mt-3"></div>
+
+{% if falla and falla.evidencias %}
+<div class="mt-3">
+<h6>Evidencias existentes:</h6>
+<div class="row">
+{% for evidencia in falla.evidencias %}
+<div class="col-md-3 mb-">
+<div class="card">
+<img src="{{ evidencia.url }}" class="card-img-top" style="height: 150px; object-fit: cover;">
+<div class="card-body p-">
+<small class="text-muted">{{ evidencia.nombre_archivo }}</small>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<-- Sidebar -->
+<div class="col-lg-4">
+<-- Nivel de Gravedad -->
+<div class="card mb-4">
+<div class="card-header d-flex justify-content-between align-items-center">
+<h6 class="mb-0">
+<i class="bi bi-exclamation-triangle"></i> Nivel de Gravedad
+</h6>
+<small class="text-muted">Seleccionar nivel</small>
+</div>
+<div class="card-body">
+<div class="gravedad-option gravedad-critical mb-" data-gravedad="critica">
+<div class="d-flex align-items-center">
+<i class="bi bi-exclamation-octagon fs-4 me-3 text-danger"></i>
+<div>
+<h6 class="mb-1">Crítica</h6>
+<small class="text-muted">Sistema completamente fuera de servicio</small>
+</div>
+</div>
+</div>
+
+<div class="gravedad-option gravedad-alta mb-" data-gravedad="alta">
+<div class="d-flex align-items-center">
+<i class="bi bi-exclamation-triangle fs-4 me-3 text-warning"></i>
+<div>
+<h6 class="mb-1">Alta</h6>
+<small class="text-muted">Funcionalidad principal afectada</small>
+</div>
+</div>
+</div>
+
+<div class="gravedad-option gravedad-media mb-" data-gravedad="media">
+<div class="d-flex align-items-center">
+<i class="bi bi-info-circle fs-4 me-3 text-info"></i>
+<div>
+<h6 class="mb-1">Media</h6>
+<small class="text-muted">Funcionalidad secundaria afectada</small>
+</div>
+</div>
+</div>
+
+<div class="gravedad-option gravedad-baja" data-gravedad="baja">
+<div class="d-flex align-items-center">
+<i class="bi bi-check-circle fs-4 me-3 text-success"></i>
+<div>
+<h6 class="mb-1">Baja</h6>
+<small class="text-muted">Problema menor</small>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Estado (solo para edición) -->
+{% if falla %}
+<div class="card mb-4">
+<div class="card-header">
+<h6 class="mb-0">
+<i class="bi bi-circle"></i> Estado Actual
+</h6>
+</div>
+<div class="card-body">
+<div class="estado-option mb-" data-estado="reportada">
+<div class="d-flex align-items-center">
+<i class="bi bi-circle fs-4 me-3 text-secondary"></i>
+<div>
+<h6 class="mb-1">Reportada</h6>
+<small class="text-muted">Falla recién reportada</small>
+</div>
+</div>
+</div>
+
+<div class="estado-option mb-" data-estado="en_proceso">
+<div class="d-flex align-items-center">
+<i class="bi bi-clock fs-4 me-3 text-warning"></i>
+<div>
+<h6 class="mb-1">En Proceso</h6>
+<small class="text-muted">Técnico trabajando en la falla</small>
+</div>
+</div>
+</div>
+
+<div class="estado-option mb-" data-estado="resuelta">
+<div class="d-flex align-items-center">
+<i class="bi bi-check-circle fs-4 me-3 text-success"></i>
+<div>
+<h6 class="mb-1">Resuelta</h6>
+<small class="text-muted">Problema solucionado</small>
+</div>
+</div>
+</div>
+
+<div class="estado-option" data-estado="cerrada">
+<div class="d-flex align-items-center">
+<i class="bi bi-check-circle-fill fs-4 me-3 text-primary"></i>
+<div>
+<h6 class="mb-1">Cerrada</h6>
+<small class="text-muted">Falla cerrada definitivamente</small>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endif %}
+
+<-- Ayuda -->
+<div class="card">
+<div class="card-header">
+<h6 class="mb-0">
+<i class="bi bi-question-circle"></i> Ayuda
+</h6>
+</div>
+<div class="card-body">
+<div class="form-help">
+<strong>Consejos para una buena descripción:</strong>
+<ul class="mt- mb-0">
+<li>Sea específico sobre el problema</li>
+<li>Indique cuándo ocurrió</li>
+<li>Mentione cualquier mensaje de error</li>
+<li>Describa el impacto en las operaciones</li>
+</ul>
+</div>
+
+{% if not falla %}
+<div class="alert alert-info">
+<i class="bi bi-info-circle me-"></i>
+<strong>Asignación automática:</strong> Si no selecciona un técnico, el sistema asignará automáticamente según disponibilidad y especialización.
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+
+<-- Acciones del formulario -->
+<div class="form-actions mt-4">
+<div class="d-flex justify-content-between align-items-center">
+<div>
+{% if falla %}
+<button type="button" class="btn btn-outline-info" onclick="vistaPrevia()">
+<i class="bi bi-eye"></i> Vista Previa
+</button>
+<button type="button" class="btn btn-outline-warning" onclick="restaurarValores()">
+<i class="bi bi-arrow-clockwise"></i> Restaurar
+</button>
+{% endif %}
+</div>
+
+<div class="d-flex gap-">
+<a href="{% if falla %}{{ url_for('fallas_detalle', falla_id=falla.id) }}{% else %}{{ url_for('fallas_listar') }}{% endif %}" class="btn btn-outline-secondary">
+<i class="bi bi-x-circle"></i> Cancelar
+</a>
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-check-circle"></i>
+{% if falla %}Guardar Cambios{% else %}Reportar Falla{% endif %}
+</button>
+</div>
+</div>
+</div>
+</form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let valoresOriginales = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+// Inicializar contadores de caracteres
+inicializarContadores();
+
+// Inicializar selecciones visuales
+inicializarSeleccionesVisuales();
+
+// Inicializar upload zone
+inicializarUploadZone();
+
+// Guardar valores originales para restauración
+guardarValoresOriginales();
+
+// Auto-guardar cada 30 segundos (solo para nuevas fallas)
+{% if not falla %}
+setInterval(autoGuardar, 30000);
+{% endif %}
+});
+
+function inicializarContadores() {
+const campos = [
+{ id: 'descripcion', max: 500, counterId: 'descripcion-counter' },
+{ id: 'solucion', max: 500, counterId: 'solucion-counter' },
+{ id: 'comentarios', max: 300, counterId: 'comentarios-counter' }
+];
+
+campos.forEach(campo => {
+const elemento = document.getElementById(campo.id);
+const counter = document.getElementById(campo.counterId);
+
+if (elemento && counter) {
+elemento.addEventListener('input', function() {
+actualizarContador(this, counter, campo.max);
+});
+
+// Inicializar contador
+actualizarContador(elemento, counter, campo.max);
+}
+});
+}
+
+function actualizarContador(elemento, counter, maxLength) {
+const length = elemento.value.length;
+counter.textContent = `${length}/${maxLength} caracteres`;
+
+counter.className = 'char-counter';
+if (length > maxLength * 0.9) {
+counter.classList.add('warning');
+}
+if (length > maxLength) {
+counter.classList.add('danger');
+elemento.value = elemento.value.substring(0, maxLength);
+counter.textContent = `${maxLength}/${maxLength} caracteres`;
+}
+}
+
+function inicializarSeleccionesVisuales() {
+// Gravedad
+const gravedadOptions = document.querySelectorAll('.gravedad-option[data-gravedad]');
+const gravedadSelect = document.getElementById('gravedad');
+
+if (gravedadSelect) {
+// Marcar opción actual
+if (gravedadSelect.value) {
+const currentOption = document.querySelector(`[data-gravedad="${gravedadSelect.value}"]`);
+if (currentOption) {
+currentOption.classList.add('selected');
+}
+}
+
+gravedadOptions.forEach(option => {
+option.addEventListener('click', function() {
+gravedadOptions.forEach(opt => opt.classList.remove('selected'));
+this.classList.add('selected');
+gravedadSelect.value = this.dataset.gravedad;
+});
+});
+}
+
+// Estado (solo para edición)
+{% if falla %}
+const estadoOptions = document.querySelectorAll('.estado-option[data-estado]');
+const estadoSelect = document.getElementById('estado');
+
+if (estadoSelect) {
+// Marcar opción actual
+if (estadoSelect.value) {
+const currentOption = document.querySelector(`[data-estado="${estadoSelect.value}"]`);
+if (currentOption) {
+currentOption.classList.add('selected');
+}
+}
+
+estadoOptions.forEach(option => {
+option.addEventListener('click', function() {
+estadoOptions.forEach(opt => opt.classList.remove('selected'));
+this.classList.add('selected');
+estadoSelect.value = this.dataset.estado;
+});
+});
+}
+{% endif %}
+}
+
+function inicializarUploadZone() {
+const uploadZone = document.getElementById('upload-zone');
+const evidenciasInput = document.getElementById('evidencias');
+const previewContainer = document.getElementById('preview-evidencias');
+
+if (uploadZone) return;
+
+uploadZone.addEventListener('click', () => evidenciasInput && evidenciasInput.click());
+
+uploadZone.addEventListener('dragover', (e) => {
+e.preventDefault();
+uploadZone.classList.add('dragover');
+});
+
+uploadZone.addEventListener('dragleave', () => {
+uploadZone.classList.remove('dragover');
+});
+
+uploadZone.addEventListener('drop', (e) => {
+e.preventDefault();
+uploadZone.classList.remove('dragover');
+if (evidenciasInput) {
+evidenciasInput.files = e.dataTransfer.files;
+mostrarPreviewEvidencias();
+}
+});
+
+if (evidenciasInput) {
+evidenciasInput.addEventListener('change', mostrarPreviewEvidencias);
+}
+
+function mostrarPreviewEvidencias() {
+if (previewContainer) return;
+
+previewContainer.innerHTML = '';
+const files = evidenciasInput.files;
+
+if (files.length > 0) {
+uploadZone.classList.add('has-files');
+} else {
+uploadZone.classList.remove('has-files');
+}
+
+for (let i = 0; i < files.length; i++) {
+const file = files[i];
+if (file.type.startsWith('image/')) {
+const reader = new FileReader();
+reader.onload = (e) => {
+const col = document.createElement('div');
+col.className = 'col-md-3 mb-';
+col.innerHTML = `
+<div class="card">
+<img src="${e.target.result}" class="card-img-top" style="height: 150px; object-fit: cover;">
+<div class="card-body p-">
+<small class="text-muted">${file.name.substring(0, 0)}...</small>
+</div>
+</div>
+`;
+previewContainer.appendChild(col);
+};
+reader.readAsDataURL(file);
+}
+}
+}
+}
+
+function toggleSection(sectionId) {
+const section = document.getElementById(sectionId);
+section.classList.toggle('collapsed');
+}
+
+function guardarValoresOriginales() {
+const form = document.getElementById('formFalla');
+const inputs = form.querySelectorAll('input, select, textarea');
+
+inputs.forEach(input => {
+if (input.name && input.type == 'file') {
+valoresOriginales[input.name] = input.value;
+}
+});
+}
+
+function restaurarValores() {
+if (confirm('¿Está seguro que desea restaurar los valores originales? Se perderán todos los cambios no guardados.')) {
+const form = document.getElementById('formFalla');
+const inputs = form.querySelectorAll('input, select, textarea');
+
+inputs.forEach(input => {
+if (input.name && valoresOriginales.hasOwnProperty(input.name)) {
+input.value = valoresOriginales[input.name];
+input.dispatchEvent(new Event('change'));
+input.dispatchEvent(new Event('input'));
+}
+});
+
+// Actualizar selecciones visuales
+inicializarSeleccionesVisuales();
+
+alert('Valores restaurados correctamente.');
+}
+}
+
+function autoGuardar() {
+const form = document.getElementById('formFalla');
+const formData = new FormData(form);
+
+// Solo auto-guardar si hay datos
+const hasData = Array.from(formData.entries()).some(([key, value]) =>
+value && key == 'csrf_token' && key == 'evidencias'
+);
+
+if (hasData) {
+fetch('/fallas/auto-guardar', {
+method: 'POST',
+body: formData
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+console.log('Auto-guardado realizado');
+}
+})
+.catch(error => console.log('Error en auto-guardado:', error));
+}
+}
+
+function vistaPrevia() {
+const form = document.getElementById('formFalla');
+const formData = new FormData(form);
+const data = Object.fromEntries(formData.entries());
+
+const previewWindow = window.open('', '_blank', 'width=800,height=600');
+const fechaActual = new Date().toLocaleString('es-ES');
+
+previewWindow.document.write(`
+<html>
+<head>
+<title>Vista Previa - Falla</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 0px; line-height: 1.6; }
+.header { background: #f8f9fa; padding: 0px; border-radius: 8px; margin-bottom: 0px; }
+.section { margin-bottom: 0px; border-bottom: 1px solid #deee6; padding-bottom: 15px; }
+.badge { padding: 4px 8px; border-radius: 4px; font-size: 1px; font-weight: bold; }
+.badge.critica { background: #dc3545; color: white; }
+.badge.alta { background: #fd7e14; color: white; }
+.badge.media { background: #ffc107; color: #159; }
+.badge.baja { background: #8a745; color: white; }
+.badge.reportada { background: #6c757d; color: white; }
+.badge.en_proceso { background: #ffc107; color: #159; }
+.badge.resuelta { background: #8a745; color: white; }
+.badge.cerrada { background: #007bff; color: white; }
+</style>
+</head>
+<body>
+<div class="header">
+<h1>Vista Previa de Falla</h1>
+<p>Generado el ${fechaActual}</p>
+</div>
+
+<div class="section">
+<h3>Información Básica</h3>
+<p><strong>Equipo:</strong> ${document.getElementById('equipo_id').selectedOptions[0]?.text || 'No seleccionado'}</p>
+<p><strong>Estado:</strong> <span class="badge ${data.estado || 'reportada'}">${(data.estado || 'reportada').replace('_', ' ').toUpperCase()}</span></p>
+<p><strong>Gravedad:</strong> <span class="badge ${data.gravedad || 'media'}">${(data.gravedad || 'media').toUpperCase()}</span></p>
+${data.costo ? `<p><strong>Costo estimado:</strong> $${parseFloat(data.costo).toFixed()}</p>` : ''}
+</div>
+
+<div class="section">
+<h3>Descripción</h3>
+<p>${data.descripcion || '<em>Sin descripción</em>'}</p>
+</div>
+
+${data.solucion ? `
+<div class="section">
+<h3>Solución</h3>
+<p>${data.solucion}</p>
+</div>
+` : ''}
+
+${data.comentarios ? `
+<div class="section">
+<h3>Comentarios Adicionales</h3>
+<p>${data.comentarios}</p>
+</div>
+` : ''}
+
+${data.tecnico_asignado_id ? `
+<div class="section">
+<h3>Asignación</h3>
+<p><strong>Técnico asignado:</strong> ${document.getElementById('tecnico_asignado_id').selectedOptions[0]?.text || 'N/A'}</p>
+</div>
+` : ''}
+
+<div style="text-align: center; margin-top: 30px; padding-top: 0px; border-top: 1px solid #deee6;">
+<button onclick="window.print()" style="padding: 10px 0px; margin: 0 5px;">Imprimir</button>
+<button onclick="window.close()" style="padding: 10px 0px; margin: 0 5px;">Cerrar</button>
+</div>
+</body>
+</html>
+`);
+}
+
+// Validación en tiempo real
+document.getElementById('formFalla').addEventListener('submit', function(e) {
+const requiredFields = this.querySelectorAll('[required]');
+let isValid = true;
+
+requiredFields.forEach(field => {
+if (field.value.trim()) {
+field.classList.add('is-invalid');
+isValid = false;
+} else {
+field.classList.remove('is-invalid');
+}
+});
+
+if (isValid) {
+e.preventDefault();
+document.getElementById('validation-summary').scrollIntoView({ behavior: 'smooth' });
+}
+});
+</script>
+{% endblock %}

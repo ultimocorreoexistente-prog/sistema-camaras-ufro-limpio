@@ -1,0 +1,507 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Mantenimientos - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1><i class="bi bi-tools"></i> Gestionar Mantenimientos</h1>
+<a href="{{ url_for('mantenimientos_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Nuevo Mantenimiento
+</a>
+</div>
+
+<-- Filtros avanzados -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-funnel"></i> Filtros Avanzados
+</h5>
+</div>
+<div class="card-body">
+<form method="GET" class="row g-3">
+<div class="col-md-">
+<label for="estado" class="form-label">Estado</label>
+<select name="estado" id="estado" class="form-select">
+<option value="">Todos</option>
+<option value="programado" {% if request.args.get('estado') == 'programado' %}selected{% endif %}>Programado</option>
+<option value="en_proceso" {% if request.args.get('estado') == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+<option value="completado" {% if request.args.get('estado') == 'completado' %}selected{% endif %}>Completado</option>
+<option value="cancelado" {% if request.args.get('estado') == 'cancelado' %}selected{% endif %}>Cancelado</option>
+</select>
+</div>
+<div class="col-md-">
+<label for="tipo" class="form-label">Tipo</label>
+<select name="tipo" id="tipo" class="form-select">
+<option value="">Todos</option>
+<option value="preventivo" {% if request.args.get('tipo') == 'preventivo' %}selected{% endif %}>Preventivo</option>
+<option value="correctivo" {% if request.args.get('tipo') == 'correctivo' %}selected{% endif %}>Correctivo</option>
+<option value="predictivo" {% if request.args.get('tipo') == 'predictivo' %}selected{% endif %}>Predictivo</option>
+<option value="correctivo_urgente" {% if request.args.get('tipo') == 'correctivo_urgente' %}selected{% endif %}>Urgente</option>
+</select>
+</div>
+<div class="col-md-">
+<label for="prioridad" class="form-label">Prioridad</label>
+<select name="prioridad" id="prioridad" class="form-select">
+<option value="">Todas</option>
+<option value="alta" {% if request.args.get('prioridad') == 'alta' %}selected{% endif %}>Alta</option>
+<option value="media" {% if request.args.get('prioridad') == 'media' %}selected{% endif %}>Media</option>
+<option value="baja" {% if request.args.get('prioridad') == 'baja' %}selected{% endif %}>Baja</option>
+</select>
+</div>
+<div class="col-md-">
+<label for="tecnico" class="form-label">Técnico</label>
+<select name="tecnico" id="tecnico" class="form-select">
+<option value="">Todos</option>
+{% for tecnico in tecnicos %}
+<option value="{{ tecnico.id }}" {% if request.args.get('tecnico') == tecnico.id|string %}selected{% endif %}>{{ tecnico.nombre }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="col-md-">
+<label for="fecha_desde" class="form-label">Fecha Desde</label>
+<input type="date" name="fecha_desde" id="fecha_desde" class="form-control"
+value="{{ request.args.get('fecha_desde', '') }}">
+</div>
+<div class="col-md-">
+<label for="fecha_hasta" class="form-label">Fecha Hasta</label>
+<input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control"
+value="{{ request.args.get('fecha_hasta', '') }}">
+</div>
+<div class="col-md-1">
+<div class="d-flex justify-content-end">
+<button type="submit" class="btn btn-outline-primary me-">
+<i class="bi bi-search"></i> Filtrar
+</button>
+<button type="button" class="btn btn-outline-secondary me-" onclick="limpiarFiltros()">
+<i class="bi bi-arrow-clockwise"></i> Limpiar
+</button>
+<button type="button" class="btn btn-outline-success" onclick="exportarDatos()">
+<i class="bi bi-download"></i> Exportar
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+
+<-- Vista de calendario y lista -->
+<div class="d-flex justify-content-between mb-3">
+<div class="btn-group" role="group">
+<input type="radio" class="btn-check" name="vista" id="vista-lista" checked>
+<label class="btn btn-outline-primary" for="vista-lista">
+<i class="bi bi-list"></i> Lista
+</label>
+
+<input type="radio" class="btn-check" name="vista" id="vista-calendario">
+<label class="btn btn-outline-primary" for="vista-calendario">
+<i class="bi bi-calendar"></i> Calendario
+</label>
+
+<input type="radio" class="btn-check" name="vista" id="vista-kanban">
+<label class="btn btn-outline-primary" for="vista-kanban">
+<i class="bi bi-kanban"></i> Kanban
+</label>
+</div>
+
+<div class="d-flex align-items-center">
+<span class="badge bg-primary me-">{{ mantenimientos|length }} mantenimientos</span>
+<div class="dropdown">
+<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+<i class="bi bi-three-dots"></i> Acciones
+</button>
+<ul class="dropdown-menu">
+<li><a class="dropdown-item" href="#" onclick="generarReporteGeneral()">Reporte General</a></li>
+<li><a class="dropdown-item" href="#" onclick="programarMantenimientos()">Programar Masivos</a></li>
+<li><a class="dropdown-item" href="#" onclick="importarMantenimientos()">Importar</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+<-- Vista de lista -->
+<div id="vista-lista-content">
+<div class="card">
+<div class="card-body p-0">
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+<thead class="table-light">
+<tr>
+<th>ID</th>
+<th>Fecha</th>
+<th>Tipo</th>
+<th>Equipo Afectado</th>
+<th>Técnico</th>
+<th>Prioridad</th>
+<th>Duración</th>
+<th>Costo</th>
+<th>Estado</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody>
+{% for mantenimiento in mantenimientos %}
+<tr class=" {{ 'table-warning' if mantenimiento.prioridad == 'alta' else 'table-info' if mantenimiento.prioridad == 'media' else '' }}">
+<td><strong>#{{ mantenimiento.id }}</strong></td>
+<td>
+{% if mantenimiento.fecha_programada %}
+{{ mantenimiento.fecha_programada.strftime('%d/%m/%Y') }}
+{% else %}
+<span class="text-muted">No programado</span>
+{% endif %}
+</td>
+<td>
+{% if mantenimiento.tipo == 'preventivo' %}
+<span class="badge bg-info">Preventivo</span>
+{% elif mantenimiento.tipo == 'correctivo' %}
+<span class="badge bg-warning">Correctivo</span>
+{% elif mantenimiento.tipo == 'predictivo' %}
+<span class="badge bg-success">Predictivo</span>
+{% elif mantenimiento.tipo == 'correctivo_urgente' %}
+<span class="badge bg-danger">Urgente</span>
+{% endif %}
+</td>
+<td>
+<div>
+<strong>{{ mantenimiento.equipo_afectado }}</strong>
+<br>
+<small class="text-muted">{{ mantenimiento.ubicacion_equipo }}</small>
+</div>
+</td>
+<td>{{ mantenimiento.tecnico_responsable }}</td>
+<td>
+{% if mantenimiento.prioridad == 'alta' %}
+<span class="badge bg-danger">Alta</span>
+{% elif mantenimiento.prioridad == 'media' %}
+<span class="badge bg-warning">Media</span>
+{% elif mantenimiento.prioridad == 'baja' %}
+<span class="badge bg-success">Baja</span>
+{% endif %}
+</td>
+<td>
+{% if mantenimiento.duracion %}
+{{ mantenimiento.duracion }}h
+{% else %}
+<span class="text-muted">-</span>
+{% endif %}
+</td>
+<td>
+{% if mantenimiento.costo %}
+${{ "{:,.0f}".format(mantenimiento.costo) }}
+{% else %}
+<span class="text-muted">-</span>
+{% endif %}
+</td>
+<td>
+{% if mantenimiento.estado == 'programado' %}
+<span class="badge bg-secondary">Programado</span>
+{% elif mantenimiento.estado == 'en_proceso' %}
+<span class="badge bg-warning">En Proceso</span>
+{% elif mantenimiento.estado == 'completado' %}
+<span class="badge bg-success">Completado</span>
+{% elif mantenimiento.estado == 'cancelado' %}
+<span class="badge bg-danger">Cancelado</span>
+{% endif %}
+</td>
+<td>
+<div class="btn-group btn-group-sm" role="group">
+<a href="{{ url_for('mantenimientos_detalle', mantenimiento_id=mantenimiento.id) }}"
+class="btn btn-outline-primary" title="Ver detalles">
+<i class="bi bi-eye"></i>
+</a>
+{% if mantenimiento.estado = 'completado' and mantenimiento.estado = 'cancelado' %}
+<a href="{{ url_for('mantenimientos_editar', mantenimiento_id=mantenimiento.id) }}"
+class="btn btn-outline-warning" title="Editar">
+<i class="bi bi-pencil"></i>
+</a>
+{% endif %}
+<button type="button" class="btn btn-outline-success"
+onclick="cambiarEstado({{ mantenimiento.id }})" title="Cambiar estado">
+<i class="bi bi-arrow-clockwise"></i>
+</button>
+<button type="button" class="btn btn-outline-info"
+onclick="generarReporteIndividual({{ mantenimiento.id }})" title="Reporte">
+<i class="bi bi-file-text"></i>
+</button>
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+
+<-- Vista de calendario -->
+<div id="vista-calendario-content" style="display: none;">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-calendar"></i> Calendario de Mantenimientos
+</h5>
+</div>
+<div class="card-body">
+<div id="calendar"></div>
+</div>
+</div>
+</div>
+
+<-- Vista Kanban -->
+<div id="vista-kanban-content" style="display: none;">
+<div class="row">
+<div class="col-md-3">
+<div class="card border-secondary">
+<div class="card-header bg-secondary text-white">
+<h6 class="mb-0">
+<i class="bi bi-clock"></i> Programados ({{ mantenimientos|selectattr('estado', 'equalto', 'programado')|list|length }})
+</h6>
+</div>
+<div class="card-body" style="min-height: 400px;">
+{% for mantenimiento in mantenimientos|selectattr('estado', 'equalto', 'programado') %}
+<div class="card mb-">
+<div class="card-body p-">
+<h6 class="card-title">#{{ mantenimiento.id }} - {{ mantenimiento.tipo }}</h6>
+<p class="card-text small">{{ mantenimiento.equipo_afectado }}</p>
+<div class="d-flex justify-content-between align-items-center">
+<span class="badge bg-{{ 'danger' if mantenimiento.prioridad == 'alta' else 'warning' if mantenimiento.prioridad == 'media' else 'success' }}">
+{{ mantenimiento.prioridad.title() }}
+</span>
+<small class="text-muted">
+{{ mantenimiento.fecha_programada.strftime('%d/%m') if mantenimiento.fecha_programada else '' }}
+</small>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card border-warning">
+<div class="card-header bg-warning text-dark">
+<h6 class="mb-0">
+<i class="bi bi-play-circle"></i> En Proceso ({{ mantenimientos|selectattr('estado', 'equalto', 'en_proceso')|list|length }})
+</h6>
+</div>
+<div class="card-body" style="min-height: 400px;">
+{% for mantenimiento in mantenimientos|selectattr('estado', 'equalto', 'en_proceso') %}
+<div class="card mb-">
+<div class="card-body p-">
+<h6 class="card-title">#{{ mantenimiento.id }} - {{ mantenimiento.tipo }}</h6>
+<p class="card-text small">{{ mantenimiento.equipo_afectado }}</p>
+<div class="d-flex justify-content-between align-items-center">
+<span class="badge bg-{{ 'danger' if mantenimiento.prioridad == 'alta' else 'warning' if mantenimiento.prioridad == 'media' else 'success' }}">
+{{ mantenimiento.prioridad.title() }}
+</span>
+<small class="text-muted">
+{{ mantenimiento.fecha_inicio.strftime('%d/%m') if mantenimiento.fecha_inicio else '' }}
+</small>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card border-success">
+<div class="card-header bg-success text-white">
+<h6 class="mb-0">
+<i class="bi bi-check-circle"></i> Completados ({{ mantenimientos|selectattr('estado', 'equalto', 'completado')|list|length }})
+</h6>
+</div>
+<div class="card-body" style="min-height: 400px;">
+{% for mantenimiento in mantenimientos|selectattr('estado', 'equalto', 'completado') %}
+<div class="card mb-">
+<div class="card-body p-">
+<h6 class="card-title">#{{ mantenimiento.id }} - {{ mantenimiento.tipo }}</h6>
+<p class="card-text small">{{ mantenimiento.equipo_afectado }}</p>
+<div class="d-flex justify-content-between align-items-center">
+<span class="badge bg-secondary">{{ mantenimiento.duracion }}h</span>
+<small class="text-muted">
+{{ mantenimiento.fecha_completado.strftime('%d/%m') if mantenimiento.fecha_completado else '' }}
+</small>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card border-danger">
+<div class="card-header bg-danger text-white">
+<h6 class="mb-0">
+<i class="bi bi-x-circle"></i> Cancelados ({{ mantenimientos|selectattr('estado', 'equalto', 'cancelado')|list|length }})
+</h6>
+</div>
+<div class="card-body" style="min-height: 400px;">
+{% for mantenimiento in mantenimientos|selectattr('estado', 'equalto', 'cancelado') %}
+<div class="card mb-">
+<div class="card-body p-">
+<h6 class="card-title">#{{ mantenimiento.id }} - {{ mantenimiento.tipo }}</h6>
+<p class="card-text small">{{ mantenimiento.equipo_afectado }}</p>
+<div class="d-flex justify-content-between align-items-center">
+<span class="badge bg-{{ 'danger' if mantenimiento.prioridad == 'alta' else 'warning' if mantenimiento.prioridad == 'media' else 'success' }}">
+{{ mantenimiento.prioridad.title() }}
+</span>
+<small class="text-muted">
+{{ mantenimiento.fecha_programada.strftime('%d/%m') if mantenimiento.fecha_programada else '' }}
+</small>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Resumen estadístico -->
+<div class="row mt-4">
+<div class="col-md-3">
+<div class="card card-stat">
+<div class="card-body text-center">
+<i class="bi bi-tools text-primary" style="font-size: rem;"></i>
+<h3 class="mt-">{{ mantenimientos|length }}</h3>
+<p class="text-muted mb-0">Total</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat warning">
+<div class="card-body text-center">
+<i class="bi bi-exclamation-triangle text-warning" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ mantenimientos|selectattr('estado', 'in', ['programado', 'en_proceso'])|list|length }}
+</h3>
+<p class="text-muted mb-0">Pendientes</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat success">
+<div class="card-body text-center">
+<i class="bi bi-check-circle text-success" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ mantenimientos|selectattr('estado', 'equalto', 'completado')|list|length }}
+</h3>
+<p class="text-muted mb-0">Completados</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat danger">
+<div class="card-body text-center">
+<i class="bi bi-currency-dollar text-success" style="font-size: rem;"></i>
+<h3 class="mt-">
+${{ "{:,.0f}".format(mantenimientos|selectattr('costo')|sum(attribute='costo') or 0) }}
+</h3>
+<p class="text-muted mb-0">Costo Total</p>
+</div>
+</div>
+</div>
+</div>
+
+<-- Alertas de mantenimiento -->
+{% if mantenimientos_urgentes %}
+<div class="alert alert-warning mt-4" role="alert">
+<h4 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Mantenimientos Urgentes</h4>
+<p>Los siguientes mantenimientos requieren atención inmediata:</p>
+<ul class="mb-0">
+{% for mantenimiento in mantenimientos_urgentes %}
+<li><strong>#{{ mantenimiento.id }}</strong> - {{ mantenimiento.tipo }} en {{ mantenimiento.equipo_afectado }} ({{ mantenimiento.prioridad }} prioridad)</li>
+{% endfor %}
+</ul>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Toggle entre vistas
+const vistaLista = document.getElementById('vista-lista');
+const vistaCalendario = document.getElementById('vista-calendario');
+const vistaKanban = document.getElementById('vista-kanban');
+const contenidoLista = document.getElementById('vista-lista-content');
+const contenidoCalendario = document.getElementById('vista-calendario-content');
+const contenidoKanban = document.getElementById('vista-kanban-content');
+
+[vistaLista, vistaCalendario, vistaKanban].forEach(radio => {
+radio.addEventListener('change', function() {
+contenidoLista.style.display = vistaLista.checked ? 'block' : 'none';
+contenidoCalendario.style.display = vistaCalendario.checked ? 'block' : 'none';
+contenidoKanban.style.display = vistaKanban.checked ? 'block' : 'none';
+});
+});
+});
+
+function limpiarFiltros() {
+window.location.href = "{{ url_for('mantenimientos_list') }}";
+}
+
+function exportarDatos() {
+const params = new URLSearchParams(window.location.search);
+const url = `/mantenimientos/exportar?${params}`;
+window.open(url, '_blank');
+}
+
+function cambiarEstado(mantenimientoId) {
+const nuevoEstado = prompt('Nuevo estado (programado, en_proceso, completado, cancelado):');
+if (nuevoEstado && ['programado', 'en_proceso', 'completado', 'cancelado'].includes(nuevoEstado)) {
+fetch(`/mantenimientos/${mantenimientoId}/cambiar-estado`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+},
+body: JSON.stringify({ estado: nuevoEstado })
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+location.reload();
+} else {
+alert('Error al cambiar estado: ' + data.message);
+}
+});
+}
+}
+
+function generarReporteIndividual(mantenimientoId) {
+window.open(`/mantenimientos/${mantenimientoId}/reporte`, '_blank');
+}
+
+function generarReporteGeneral() {
+const url = `/mantenimientos/reporte-general`;
+window.open(url, '_blank');
+}
+
+function programarMantenimientos() {
+window.open(`/mantenimientos/programar-masivos`, '_blank');
+}
+
+function importarMantenimientos() {
+window.open(`/mantenimientos/importar`, '_blank');
+}
+
+// Auto-actualizar cada 5 minutos
+setInterval(function() {
+location.reload();
+}, 300000);
+
+// Notificaciones de mantenimiento urgente
+function verificarMantenimientosUrgentes() {
+// Implementar lógica para verificar mantenimientos urgentes
+console.log('Verificando mantenimientos urgentes...');
+}
+
+setInterval(verificarMantenimientosUrgentes, 60000);
+</script>
+{% endblock %}

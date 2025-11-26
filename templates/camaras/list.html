@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Cámaras - Sistema de Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="card">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: rem;">
+<h style="color: #1e93b;">Listado de Cámaras</h>
+<span style="color: #64748b;">Total: {{ camaras.total }} cámaras</span>
+</div>
+
+{% if camaras.items %}
+<table class="table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Nombre</th>
+<th>IP</th>
+<th>Ubicación</th>
+<th>Marca/Modelo</th>
+<th>Estado</th>
+<th>Fecha Instalación</th>
+</tr>
+</thead>
+<tbody>
+{% for camara in camaras.items %}
+<tr>
+<td><strong>#{{ camara.id }}</strong></td>
+<td>{{ camara.nombre }}</td>
+<td><code>{{ camara.ip_address }}</code></td>
+<td>{{ camara.ubicacion or '-' }}</td>
+<td>{{ camara.marca or '-' }} {{ camara.modelo or '' }}</td>
+<td>
+{% if camara.estado == 'activa' %}
+<span class="badge badge-success">Activa</span>
+{% else %}
+<span class="badge badge-danger">{{ camara.estado }}</span>
+{% endif %}
+</td>
+<td>{{ camara.fecha_instalacion.strftime('%d/%m/%Y') if camara.fecha_instalacion else '-' }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<-- Paginación -->
+{% if camaras.pages > 1 %}
+<div style="margin-top: rem; text-align: center;">
+{% if camaras.has_prev %}
+<a href="{{ url_for('camaras', page=camaras.prev_num) }}" class="btn btn-primary">Anterior</a>
+{% endif %}
+<span style="margin: 0 1rem;">Página {{ camaras.page }} de {{ camaras.pages }}</span>
+{% if camaras.has_next %}
+<a href="{{ url_for('camaras', page=camaras.next_num) }}" class="btn btn-primary">Siguiente</a>
+{% endif %}
+</div>
+{% endif %}
+{% else %}
+<p style="color: #64748b;">No hay cámaras registradas.</p>
+{% endif %}
+</div>
+{% endblock %}

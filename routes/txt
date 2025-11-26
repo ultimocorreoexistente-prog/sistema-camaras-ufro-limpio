@@ -1,0 +1,28 @@
+ El volumen de la unidad C no tiene etiqueta.
+ El n£mero de serie del volumen es: 424E-DF92
+
+ Directorio de C:\Users\Usuario\sistema-camaras-ufro-limpio\routes
+
+24-11-2025  14:12    <DIR>          .
+24-11-2025  14:12    <DIR>          ..
+14-11-2025  08:59            16.035 api.py
+14-11-2025  08:59             6.436 auth.py
+14-11-2025  08:59            14.522 camaras.py
+14-11-2025  08:59            10.715 dashboard.py
+14-11-2025  08:59            15.121 fallas.py
+14-11-2025  08:59            10.347 fotografias.py
+14-11-2025  08:59            10.104 fuentes.py
+14-11-2025  08:59            13.214 gabinetes.py
+14-11-2025  08:59             9.682 geolocalizacion.py
+23-11-2025  00:27            10.784 inventario.py
+14-11-2025  08:59            20.713 mantenimientos.py
+14-11-2025  08:59            17.276 nvr.py
+14-11-2025  08:59            21.032 switches.py
+14-11-2025  08:59            20.784 topologia.py
+23-11-2025  00:21             5.783 trazabilidad.py
+24-11-2025  14:12                 0 txt
+14-11-2025  08:59             9.034 ups.py
+14-11-2025  08:59            18.326 usuarios.py
+14-11-2025  08:59             1.521 __init__.py
+              19 archivos        231.429 bytes
+               2 dirs  101.905.653.760 bytes libres

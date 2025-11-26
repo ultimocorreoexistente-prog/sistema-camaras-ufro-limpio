@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Fallas{% endblock %}
+
+{% block extra_css %}
+<style>
+.falla-card {
+border-left: 4px solid #dc3545;
+transition: all 0.3s ease;
+}
+.falla-card:hover {
+transform: translateY(-px);
+box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.falla-card.critica { border-left-color: #dc3545; }
+.falla-card.alta { border-left-color: #fd7e14; }
+.falla-card.media { border-left-color: #ffc107; }
+.falla-card.baja { border-left-color: #8a745; }
+
+.estado-badge {
+font-size: 0.75rem;
+padding: 0.375rem 0.75rem;
+}
+
+.filtro-activo {
+background-color: #e3ffd important;
+border-color: #196f3 important;
+}
+
+.historial-falla {
+max-height: 300px;
+overflow-y: auto;
+}
+
+.stats-card {
+border-radius: 8px;
+box-shadow: 0 px 4px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<h1 class="h3 mb-0">
+<i class="bi bi-exclamation-triangle text-warning"></i>
+Gestión de Fallas
+</h1>
+<p class="text-muted mb-0">Sistema de control y seguimiento de fallas técnicas</p>
+</div>
+{% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'TECNICO'] %}
+<div>
+<a href="{{ url_for('fallas_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Reportar Falla
+</a>
+</div>
+{% endif %}
+</div>
+
+<-- Estadísticas -->
+<div class="row mb-4">
+<div class="col-md-3">
+<div class="card stats-card card-stat">
+<div class="card-body">
+<div class="d-flex align-items-center">
+<div class="flex-grow-1">
+<h5 class="card-title mb-1">Total Fallas</h5>
+<h3 class="text-danger mb-0">{{ fallas|length }}</h3>
+</div>
+<div class="text-muted">
+<i class="bi bi-exclamation-triangle fs-1"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card stats-card card-stat danger">
+<div class="card-body">
+<div class="d-flex align-items-center">
+<div class="flex-grow-1">
+<h5 class="card-title mb-1">Críticas</h5>
+<h3 class="text-danger mb-0">{{ fallas_criticas or 0 }}</h3>
+</div>
+<div class="text-danger">
+<i class="bi bi-exclamation-octagon fs-1"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card stats-card card-stat warning">
+<div class="card-body">
+<div class="d-flex align-items-center">
+<div class="flex-grow-1">
+<h5 class="card-title mb-1">Pendientes</h5>
+<h3 class="text-warning mb-0">{{ fallas_pendientes or 0 }}</h3>
+</div>
+<div class="text-warning">
+<i class="bi bi-clock fs-1"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card stats-card card-stat success">
+<div class="card-body">
+<div class="d-flex align-items-center">
+<div class="flex-grow-1">
+<h5 class="card-title mb-1">Resueltas</h5>
+<h3 class="text-success mb-0">{{ fallas_resueltas or 0 }}</h3>
+</div>
+<div class="text-success">
+<i class="bi bi-check-circle fs-1"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Filtros -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-funnel"></i> Filtros
+</h5>
+</div>
+<div class="card-body">
+<form method="GET" class="row g-3">
+<div class="col-md-3">
+<label class="form-label">Estado</label>
+<select name="estado" class="form-select" onchange="this.form.submit()">
+<option value="">Todos los estados</option>
+<option value="reportada" {% if request.args.get('estado') == 'reportada' %}selected{% endif %}>Reportada</option>
+<option value="en_proceso" {% if request.args.get('estado') == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+<option value="resuelta" {% if request.args.get('estado') == 'resuelta' %}selected{% endif %}>Resuelta</option>
+<option value="cerrada" {% if request.args.get('estado') == 'cerrada' %}selected{% endif %}>Cerrada</option>
+</select>
+</div>
+
+<div class="col-md-3">
+<label class="form-label">Gravedad</label>
+<select name="gravedad" class="form-select" onchange="this.form.submit()">
+<option value="">Todas las gravedades</option>
+<option value="critica" {% if request.args.get('gravedad') == 'critica' %}selected{% endif %}>Crítica</option>
+<option value="alta" {% if request.args.get('gravedad') == 'alta' %}selected{% endif %}>Alta</option>
+<option value="media" {% if request.args.get('gravedad') == 'media' %}selected{% endif %}>Media</option>
+<option value="baja" {% if request.args.get('gravedad') == 'baja' %}selected{% endif %}>Baja</option>
+</select>
+</div>
+
+<div class="col-md-3">
+<label class="form-label">Técnico</label>
+<select name="tecnico" class="form-select" onchange="this.form.submit()">
+<option value="">Todos los técnicos</option>
+{% for tecnico in tecnicos %}
+<option value="{{ tecnico.id }}" {% if request.args.get('tecnico') == tecnico.id|string %}selected{% endif %}>
+{{ tecnico.nombre_completo }}
+</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="col-md-3">
+<label class="form-label">Fecha Desde</label>
+<input type="date" name="fecha_desde" class="form-control" value="{{ request.args.get('fecha_desde') }}" onchange="this.form.submit()">
+</div>
+
+<div class="col-1">
+<div class="d-flex gap-">
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-search"></i> Filtrar
+</button>
+<a href="{{ url_for('fallas_listar') }}" class="btn btn-outline-secondary">
+<i class="bi bi-x-circle"></i> Limpiar Filtros
+</a>
+</div>
+</div>
+</form>
+</div>
+</div>
+
+<-- Lista de Fallas -->
+<div class="row">
+{% if fallas %}
+{% for falla in fallas %}
+<div class="col-1 mb-3">
+<div class="card falla-card {{ falla.gravedad }}">
+<div class="card-body">
+<div class="row align-items-center">
+<div class="col-md-8">
+<div class="d-flex align-items-start gap-3">
+<div class="flex-grow-1">
+<h5 class="card-title mb-">
+<a href="{{ url_for('fallas_detalle', falla_id=falla.id) }}" class="text-decoration-none">
+#{{ falla.id }} - {{ falla.descripcion[:60] }}{% if falla.descripcion|length > 60 %}...{% endif %}
+</a>
+</h5>
+<div class="mb-">
+<small class="text-muted">
+<i class="bi bi-calendar"></i> {{ falla.fecha_reporte.strftime('%d/%m/%Y %H:%M') if falla.fecha_reporte else 'N/A' }}
+{% if falla.equipo %}
+| <i class="bi bi-camera-video"></i> {{ falla.equipo.nombre or 'Equipo N/A' }}
+{% endif %}
+| <i class="bi bi-person"></i> {{ falla.tecnico_asignado.nombre_completo if falla.tecnico_asignado else 'Sin asignar' }}
+</small>
+</div>
+{% if falla.solucion %}
+<p class="card-text text-muted mb-0">
+<i class="bi bi-check"></i> {{ falla.solucion[:100] }}{% if falla.solucion|length > 100 %}...{% endif %}
+</p>
+{% endif %}
+</div>
+</div>
+</div>
+
+<div class="col-md-4 text-end">
+<div class="d-flex flex-column align-items-end gap-">
+<-- Badges -->
+<div>
+<span class="badge estado-badge bg-{% if falla.estado == 'reportada' %}secondary{% elif falla.estado == 'en_proceso' %}warning{% elif falla.estado == 'resuelta' %}success{% else %}info{% endif %}">
+{{ falla.estado.replace('_', ' ').title() }}
+</span>
+</div>
+
+<div>
+<span class="badge estado-badge bg-{% if falla.gravedad == 'critica' %}danger{% elif falla.gravedad == 'alta' %}warning{% elif falla.gravedad == 'media' %}info{% else %}success{% endif %}">
+{{ falla.gravedad.title() }}
+</span>
+</div>
+
+{% if falla.costo %}
+<div>
+<small class="text-muted">
+<i class="bi bi-currency-dollar"></i> ${{ "{:,.f}".format(falla.costo) }}
+</small>
+</div>
+{% endif %}
+
+<-- Acciones -->
+<div class="btn-group btn-group-sm">
+<a href="{{ url_for('fallas_detalle', falla_id=falla.id) }}" class="btn btn-outline-primary" title="Ver Detalle">
+<i class="bi bi-eye"></i>
+</a>
+{% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'TECNICO'] %}
+<a href="{{ url_for('fallas_editar', falla_id=falla.id) }}" class="btn btn-outline-secondary" title="Editar">
+<i class="bi bi-pencil"></i>
+</a>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endfor %}
+{% else %}
+<div class="col-1">
+<div class="text-center py-5">
+<i class="bi bi-inbox display-1 text-muted"></i>
+<h3 class="mt-3">No hay fallas registradas</h3>
+<p class="text-muted">No se encontraron fallas con los filtros seleccionados.</p>
+{% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'TECNICO'] %}
+<a href="{{ url_for('fallas_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Reportar Primera Falla
+</a>
+{% endif %}
+</div>
+</div>
+{% endif %}
+</div>
+
+<-- Paginación (si es necesaria) -->
+{% if fallas and fallas|length > 0 %}
+<div class="row mt-4">
+<div class="col-1">
+<nav aria-label="Paginación de fallas">
+<ul class="pagination justify-content-center">
+<li class="page-item disabled">
+<a class="page-link" href="#" tabindex="-1">Anterior</a>
+</li>
+<li class="page-item active">
+<a class="page-link" href="#">1</a>
+</li>
+<li class="page-item">
+<a class="page-link" href="#"></a>
+</li>
+<li class="page-item">
+<a class="page-link" href="#">3</a>
+</li>
+<li class="page-item">
+<a class="page-link" href="#">Siguiente</a>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Funciones JavaScript para gestión de fallas
+document.addEventListener('DOMContentLoaded', function() {
+// Auto-refresh cada 30 segundos para estado en tiempo real
+setInterval(function() {
+// Actualizar badges de estado dinámicamente si es necesario
+const estadoBadges = document.querySelectorAll('.estado-badge');
+estadoBadges.forEach(function(badge) {
+// Lógica para actualizar estados en tiempo real
+});
+}, 30000);
+
+// Validación de filtros
+const filtros = document.querySelectorAll('select[name], input[name]');
+filtros.forEach(function(filtro) {
+filtro.addEventListener('change', function() {
+// Mostrar loading sutil
+const card = this.closest('.card');
+if (card) {
+card.style.opacity = '0.6';
+setTimeout(() => {
+card.style.opacity = '1';
+}, 500);
+}
+});
+});
+});
+</script>
+{% endblock %}

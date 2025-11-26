@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Gabinetes - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1><i class="bi bi-archive"></i> Gestionar Gabinetes</h1>
+<a href="{{ url_for('gabinetes_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Nuevo Gabinete
+</a>
+</div>
+
+<-- Filtros avanzados -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-funnel"></i> Filtros Avanzados
+</h5>
+</div>
+<div class="card-body">
+<form method="GET" class="row g-3">
+<div class="col-md-">
+<label for="campus" class="form-label">Campus</label>
+<select name="campus" id="campus" class="form-select">
+<option value="">Todos</option>
+<option value="Campus Principal" {% if request.args.get('campus') == 'Campus Principal' %}selected{% endif %}>Campus Principal</option>
+<option value="Campus Sur" {% if request.args.get('campus') == 'Campus Sur' %}selected{% endif %}>Campus Sur</option>
+<option value="Campus Norte" {% if request.args.get('campus') == 'Campus Norte' %}selected{% endif %}>Campus Norte</option>
+<option value="Campus Centro" {% if request.args.get('campus') == 'Campus Centro' %}selected{% endif %}>Campus Centro</option>
+</select>
+</div>
+<div class="col-md-">
+<label for="estado" class="form-label">Estado</label>
+<select name="estado" id="estado" class="form-select">
+<option value="">Todos</option>
+<option value="operativo" {% if request.args.get('estado') == 'operativo' %}selected{% endif %}>Operativo</option>
+<option value="mantenimiento" {% if request.args.get('estado') == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+<option value="sobrecarga" {% if request.args.get('estado') == 'sobrecarga' %}selected{% endif %}>Sobrecarga</option>
+<option value="deshabilitado" {% if request.args.get('estado') == 'deshabilitado' %}selected{% endif %}>Deshabilitado</option>
+</select>
+</div>
+<div class="col-md-">
+<label for="piso" class="form-label">Piso</label>
+<select name="piso" id="piso" class="form-select">
+<option value="">Todos</option>
+<option value="Sótano" {% if request.args.get('piso') == 'Sótano' %}selected{% endif %}>Sótano</option>
+<option value="Planta Baja" {% if request.args.get('piso') == 'Planta Baja' %}selected{% endif %}>Planta Baja</option>
+<option value="Piso 1" {% if request.args.get('piso') == 'Piso 1' %}selected{% endif %}>Piso 1</option>
+<option value="Piso " {% if request.args.get('piso') == 'Piso ' %}selected{% endif %}>Piso </option>
+<option value="Piso 3" {% if request.args.get('piso') == 'Piso 3' %}selected{% endif %}>Piso 3</option>
+<option value="Azotea" {% if request.args.get('piso') == 'Azotea' %}selected{% endif %}>Azotea</option>
+</select>
+</div>
+<div class="col-md-">
+<label for="acceso" class="form-label">Acceso</label>
+<select name="acceso" id="acceso" class="form-select">
+<option value="">Todos</option>
+<option value="libre" {% if request.args.get('acceso') == 'libre' %}selected{% endif %}>Libre</option>
+<option value="restringido" {% if request.args.get('acceso') == 'restringido' %}selected{% endif %}>Restringido</option>
+<option value="clave" {% if request.args.get('acceso') == 'clave' %}selected{% endif %}>Con clave</option>
+</select>
+</div>
+<div class="col-md-">
+<label for="temperatura_min" class="form-label">Temp. Min (°C)</label>
+<input type="number" name="temperatura_min" id="temperatura_min" class="form-control"
+value="{{ request.args.get('temperatura_min', '') }}" placeholder="Min">
+</div>
+<div class="col-md-">
+<label for="temperatura_max" class="form-label">Temp. Max (°C)</label>
+<input type="number" name="temperatura_max" id="temperatura_max" class="form-control"
+value="{{ request.args.get('temperatura_max', '') }}" placeholder="Max">
+</div>
+<div class="col-md-1">
+<div class="d-flex justify-content-end">
+<button type="submit" class="btn btn-outline-primary me-">
+<i class="bi bi-search"></i> Filtrar
+</button>
+<button type="button" class="btn btn-outline-secondary" onclick="limpiarFiltros()">
+<i class="bi bi-arrow-clockwise"></i> Limpiar
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+
+<-- Vista de tarjetas y tabla -->
+<div class="d-flex justify-content-between mb-3">
+<div class="btn-group" role="group">
+<input type="radio" class="btn-check" name="vista" id="vista-tarjetas" checked>
+<label class="btn btn-outline-primary" for="vista-tarjetas">
+<i class="bi bi-grid"></i> Tarjetas
+</label>
+
+<input type="radio" class="btn-check" name="vista" id="vista-tabla">
+<label class="btn btn-outline-primary" for="vista-tabla">
+<i class="bi bi-list"></i> Tabla
+</label>
+</div>
+
+<div class="d-flex align-items-center">
+<span class="badge bg-primary me-">{{ gabinetes|length }} gabinetes</span>
+<button class="btn btn-outline-success btn-sm" onclick="exportarDatos()">
+<i class="bi bi-download"></i> Exportar
+</button>
+</div>
+</div>
+
+<-- Vista de tarjetas -->
+<div id="vista-tarjetas-content">
+<div class="row">
+{% for gabinete in gabinetes %}
+<div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+<div class="card h-100 border-{{ 'success' if gabinete.estado == 'operativo' else 'warning' if gabinete.estado == 'mantenimiento' else 'danger' }}">
+<div class="card-body">
+<div class="d-flex justify-content-between align-items-start mb-">
+<h5 class="card-title">{{ gabinete.nombre }}</h5>
+{% if gabinete.temperatura %}
+<span class="badge bg-{{ 'success' if gabinete.temperatura < 30 else 'warning' if gabinete.temperatura < 40 else 'danger' }}">
+{{ gabinete.temperatura }}°C
+</span>
+{% endif %}
+</div>
+
+<p class="card-text text-muted mb-">
+<i class="bi bi-building"></i> {{ gabinete.campus }} - {{ gabinete.edificio }}
+</p>
+
+<p class="card-text text-muted mb-">
+<i class="bi bi-layers"></i> {{ gabinete.piso_nivel }}
+</p>
+
+<div class="mb-">
+{% if gabinete.estado == 'operativo' %}
+<span class="badge bg-success">Operativo</span>
+{% elif gabinete.estado == 'mantenimiento' %}
+<span class="badge bg-warning">Mantenimiento</span>
+{% elif gabinete.estado == 'sobrecarga' %}
+<span class="badge bg-warning">Sobrecarga</span>
+{% elif gabinete.estado == 'deshabilitado' %}
+<span class="badge bg-danger">Deshabilitado</span>
+{% endif %}
+
+<span class="badge bg-{{ 'success' if gabinete.acceso == 'libre' else 'warning' if gabinete.acceso == 'restringido' else 'info' }}">
+{{ gabinete.acceso.title() }}
+</span>
+</div>
+
+{% if gabinete.equipos_contenidos %}
+<div class="mb-">
+<small class="text-muted">
+<i class="bi bi-cpu"></i> {{ gabinete.equipos_contenidos|length }} equipos
+</small>
+</div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center">
+<div class="btn-group btn-group-sm" role="group">
+<a href="{{ url_for('gabinetes_detalle', gabinete_id=gabinete.id) }}"
+class="btn btn-outline-primary" title="Ver detalles">
+<i class="bi bi-eye"></i>
+</a>
+<a href="{{ url_for('gabinetes_editar', gabinete_id=gabinete.id) }}"
+class="btn btn-outline-warning" title="Editar">
+<i class="bi bi-pencil"></i>
+</a>
+<a href="{{ url_for('gabinetes_mantencion', gabinete_id=gabinete.id) }}"
+class="btn btn-outline-success" title="Mantenimiento">
+<i class="bi bi-tools"></i>
+</a>
+</div>
+
+<button type="button" class="btn btn-outline-danger btn-sm"
+onclick="confirmarEliminacion({{ gabinete.id }})" title="Eliminar">
+<i class="bi bi-trash"></i>
+</button>
+</div>
+</div>
+</div>
+</div>
+{% endfor %}
+
+{% if not gabinetes %}
+<div class="col-1">
+<div class="text-center py-5">
+<i class="bi bi-archive display-1 text-muted"></i>
+<h3 class="text-muted mt-3">No hay gabinetes registrados</h3>
+<p class="text-muted">Comienza agregando un nuevo gabinete al sistema.</p>
+<a href="{{ url_for('gabinetes_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Agregar primer gabinete
+</a>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+
+<-- Vista de tabla -->
+<div id="vista-tabla-content" style="display: none;">
+<div class="card">
+<div class="card-body p-0">
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+<thead class="table-light">
+<tr>
+<th>Nombre</th>
+<th>Ubicación</th>
+<th>Piso</th>
+<th>Temperatura</th>
+<th>Estado</th>
+<th>Acceso</th>
+<th>Equipos</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody>
+{% for gabinete in gabinetes %}
+<tr>
+<td><strong>{{ gabinete.nombre }}</strong></td>
+<td>{{ gabinete.campus }}<br><small class="text-muted">{{ gabinete.edificio }}</small></td>
+<td>{{ gabinete.piso_nivel }}</td>
+<td>
+{% if gabinete.temperatura %}
+<span class="badge bg-{{ 'success' if gabinete.temperatura < 30 else 'warning' if gabinete.temperatura < 40 else 'danger' }}">
+{{ gabinete.temperatura }}°C
+</span>
+{% else %}
+<span class="text-muted">No disponible</span>
+{% endif %}
+</td>
+<td>
+{% if gabinete.estado == 'operativo' %}
+<span class="badge bg-success">Operativo</span>
+{% elif gabinete.estado == 'mantenimiento' %}
+<span class="badge bg-warning">Mantenimiento</span>
+{% elif gabinete.estado == 'sobrecarga' %}
+<span class="badge bg-warning">Sobrecarga</span>
+{% elif gabinete.estado == 'deshabilitado' %}
+<span class="badge bg-danger">Deshabilitado</span>
+{% endif %}
+</td>
+<td>
+{% if gabinete.acceso == 'libre' %}
+<i class="bi bi-unlock text-success"></i>
+{% elif gabinete.acceso == 'restringido' %}
+<i class="bi bi-lock text-warning"></i>
+{% elif gabinete.acceso == 'clave' %}
+<i class="bi bi-key text-info"></i>
+{% endif %}
+{{ gabinete.acceso.title() }}
+</td>
+<td>
+{% if gabinete.equipos_contenidos %}
+{{ gabinete.equipos_contenidos|length }} equipos
+{% else %}
+<span class="text-muted">Vacío</span>
+{% endif %}
+</td>
+<td>
+<div class="btn-group btn-group-sm" role="group">
+<a href="{{ url_for('gabinetes_detalle', gabinete_id=gabinete.id) }}"
+class="btn btn-outline-primary" title="Ver detalles">
+<i class="bi bi-eye"></i>
+</a>
+<a href="{{ url_for('gabinetes_editar', gabinete_id=gabinete.id) }}"
+class="btn btn-outline-warning" title="Editar">
+<i class="bi bi-pencil"></i>
+</a>
+<a href="{{ url_for('gabinetes_mantencion', gabinete_id=gabinete.id) }}"
+class="btn btn-outline-success" title="Mantenimiento">
+<i class="bi bi-tools"></i>
+</a>
+<button type="button" class="btn btn-outline-danger"
+onclick="confirmarEliminacion({{ gabinete.id }})" title="Eliminar">
+<i class="bi bi-trash"></i>
+</button>
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+
+<-- Resumen estadístico -->
+<div class="row mt-4">
+<div class="col-md-3">
+<div class="card card-stat">
+<div class="card-body text-center">
+<i class="bi bi-archive text-primary" style="font-size: rem;"></i>
+<h3 class="mt-">{{ gabinetes|length }}</h3>
+<p class="text-muted mb-0">Total Gabinetes</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat success">
+<div class="card-body text-center">
+<i class="bi bi-check-circle text-success" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ gabinetes|selectattr('estado', 'equalto', 'operativo')|list|length }}
+</h3>
+<p class="text-muted mb-0">Operativos</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat warning">
+<div class="card-body text-center">
+<i class="bi bi-thermometer-half text-warning" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ gabinetes|selectattr('temperatura', 'greaterthan', 35)|list|length }}
+</h3>
+<p class="text-muted mb-0">Sobre 35°C</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat danger">
+<div class="card-body text-center">
+<i class="bi bi-exclamation-triangle text-danger" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ gabinetes|selectattr('estado', 'in', ['sobrecarga', 'deshabilitado'])|list|length }}
+</h3>
+<p class="text-muted mb-0">Requieren atención</p>
+</div>
+</div>
+</div>
+</div>
+
+<-- Alertas de temperatura -->
+{% if gabinetes|selectattr('temperatura', 'greaterthan', 40)|list %}
+<div class="alert alert-warning mt-4" role="alert">
+<h4 class="alert-heading"><i class="bi bi-thermometer-half"></i> Alertas de Temperatura</h4>
+<p>Los siguientes gabinetes están operando a temperaturas elevadas:</p>
+<ul class="mb-0">
+{% for gabinete in gabinetes|selectattr('temperatura', 'greaterthan', 40) %}
+<li><strong>{{ gabinete.nombre }}</strong> - {{ gabinete.temperatura }}°C ({{ gabinete.ubicacion }})</li>
+{% endfor %}
+</ul>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Toggle entre vistas
+const vistaTarjetas = document.getElementById('vista-tarjetas');
+const vistaTabla = document.getElementById('vista-tabla');
+const contenidoTarjetas = document.getElementById('vista-tarjetas-content');
+const contenidoTabla = document.getElementById('vista-tabla-content');
+
+vistaTarjetas.addEventListener('change', function() {
+if (this.checked) {
+contenidoTarjetas.style.display = 'block';
+contenidoTabla.style.display = 'none';
+}
+});
+
+vistaTabla.addEventListener('change', function() {
+if (this.checked) {
+contenidoTarjetas.style.display = 'none';
+contenidoTabla.style.display = 'block';
+}
+});
+
+// Auto-actualización de temperaturas cada minutos
+setInterval(function() {
+actualizarTemperaturas();
+}, 10000);
+});
+
+function limpiarFiltros() {
+window.location.href = "{{ url_for('gabinetes_list') }}";
+}
+
+function confirmarEliminacion(gabineteId) {
+if (confirm('¿Estás seguro de que deseas eliminar este gabinete?')) {
+fetch(`/gabinetes/eliminar/${gabineteId}`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+location.reload();
+} else {
+alert('Error al eliminar el gabinete: ' + data.message);
+}
+})
+.catch(error => {
+console.error('Error:', error);
+alert('Error de conexión al eliminar el gabinete');
+});
+}
+}
+
+function exportarDatos() {
+const params = new URLSearchParams(window.location.search);
+const url = `/gabinetes/exportar?${params}`;
+window.open(url, '_blank');
+}
+
+function actualizarTemperaturas() {
+// Simular actualización de temperaturas
+fetch('/gabinetes/actualizar-temperaturas', {
+method: 'POST',
+headers: {
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+// Recargar página para mostrar nuevas temperaturas
+setTimeout(() => location.reload(), 1000);
+}
+})
+.catch(error => {
+console.error('Error actualizando temperaturas:', error);
+});
+}
+
+// Detectar alertas críticas de temperatura
+function verificarAlertasTemperatura() {
+const temperaturaCritica = 45;
+
+document.querySelectorAll('.badge.bg-danger').forEach(badge => {
+if (badge.textContent.includes('°C')) {
+const temp = parseInt(badge.textContent);
+if (temp >= temperaturaCritica) {
+console.warn('Temperatura crítica detectada:', temp);
+}
+}
+});
+}
+
+setInterval(verificarAlertasTemperatura, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}Cámara {{ camara.codigo }} - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Detalle de Cámara - {{ camara.codigo }}</h1>
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white"><h5 class="mb-0">Información de la Cámara</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4"><strong>Código:</strong> {{ camara.codigo }}</div>
+                <div class="col-md-4"><strong>Nombre:</strong> {{ camara.nombre }}</div>
+                <div class="col-md-4"><strong>IP:</strong> {{ camara.ip }}</div>
+                <div class="col-md-4 mt-2"><strong>Modelo:</strong> {{ camara.modelo }}</div>
+                <div class="col-md-4 mt-2"><strong>Fabricante:</strong> {{ camara.fabricante }}</div>
+                <div class="col-md-4 mt-2"><strong>Tipo:</strong> {{ camara.tipo_camara }}</div>
+                <div class="col-md-12 mt-3"><strong>Ubicación:</strong> 
+                    {% if camara.ubicacion %}
+                    {{ camara.ubicacion.campus }} - {{ camara.ubicacion.edificio }} - {{ camara.ubicacion.piso }}
+                    {% endif %}
+                </div>
+                <div class="col-md-4 mt-2"><strong>Estado:</strong> 
+                    <span class="badge bg-{{ 'success' if camara.estado == 'Activo' else 'danger' }}">{{ camara.estado }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Fallas Asociadas</h5></div>
+        <div class="card-body">
+            {% if fallas %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>ID</th><th>Descripción</th><th>Estado</th><th>Fecha</th></tr></thead>
+                    <tbody>
+                        {% for falla in fallas %}
+                        <tr>
+                            <td>{{ falla.id }}</td>
+                            <td>{{ falla.descripcion[:50] }}</td>
+                            <td><span class="badge bg-secondary">{{ falla.estado }}</span></td>
+                            <td>{{ falla.fecha_reporte.strftime('%d/%m/%Y') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No hay fallas registradas</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

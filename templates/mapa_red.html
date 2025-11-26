@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}Topología de Red - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Topología de Red</h1>
+    <div class="card mb-4">
+        <div class="card-body">
+            <label class="form-label">Filtrar por Campus:</label>
+            <select id="campusFilter" class="form-select mb-3">
+                <option value="">Todos los Campus</option>
+                {% for campus in campus_list %}
+                <option value="{{ campus }}">{{ campus }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="mermaid">
+graph TD
+    Core[Core Switch UFRO]
+    {% for gabinete in gabinetes %}
+    Gab{{ gabinete.id }}[Gabinete {{ gabinete.codigo }}]
+    Core --> Gab{{ gabinete.id }}
+    {% for switch in switches %}
+    {% if switch.gabinete_id == gabinete.id %}
+    Sw{{ switch.id }}[Switch {{ switch.codigo }}<br/>{{ switch.puertos_totales }} puertos]
+    Gab{{ gabinete.id }} --> Sw{{ switch.id }}
+    {% endif %}
+    {% endfor %}
+    {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    
+    document.getElementById('campusFilter').addEventListener('change', function() {
+        // Recargar página con filtro
+        if (this.value) {
+            window.location.href = '?campus=' + this.value;
+        } else {
+            window.location.href = window.location.pathname;
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Switches - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1><i class="bi bi-hdd-network"></i> Gestionar Switches de Red</h1>
+<a href="{{ url_for('switches_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Nuevo Switch
+</a>
+</div>
+
+<-- Filtros -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="card-title mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+</div>
+<div class="card-body">
+<form method="GET" class="row g-3">
+<div class="col-md-3">
+<label for="marca" class="form-label">Marca</label>
+<select name="marca" id="marca" class="form-select">
+<option value="">Todas las marcas</option>
+<option value="Cisco" {% if request.args.get('marca') == 'Cisco' %}selected{% endif %}>Cisco</option>
+<option value="TP-Link" {% if request.args.get('marca') == 'TP-Link' %}selected{% endif %}>TP-Link</option>
+<option value="Ubiquiti" {% if request.args.get('marca') == 'Ubiquiti' %}selected{% endif %}>Ubiquiti</option>
+<option value="D-Link" {% if request.args.get('marca') == 'D-Link' %}selected{% endif %}>D-Link</option>
+<option value="HP" {% if request.args.get('marca') == 'HP' %}selected{% endif %}>HP</option>
+</select>
+</div>
+<div class="col-md-3">
+<label for="estado" class="form-label">Estado</label>
+<select name="estado" id="estado" class="form-select">
+<option value="">Todos los estados</option>
+<option value="activo" {% if request.args.get('estado') == 'activo' %}selected{% endif %}>Activo</option>
+<option value="inactivo" {% if request.args.get('estado') == 'inactivo' %}selected{% endif %}>Inactivo</option>
+<option value="mantenimiento" {% if request.args.get('estado') == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+<option value="falla" {% if request.args.get('estado') == 'falla' %}selected{% endif %}>Con fallas</option>
+</select>
+</div>
+<div class="col-md-4">
+<label for="buscar" class="form-label">Buscar</label>
+<input type="text" name="buscar" id="buscar" class="form-control"
+value="{{ request.args.get('buscar', '') }}" placeholder="Modelo, ubicación o IP...">
+</div>
+<div class="col-md-">
+<label class="form-label">&nbsp;</label>
+<div class="d-grid">
+<button type="submit" class="btn btn-outline-primary">
+<i class="bi bi-search"></i> Filtrar
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+
+<-- Lista de Switches -->
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-collection"></i> Lista de Switches
+<span class="badge bg-primary ms-">{{ switches|length }}</span>
+</h5>
+</div>
+<div class="card-body p-0">
+{% if switches %}
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+<thead class="table-light">
+<tr>
+<th>Marca</th>
+<th>Modelo</th>
+<th>Puertos</th>
+<th>Velocidad</th>
+<th>Ubicación</th>
+<th>Estado</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody>
+{% for switch in switches %}
+<tr>
+<td>
+<strong>{{ switch.marca }}</strong>
+</td>
+<td>{{ switch.modelo }}</td>
+<td>
+<span class="badge bg-info">{{ switch.puertos }} puertos</span>
+</td>
+<td>
+<i class="bi bi-speedometer text-success"></i>
+{{ switch.velocidad }}
+</td>
+<td>
+<i class="bi bi-geo-alt text-primary"></i>
+{{ switch.ubicacion }}
+</td>
+<td>
+{% if switch.estado == 'activo' %}
+<span class="badge bg-success">Activo</span>
+{% elif switch.estado == 'inactivo' %}
+<span class="badge bg-danger">Inactivo</span>
+{% elif switch.estado == 'mantenimiento' %}
+<span class="badge bg-warning">Mantenimiento</span>
+{% elif switch.estado == 'falla' %}
+<span class="badge bg-danger">Con fallas</span>
+{% endif %}
+</td>
+<td>
+<div class="btn-group btn-group-sm" role="group">
+<a href="{{ url_for('switches_detalle', switch_id=switch.id) }}"
+class="btn btn-outline-primary" title="Ver detalles">
+<i class="bi bi-eye"></i>
+</a>
+<a href="{{ url_for('switches_editar', switch_id=switch.id) }}"
+class="btn btn-outline-warning" title="Editar">
+<i class="bi bi-pencil"></i>
+</a>
+<button type="button" class="btn btn-outline-danger"
+onclick="confirmarEliminacion({{ switch.id }})" title="Eliminar">
+<i class="bi bi-trash"></i>
+</button>
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="text-center py-5">
+<i class="bi bi-hdd-network display-1 text-muted"></i>
+<h3 class="text-muted mt-3">No hay switches registrados</h3>
+<p class="text-muted">Comienza agregando un nuevo switch de red al sistema.</p>
+<a href="{{ url_for('switches_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Agregar primer Switch
+</a>
+</div>
+{% endif %}
+</div>
+</div>
+
+<-- Resumen estadístico -->
+<div class="row mt-4">
+<div class="col-md-3">
+<div class="card card-stat">
+<div class="card-body text-center">
+<i class="bi bi-hdd-network text-primary" style="font-size: rem;"></i>
+<h3 class="mt-">{{ switches|length }}</h3>
+<p class="text-muted mb-0">Total Switches</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat success">
+<div class="card-body text-center">
+<i class="bi bi-check-circle text-success" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ switches|selectattr('estado', 'equalto', 'activo')|list|length }}
+</h3>
+<p class="text-muted mb-0">Activos</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat warning">
+<div class="card-body text-center">
+<i class="bi bi-exclamation-triangle text-warning" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ switches|selectattr('estado', 'equalto', 'mantenimiento')|list|length }}
+</h3>
+<p class="text-muted mb-0">En Mantenimiento</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat danger">
+<div class="card-body text-center">
+<i class="bi bi-x-circle text-danger" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ switches|selectattr('estado', 'in', ['inactivo', 'falla'])|list|length }}
+</h3>
+<p class="text-muted mb-0">Con problemas</p>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarEliminacion(switchId) {
+if (confirm('¿Estás seguro de que deseas eliminar este switch de red?')) {
+fetch(`/switches/eliminar/${switchId}`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+location.reload();
+} else {
+alert('Error al eliminar el switch: ' + data.message);
+}
+})
+.catch(error => {
+console.error('Error:', error);
+alert('Error de conexión al eliminar el switch');
+});
+}
+}
+</script>
+{% endblock %}

@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title or (editing and 'Editar Cámara' or 'Nueva Cámara') }} - Sistema de Gestión de Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<nav aria-label="breadcrumb">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('camaras_listar') }}">Cámaras</a></li>
+{% if editing %}
+<li class="breadcrumb-item"><a href="{{ url_for('camaras_detalle', id=camara.id) }}">{{ camara.ubicacion }}</a></li>
+<li class="breadcrumb-item active">Editar</li>
+{% else %}
+<li class="breadcrumb-item active">Nueva Cámara</li>
+{% endif %}
+</ol>
+</nav>
+<h1>
+<i class="bi bi-{{ editing and 'pencil' or 'plus-circle' }}"></i>
+{{ title or (editing and 'Editar Cámara: ' + camara.ubicacion or 'Registrar Nueva Cámara') }}
+</h1>
+</div>
+<div>
+<a href="{{ url_for('camaras_listar') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Volver a la Lista
+</a>
+</div>
+</div>
+
+<form action="{{ action }}" method="POST" class="{{ form_class or '' }}" id="{{ form_id or 'formCamara' }}">
+{{ form.hidden_tag() }}
+
+<-- Información Básica -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-info-circle"></i>
+{{ section_titles.basic_info or 'Información Básica' }}
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-8">
+<div class="mb-3">
+{{ form.ubicacion.label(class="form-label") }}
+{{ form.ubicacion(
+class="form-control",
+placeholder="Ej: Edificio A - Pasillo Principal - Piso ",
+**input_attrs.ubicacion
+) }}
+{% if form.ubicacion.errors %}
+<div class="text-danger small mt-1">
+{{ form.ubicacion.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="mb-3">
+{{ form.estado.label(class="form-label") }}
+{{ form.estado(class="form-select", **input_attrs.estado) }}
+{% if form.estado.errors %}
+<div class="text-danger small mt-1">
+{{ form.estado.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.marca.label(class="form-label") }}
+{{ form.marca(class="form-select", id="marcaSelect", **input_attrs.marca) }}
+{% if form.marca.errors %}
+<div class="text-danger small mt-1">
+{{ form.marca.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.modelo.label(class="form-label") }}
+{{ form.modelo(
+class="form-control",
+placeholder="Ej: DS-CD14FWD-I",
+**input_attrs.modelo
+) }}
+{% if form.modelo.errors %}
+<div class="text-danger small mt-1">
+{{ form.modelo.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.ip.label(class="form-label") }}
+{{ form.ip(
+class="form-control",
+placeholder="19.168.1.100",
+**input_attrs.ip
+) }}
+{% if form.ip.errors %}
+<div class="text-danger small mt-1">
+{{ form.ip.errors[0] }}
+</div>
+{% endif %}
+<div class="form-text">Dirección IP de la cámara en la red local</div>
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.responsable.label(class="form-label") }}
+{{ form.responsable(
+class="form-control",
+placeholder="Nombre del responsable técnico",
+**input_attrs.responsable
+) }}
+{% if form.responsable.errors %}
+<div class="text-danger small mt-1">
+{{ form.responsable.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Ubicación Física -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-geo-alt"></i>
+{{ section_titles.location or 'Ubicación Física' }}
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-4">
+<div class="mb-3">
+{{ form.campus.label(class="form-label") }}
+{{ form.campus(class="form-select", id="campusSelect", **input_attrs.campus) }}
+{% if form.campus.errors %}
+<div class="text-danger small mt-1">
+{{ form.campus.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="mb-3">
+{{ form.edificio.label(class="form-label") }}
+{{ form.edificio(class="form-select", id="edificioSelect", **input_attrs.edificio) }}
+{% if form.edificio.errors %}
+<div class="text-danger small mt-1">
+{{ form.edificio.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="mb-3">
+{{ form.fecha_instalacion.label(class="form-label") }}
+{{ form.fecha_instalacion(class="form-control", type="date", **input_attrs.fecha_instalacion) }}
+{% if form.fecha_instalacion.errors %}
+<div class="text-danger small mt-1">
+{{ form.fecha_instalacion.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<-- Coordenadas GPS (Opcional) -->
+{% if show_gps_coords = false %}
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.latitud.label(class="form-label") }}
+<div class="input-group">
+{{ form.latitud(
+class="form-control",
+placeholder="-38.9456",
+id="latitud",
+**input_attrs.latitud
+) }}
+{% if show_gps_button = false %}
+<button type="button" class="btn btn-outline-secondary" onclick="obtenerGPS()">
+<i class="bi bi-geo-alt"></i> GPS
+</button>
+{% endif %}
+</div>
+<div class="form-text">Coordenada latitude (opcional)</div>
+{% if form.latitud.errors %}
+<div class="text-danger small mt-1">
+{{ form.latitud.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.longitud.label(class="form-label") }}
+{{ form.longitud(
+class="form-control",
+placeholder="-7.3306",
+id="longitud",
+**input_attrs.longitud
+) }}
+<div class="form-text">Coordenada longitude (opcional)</div>
+{% if form.longitud.errors %}
+<div class="text-danger small mt-1">
+{{ form.longitud.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+
+<-- Información Adicional -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-plus-circle"></i>
+{{ section_titles.additional_info or 'Información Adicional' }}
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+{{ form.observaciones.label(class="form-label") }}
+{{ form.observaciones(
+class="form-control",
+rows="4",
+placeholder="Observaciones adicionales, características especiales, notas técnicas...",
+**input_attrs.observaciones
+) }}
+{% if form.observaciones.errors %}
+<div class="text-danger small mt-1">
+{{ form.observaciones.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<-- Campos Personalizados -->
+{% if custom_fields %}
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-sliders"></i>
+{{ section_titles.custom_fields or 'Campos Personalizados' }}
+</h5>
+</div>
+<div class="card-body">
+{% for field in custom_fields %}
+<div class="row">
+<div class="col-md-{{ field.col_size or 1 }}">
+<div class="mb-3">
+{% if field.type == 'select' %}
+{{ field.label(class="form-label") }}
+{{ field.field(class="form-select", **field.attrs) }}
+{% elif field.type == 'textarea' %}
+{{ field.label(class="form-label") }}
+{{ field.field(class="form-control", rows="3", **field.attrs) }}
+{% elif field.type == 'checkbox' %}
+<div class="form-check">
+{{ field.field(class="form-check-input", **field.attrs) }}
+{{ field.label(class="form-check-label", **field.attrs) }}
+</div>
+{% else %}
+{{ field.label(class="form-label") }}
+{{ field.field(class="form-control", **field.attrs) }}
+{% endif %}
+
+{% if field.help_text %}
+<div class="form-text">{{ field.help_text }}</div>
+{% endif %}
+
+{% if field.errors %}
+<div class="text-danger small mt-1">
+{{ field.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+
+<-- Información de Auditoría (solo en edición) -->
+{% if editing %}
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-clock-history"></i>
+Información de Auditoría
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<dl class="row">
+<dt class="col-sm-4">Creada:</dt>
+<dd class="col-sm-8">{{ camara.fecha_creacion.strftime('%d/%m/%Y %H:%M') if camara.fecha_creacion else 'No disponible' }}</dd>
+
+<dt class="col-sm-4">Última modificación:</dt>
+<dd class="col-sm-8">{{ camara.fecha_actualizacion.strftime('%d/%m/%Y %H:%M') if camara.fecha_actualizacion else 'No disponible' }}</dd>
+</dl>
+</div>
+<div class="col-md-6">
+<dl class="row">
+<dt class="col-sm-4">ID:</dt>
+<dd class="col-sm-8">{{ camara.id }}</dd>
+
+<dt class="col-sm-4">Creado por:</dt>
+<dd class="col-sm-8">{{ camara.creado_por or 'No registrado' }}</dd>
+</dl>
+</div>
+</div>
+
+{% if show_audit_trail = false %}
+<div class="mb-3">
+<label for="motivo_cambio" class="form-label">Motivo del Cambio (Opcional)</label>
+<textarea class="form-control" id="motivo_cambio" name="motivo_cambio"
+rows="" placeholder="Describe brevemente por qué realizas este cambio..."></textarea>
+<div class="form-text">Esta información se guardará en el historial para auditoría</div>
+</div>
+{% endif %}
+</div>
+</div>
+{% endif %}
+
+<-- Botones de Acción -->
+<div class="card">
+<div class="card-body">
+<div class="d-flex justify-content-between">
+<div>
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-{{ editing and 'check-circle' or 'plus-circle' }}"></i>
+{{ submit_text or (editing and 'Actualizar Cámara' or 'Registrar Cámara') }}
+</button>
+{% if show_reset_button = false %}
+<button type="reset" class="btn btn-secondary">
+<i class="bi bi-arrow-clockwise"></i> Limpiar
+</button>
+{% endif %}
+</div>
+<div>
+<a href="{{ cancel_url or url_for('camaras_listar') }}" class="btn btn-outline-secondary">
+<i class="bi bi-x-circle"></i> Cancelar
+</a>
+</div>
+</div>
+</div>
+</div>
+</form>
+
+<-- Configuración JavaScript personalizada -->
+{% if custom_js %}
+<script>
+{{ custom_js|safe }}
+</script>
+{% endif %}
+
+<-- JavaScript por defecto -->
+{% if enable_default_js = false %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Configuración de campos para validación y vista previa
+const config = {
+ipValidation: {{ enable_ip_validation and 'true' or 'false' }},
+livePreview: {{ enable_live_preview and 'true' or 'false' }},
+autoSubmit: {{ enable_auto_submit and 'true' or 'false' }},
+gpsEnabled: {{ show_gps_button and 'true' or 'false' }}
+};
+
+// Validación de IP si está habilitada
+if (config.ipValidation) {
+const ipInput = document.getElementById('{{ form.ip.id }}');
+if (ipInput) {
+ipInput.addEventListener('blur', validarIP);
+}
+}
+
+// Vista previa en tiempo real si está habilitada
+if (config.livePreview) {
+const campos = ['{{ form.ubicacion.id }}', '{{ form.marca.id }}', '{{ form.modelo.id }}',
+'{{ form.ip.id }}', '{{ form.estado.id }}'];
+
+campos.forEach(campoId => {
+const campo = document.getElementById(campoId);
+if (campo) {
+campo.addEventListener('input', actualizarVistaPrevia);
+}
+});
+}
+
+// Auto-submit si está habilitado
+if (config.autoSubmit) {
+const form = document.getElementById('{{ form_id or 'formCamara' }}');
+if (form) {
+form.classList.add('auto-submit');
+}
+}
+});
+
+function validarIP() {
+const ip = document.getElementById('{{ form.ip.id }}').value;
+const ipRegex = /^(([0-9]|[1-9][0-9]|1[0-9]{}|[0-4][0-9]|5[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{}|[0-4][0-9]|5[0-5])$/;
+
+if (ip && ipRegex.test(ip)) {
+mostrarValidacion('error', 'Formato de IP inválido');
+return false;
+} else if (ip) {
+mostrarValidacion('success', 'IP válida');
+return true;
+}
+return true;
+}
+
+function actualizarVistaPrevia() {
+const previewId = 'preview-panel';
+const panel = document.getElementById(previewId);
+
+if (panel) {
+panel.innerHTML = `
+<div class="alert alert-light">
+<p class="mb-1"><strong>Ubicación:</strong> <span id="preview-ubicacion">${document.getElementById('{{ form.ubicacion.id }}').value || '-'}</span></p>
+<p class="mb-1"><strong>Marca:</strong> <span id="preview-marca">${document.getElementById('{{ form.marca.id }}').selectedOptions[0]?.text || '-'}</span></p>
+<p class="mb-1"><strong>Modelo:</strong> <span id="preview-modelo">${document.getElementById('{{ form.modelo.id }}').value || '-'}</span></p>
+<p class="mb-1"><strong>IP:</strong> <span id="preview-ip">${document.getElementById('{{ form.ip.id }}').value || '-'}</span></p>
+<p class="mb-0"><strong>Estado:</strong> <span id="preview-estado">${document.getElementById('{{ form.estado.id }}').selectedOptions[0]?.text || '-'}</span></p>
+</div>
+`;
+}
+}
+
+function mostrarValidacion(tipo, mensaje) {
+const panelId = 'validation-panel';
+const panel = document.getElementById(panelId);
+
+if (panel) {
+panel.innerHTML = `
+<div class="alert alert-${tipo === 'error' ? 'danger' : 'success'}">
+<i class="bi bi-${tipo === 'error' ? 'exclamation-circle' : 'check-circle'}"></i>
+${mensaje}
+</div>
+`;
+}
+}
+
+function obtenerGPS() {
+if (navigator.geolocation) {
+navigator.geolocation.getCurrentPosition(
+function(position) {
+document.getElementById('latitud').value = position.coords.latitude.toFixed(6);
+document.getElementById('longitud').value = position.coords.longitude.toFixed(6);
+mostrarValidacion('success', 'Coordenadas GPS obtenidas correctamente');
+},
+function(error) {
+mostrarValidacion('error', 'Error al obtener GPS: ' + error.message);
+}
+);
+} else {
+mostrarValidacion('error', 'Geolocalización no soportada por este navegador');
+}
+}
+
+// Validación antes del envío del formulario
+document.getElementById('{{ form_id or 'formCamara' }}').addEventListener('submit', function(e) {
+{% if enable_ip_validation %}
+if (validarIP()) {
+e.preventDefault();
+return false;
+}
+{% endif %}
+
+{% if validate_required_fields %}
+const requiredFields = {{ required_fields or '[]' | tojson }};
+for (let field of requiredFields) {
+const element = document.getElementById(field);
+if (element && element.value.trim()) {
+e.preventDefault();
+mostrarValidacion('error', `El campo ${field} es obligatorio`);
+element.focus();
+return false;
+}
+}
+{% endif %}
+});
+</script>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<-- Scripts adicionales específicos del template -->
+{% if extra_js %}{{ extra_js|safe }}{% endif %}
+{% endblock %}

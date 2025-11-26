@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+
+{% block title %}Mantenimiento Gabinete - {{ gabinete.nombre }} - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<nav aria-label="breadcrumb">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('gabinetes_list') }}">Gabinetes</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('gabinetes_detalle', gabinete_id=gabinete.id) }}">{{ gabinete.nombre }}</a></li>
+<li class="breadcrumb-item active">Mantenimiento</li>
+</ol>
+</nav>
+<h1 class="mb-0">
+<i class="bi bi-tools"></i>
+Mantenimiento - {{ gabinete.nombre }}
+</h1>
+</div>
+<div>
+<a href="{{ url_for('gabinetes_detalle', gabinete_id=gabinete.id) }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Volver
+</a>
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoMantenimiento">
+<i class="bi bi-plus-circle"></i> Nuevo Mantenimiento
+</button>
+</div>
+</div>
+
+<-- Estado actual del gabinete -->
+<div class="row mb-4">
+<div class="col-md-8">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-info-circle"></i> Estado Actual del Gabinete
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<dl class="row">
+<dt class="col-sm-4">Nombre:</dt>
+<dd class="col-sm-8"><strong>{{ gabinete.nombre }}</strong></dd>
+
+<dt class="col-sm-4">Ubicación:</dt>
+<dd class="col-sm-8">{{ gabinete.campus }} - {{ gabinete.edificio }}</dd>
+
+<dt class="col-sm-4">Piso/Nivel:</dt>
+<dd class="col-sm-8">{{ gabinete.piso_nivel }}</dd>
+
+<dt class="col-sm-4">Acceso:</dt>
+<dd class="col-sm-8">{{ gabinete.acceso.title() }}</dd>
+</dl>
+</div>
+<div class="col-md-6">
+<dl class="row">
+<dt class="col-sm-4">Estado:</dt>
+<dd class="col-sm-8">
+{% if gabinete.estado == 'operativo' %}
+<span class="badge bg-success">Operativo</span>
+{% elif gabinete.estado == 'mantenimiento' %}
+<span class="badge bg-warning">En mantenimiento</span>
+{% elif gabinete.estado == 'sobrecarga' %}
+<span class="badge bg-warning">Sobrecarga</span>
+{% elif gabinete.estado == 'deshabilitado' %}
+<span class="badge bg-danger">Deshabilitado</span>
+{% endif %}
+</dd>
+
+<dt class="col-sm-4">Temperatura:</dt>
+<dd class="col-sm-8">
+{% if gabinete.temperatura %}
+<span class="badge bg-{{ 'success' if gabinete.temperatura < 30 else 'warning' if gabinete.temperatura < 40 else 'danger' }}">
+{{ gabinete.temperatura }}°C
+</span>
+{% else %}
+<span class="text-muted">No disponible</span>
+{% endif %}
+</dd>
+
+<dt class="col-sm-4">Equipos:</dt>
+<dd class="col-sm-8">
+{% if gabinete.equipos_contenidos %}
+{{ gabinete.equipos_contenidos|length }} equipos
+{% else %}
+Sin equipos
+{% endif %}
+</dd>
+
+<dt class="col-sm-4">Último Mantenimiento:</dt>
+<dd class="col-sm-8">
+{% if ultimo_mantenimiento %}
+{{ ultimo_mantenimiento.fecha.strftime('%d/%m/%Y') if ultimo_mantenimiento.fecha else '-' }}
+{% else %}
+<span class="text-muted">No registrado</span>
+{% endif %}
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="col-md-4">
+<-- Panel de control rápido -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-speedometer"></i> Control Rápido
+</h5>
+</div>
+<div class="card-body">
+<div class="d-grid gap-">
+<button class="btn btn-outline-primary btn-sm" onclick="iniciarMantenimiento()">
+<i class="bi bi-play-circle"></i> Iniciar Mantenimiento
+</button>
+<button class="btn btn-outline-success btn-sm" onclick="finalizarMantenimiento()">
+<i class="bi bi-check-circle"></i> Finalizar Mantenimiento
+</button>
+<button class="btn btn-outline-warning btn-sm" onclick="calibrarTemperatura()">
+<i class="bi bi-thermometer"></i> Calibrar Sensores
+</button>
+<button class="btn btn-outline-info btn-sm" onclick="generarReporte()">
+<i class="bi bi-file-text"></i> Generar Reporte
+</button>
+</div>
+</div>
+</div>
+
+<-- Próximos mantenimientos -->
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-calendar"></i> Próximos Mantenimientos
+</h5>
+</div>
+<div class="card-body">
+{% if mantenimientos_programados %}
+<div class="list-group list-group-flush">
+{% for mantenimiento in mantenimientos_programados[:3] %}
+<div class="list-group-item px-0">
+<div class="d-flex justify-content-between align-items-center">
+<div>
+<h6 class="mb-1">{{ mantenimiento.tipo }}</h6>
+<small class="text-muted">
+{{ mantenimiento.fecha_programada.strftime('%d/%m/%Y') if mantenimiento.fecha_programada else 'Sin fecha' }}
+</small>
+</div>
+<span class="badge bg-secondary">{{ mantenimiento.prioridad }}</span>
+</div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<p class="text-muted text-center">No hay mantenimientos programados</p>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+
+<-- Historial de mantenimientos -->
+<div class="row">
+<div class="col-md-1">
+<div class="card">
+<div class="card-header d-flex justify-content-between align-items-center">
+<h5 class="card-title mb-0">
+<i class="bi bi-clock-history"></i> Historial de Mantenimientos
+</h5>
+<div class="btn-group btn-group-sm">
+<button type="button" class="btn btn-outline-secondary active" onclick="filtrarMantenimientos('todos')">
+Todos
+</button>
+<button type="button" class="btn btn-outline-secondary" onclick="filtrarMantenimientos('preventivo')">
+Preventivo
+</button>
+<button type="button" class="btn btn-outline-secondary" onclick="filtrarMantenimientos('correctivo')">
+Correctivo
+</button>
+<button type="button" class="btn btn-outline-secondary" onclick="filtrarMantenimientos('predictivo')">
+Predictivo
+</button>
+</div>
+</div>
+<div class="card-body">
+<div class="table-responsive">
+<table class="table table-hover" id="tablaMantenimientos">
+<thead class="table-light">
+<tr>
+<th>ID</th>
+<th>Fecha</th>
+<th>Tipo</th>
+<th>Técnico</th>
+<th>Descripción</th>
+<th>Duración</th>
+<th>Estado</th>
+<th>Costo</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody>
+{% for mantenimiento in mantenimientos %}
+<tr data-tipo="{{ mantenimiento.tipo }}">
+<td><strong>#{{ mantenimiento.id }}</strong></td>
+<td>{{ mantenimiento.fecha.strftime('%d/%m/%Y') if mantenimiento.fecha else '-' }}</td>
+<td>
+{% if mantenimiento.tipo == 'preventivo' %}
+<span class="badge bg-info">Preventivo</span>
+{% elif mantenimiento.tipo == 'correctivo' %}
+<span class="badge bg-warning">Correctivo</span>
+{% elif mantenimiento.tipo == 'predictivo' %}
+<span class="badge bg-success">Predictivo</span>
+{% endif %}
+</td>
+<td>{{ mantenimiento.tecnico_responsable }}</td>
+<td>
+<div class="text-truncate" style="max-width: 00px;" title="{{ mantenimiento.descripcion }}">
+{{ mantenimiento.descripcion }}
+</div>
+</td>
+<td>
+{% if mantenimiento.duracion %}
+{{ mantenimiento.duracion }}h
+{% else %}
+<span class="text-muted">-</span>
+{% endif %}
+</td>
+<td>
+{% if mantenimiento.estado == 'completado' %}
+<span class="badge bg-success">Completado</span>
+{% elif mantenimiento.estado == 'en_proceso' %}
+<span class="badge bg-warning">En proceso</span>
+{% elif mantenimiento.estado == 'programado' %}
+<span class="badge bg-secondary">Programado</span>
+{% elif mantenimiento.estado == 'cancelado' %}
+<span class="badge bg-danger">Cancelado</span>
+{% endif %}
+</td>
+<td>
+{% if mantenimiento.costo %}
+${{ mantenimiento.costo }}
+{% else %}
+<span class="text-muted">-</span>
+{% endif %}
+</td>
+<td>
+<div class="btn-group btn-group-sm">
+<button type="button" class="btn btn-outline-primary"
+onclick="verDetalleMantenimiento({{ mantenimiento.id }})" title="Ver detalles">
+<i class="bi bi-eye"></i>
+</button>
+{% if mantenimiento.estado = 'completado' %}
+<button type="button" class="btn btn-outline-warning"
+onclick="editarMantenimiento({{ mantenimiento.id }})" title="Editar">
+<i class="bi bi-pencil"></i>
+</button>
+{% endif %}
+<button type="button" class="btn btn-outline-info"
+onclick="generarReporteMantenimiento({{ mantenimiento.id }})" title="Reporte">
+<i class="bi bi-file-text"></i>
+</button>
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Checklist de mantenimiento -->
+<div class="row mt-4">
+<div class="col-md-6">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-check-square"></i> Checklist de Mantenimiento
+</h5>
+</div>
+<div class="card-body">
+<div class="list-group list-group-flush">
+<div class="list-group-item d-flex justify-content-between align-items-center">
+<div>
+<h6 class="mb-1">Limpieza general</h6>
+<small class="text-muted">Aspirar y limpiar el interior del gabinete</small>
+</div>
+<input class="form-check-input" type="checkbox" id="check1">
+</div>
+<div class="list-group-item d-flex justify-content-between align-items-center">
+<div>
+<h6 class="mb-1">Inspección cables</h6>
+<small class="text-muted">Verificar estado y sujeción de cables</small>
+</div>
+<input class="form-check-input" type="checkbox" id="check">
+</div>
+<div class="list-group-item d-flex justify-content-between align-items-center">
+<div>
+<h6 class="mb-1">Verificar temperatura</h6>
+<small class="text-muted">Comprobar sensores y ventilación</small>
+</div>
+<input class="form-check-input" type="checkbox" id="check3">
+</div>
+<div class="list-group-item d-flex justify-content-between align-items-center">
+<div>
+<h6 class="mb-1">Prueba sistemas</h6>
+<small class="text-muted">Verificar funcionamiento de equipos</small>
+</div>
+<input class="form-check-input" type="checkbox" id="check4">
+</div>
+<div class="list-group-item d-flex justify-content-between align-items-center">
+<div>
+<h6 class="mb-1">Actualizar documentación</h6>
+<small class="text-muted">Registrar cambios y observaciones</small>
+</div>
+<input class="form-check-input" type="checkbox" id="check5">
+</div>
+</div>
+<div class="mt-3">
+<button class="btn btn-success" onclick="completarChecklist()">
+<i class="bi bi-check-circle"></i> Completar Mantenimiento
+</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-graph-up"></i> Estadísticas de Mantenimiento
+</h5>
+</div>
+<div class="card-body">
+<div class="row text-center">
+<div class="col-4">
+<h3 class="text-primary">{{ mantenimientos|length }}</h3>
+<p class="text-muted small">Total</p>
+</div>
+<div class="col-4">
+<h3 class="text-success">
+{{ mantenimientos|selectattr('estado', 'equalto', 'completado')|list|length }}
+</h3>
+<p class="text-muted small">Completados</p>
+</div>
+<div class="col-4">
+<h3 class="text-warning">{{ mantenimientos|selectattr('estado', 'equalto', 'en_proceso')|list|length }}</h3>
+<p class="text-muted small">En proceso</p>
+</div>
+</div>
+
+<hr>
+
+<div class="mb-3">
+<h6>Frecuencia por Tipo</h6>
+{% set preventivo_count = mantenimientos|selectattr('tipo', 'equalto', 'preventivo')|list|length %}
+{% set correctivo_count = mantenimientos|selectattr('tipo', 'equalto', 'correctivo')|list|length %}
+{% set predictivo_count = mantenimientos|selectattr('tipo', 'equalto', 'predictivo')|list|length %}
+
+<div class="progress mb-" style="height: 5px;">
+<div class="progress-bar bg-info" style="width: {{ (preventivo_count / mantenimientos|length * 100)|round(1) if mantenimientos|length > 0 else 0 }}%">
+Preventivo {{ preventivo_count }}
+</div>
+</div>
+<div class="progress mb-" style="height: 5px;">
+<div class="progress-bar bg-warning" style="width: {{ (correctivo_count / mantenimientos|length * 100)|round(1) if mantenimientos|length > 0 else 0 }}%">
+Correctivo {{ correctivo_count }}
+</div>
+</div>
+<div class="progress mb-" style="height: 5px;">
+<div class="progress-bar bg-success" style="width: {{ (predictivo_count / mantenimientos|length * 100)|round(1) if mantenimientos|length > 0 else 0 }}%">
+Predictivo {{ predictivo_count }}
+</div>
+</div>
+</div>
+
+<div class="text-center">
+<button class="btn btn-outline-primary btn-sm" onclick="verGraficosCompletos()">
+<i class="bi bi-graph-up"></i> Ver gráficos completos
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function iniciarMantenimiento() {
+// Abrir modal para crear nuevo mantenimiento
+$('#modalNuevoMantenimiento').modal('show');
+}
+
+function finalizarMantenimiento() {
+if (confirm('¿Deseas finalizar el mantenimiento actual?')) {
+fetch(`/gabinetes/{{ gabinete.id }}/finalizar-mantenimiento`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+alert('Mantenimiento finalizado exitosamente');
+location.reload();
+} else {
+alert('Error al finalizar mantenimiento: ' + data.message);
+}
+});
+}
+}
+
+function calibrarTemperatura() {
+if (confirm('¿Deseas recalibrar los sensores de temperatura?')) {
+fetch(`/gabinetes/{{ gabinete.id }}/calibrar-temperatura`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+alert('Sensores calibrados exitosamente');
+location.reload();
+} else {
+alert('Error al calibrar sensores: ' + data.message);
+}
+});
+}
+}
+
+function completarChecklist() {
+const checks = document.querySelectorAll('.form-check-input:checked');
+if (checks.length < 5) {
+alert('Por favor completa todas las tareas del checklist');
+return;
+}
+
+// Finalizar mantenimiento con checklist completado
+finalizarMantenimiento();
+}
+
+function filtrarMantenimientos(tipo) {
+const filas = document.querySelectorAll('#tablaMantenimientos tbody tr');
+const botones = document.querySelectorAll('[onclick^="filtrarMantenimientos"]');
+
+// Actualizar botones activos
+botones.forEach(btn => btn.classList.remove('active'));
+event.target.classList.add('active');
+
+// Filtrar filas
+filas.forEach(fila => {
+if (tipo === 'todos') {
+fila.style.display = '';
+} else {
+const tipoFila = fila.getAttribute('data-tipo');
+if (tipoFila === tipo) {
+fila.style.display = '';
+} else {
+fila.style.display = 'none';
+}
+}
+});
+}
+
+function verDetalleMantenimiento(mantenimientoId) {
+window.open(`/mantenimientos/${mantenimientoId}/detalle`, '_blank');
+}
+
+function editarMantenimiento(mantenimientoId) {
+window.open(`/mantenimientos/${mantenimientoId}/editar`, '_blank');
+}
+
+function generarReporteMantenimiento(mantenimientoId) {
+window.open(`/mantenimientos/${mantenimientoId}/reporte`, '_blank');
+}
+
+function generarReporte() {
+const url = `/gabinetes/{{ gabinete.id }}/reporte-mantenimiento`;
+window.open(url, '_blank');
+}
+
+function verGraficosCompletos() {
+const url = `/gabinetes/{{ gabinete.id }}/estadisticas-mantenimiento`;
+window.open(url, '_blank');
+}
+
+// Auto-actualizar cada 5 minutos
+setInterval(function() {
+location.reload();
+}, 300000);
+</script>
+{% endblock %}

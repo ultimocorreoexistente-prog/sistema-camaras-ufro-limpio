@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Usuario - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+<div class="row">
+<div class="col-1">
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<h><i class="bi bi-pencil-square"></i> Editar Usuario</h>
+<nav aria-label="breadcrumb">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('usuarios_listar') }}">Gestión Usuarios</a></li>
+<li class="breadcrumb-item active">Editar: {{ usuario.nombre_completo or usuario.nombre }}</li>
+</ol>
+</nav>
+</div>
+<a href="{{ url_for('usuarios_listar') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Volver a Lista
+</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+{{ message }}
+<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="row justify-content-center">
+<div class="col-lg-8">
+<div class="card">
+<div class="card-header">
+<div class="d-flex justify-content-between align-items-center">
+<h5 class="card-title mb-0">
+<i class="bi bi-person-badge"></i> Información del Usuario
+</h5>
+<div>
+<span class="badge bg-{{ 'danger' if usuario.rol == 'SUPERADMIN' else 'primary' if usuario.rol == 'ADMIN' else 'info' if usuario.rol == 'SUPERVISOR' else 'success' if usuario.rol == 'TECNICO' else 'secondary' }}">
+{{ usuario.rol }}
+</span>
+<span class="badge bg-{{ 'success' if usuario.activo else 'danger' }} ms-1">
+{{ 'ACTIVO' if usuario.activo else 'INACTIVO' }}
+</span>
+</div>
+</div>
+</div>
+<div class="card-body">
+<form method="POST" action="{{ url_for('usuarios_editar', usuario_id=usuario.id) }}" novalidate>
+<div class="row">
+<-- Información Personal -->
+<div class="col-md-6">
+<h6 class="text-muted mb-3">
+<i class="bi bi-person"></i> Información Personal
+</h6>
+
+<div class="mb-3">
+<label for="nombre" class="form-label">
+Nombre Completo <span class="text-danger">*</span>
+</label>
+<input type="text" class="form-control" id="nombre" name="nombre"
+value="{{ usuario.nombre_completo or usuario.nombre or '' }}"
+placeholder="Ej: Juan Pérez González" required>
+<div class="form-text">Nombre completo como aparece en el sistema</div>
+</div>
+
+<div class="mb-3">
+<label for="email" class="form-label">
+Correo Electrónico <span class="text-danger">*</span>
+</label>
+<input type="email" class="form-control" id="email" name="email"
+value="{{ usuario.email or '' }}"
+placeholder="usuario@ufrontera.cl" required>
+<div class="form-text">Usado como nombre de usuario para login</div>
+</div>
+
+<div class="mb-3">
+<label for="telefono" class="form-label">Teléfono</label>
+<input type="tel" class="form-control" id="telefono" name="telefono"
+value="{{ usuario.telefono or '' }}"
+placeholder="+56 9 134 5678">
+<div class="form-text">Número de contacto (opcional)</div>
+</div>
+
+<div class="mb-3">
+<label for="departamento" class="form-label">Departamento</label>
+<select class="form-select" id="departamento" name="departamento">
+<option value="">Seleccionar departamento</option>
+<option value="Tecnología" {{ 'selected' if usuario.departamento == 'Tecnología' }}>Tecnología</option>
+<option value="Seguridad" {{ 'selected' if usuario.departamento == 'Seguridad' }}>Seguridad</option>
+<option value="Infraestructura" {{ 'selected' if usuario.departamento == 'Infraestructura' }}>Infraestructura</option>
+<option value="Mantenimiento" {{ 'selected' if usuario.departamento == 'Mantenimiento' }}>Mantenimiento</option>
+<option value="Administración" {{ 'selected' if usuario.departamento == 'Administración' }}>Administración</option>
+<option value="Otro" {{ 'selected' if usuario.departamento == 'Otro' }}>Otro</option>
+</select>
+<div class="form-text">Departamento o área de trabajo</div>
+</div>
+</div>
+
+<-- Configuración del Sistema -->
+<div class="col-md-6">
+<h6 class="text-muted mb-3">
+<i class="bi bi-gear"></i> Configuración del Sistema
+</h6>
+
+<div class="mb-3">
+<label for="rol" class="form-label">
+Rol en el Sistema <span class="text-danger">*</span>
+</label>
+<select class="form-select" id="rol" name="rol" required>
+<option value="SUPERADMIN" {{ 'selected' if usuario.rol == 'SUPERADMIN' }}> SUPERADMIN - Acceso total al sistema</option>
+<option value="ADMIN" {{ 'selected' if usuario.rol == 'ADMIN' }}> ADMIN - Gestión completa sin configuraciones críticas</option>
+<option value="SUPERVISOR" {{ 'selected' if usuario.rol == 'SUPERVISOR' }}> SUPERVISOR - Supervisión y reportes avanzados</option>
+<option value="TECNICO" {{ 'selected' if usuario.rol == 'TECNICO' }}> TECNICO - Gestión técnica y mantenimiento</option>
+<option value="VISUALIZADOR" {{ 'selected' if usuario.rol == 'VISUALIZADOR' }}> VISUALIZADOR - Solo visualización de información</option>
+</select>
+<div class="form-text">Determina los permisos y funcionalidades disponibles</div>
+</div>
+
+<div class="mb-3">
+<div class="form-check form-switch">
+<input class="form-check-input" type="checkbox" id="activo" name="activo"
+{{ 'checked' if usuario.activo else '' }}>
+<label class="form-check-label" for="activo">
+<strong>Usuario Activo</strong>
+</label>
+<div class="form-text">Los usuarios inactivos no pueden acceder al sistema</div>
+</div>
+</div>
+
+<div class="mb-3">
+<label for="comentarios" class="form-label">Comentarios</label>
+<textarea class="form-control" id="comentarios" name="comentarios" rows="3"
+placeholder="Notas adicionales sobre el usuario">{{ usuario.comentarios or '' }}</textarea>
+<div class="form-text">Información adicional o notas especiales</div>
+</div>
+</div>
+</div>
+
+<-- Sección de Cambio de Contraseña -->
+<hr class="my-4">
+<div class="row">
+<div class="col-1">
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h6 class="text-muted mb-0">
+<i class="bi bi-key"></i> Cambio de Contraseña (Opcional)
+</h6>
+<button type="button" class="btn btn-outline-primary btn-sm" id="togglePasswordSection">
+<i class="bi bi-eye"></i> Cambiar Contraseña
+</button>
+</div>
+
+<div id="passwordSection" class="collapse">
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="nueva_password" class="form-label">Nueva Contraseña</label>
+<div class="input-group">
+<span class="input-group-text">
+<i class="bi bi-lock"></i>
+</span>
+<input type="password" class="form-control" id="nueva_password" name="nueva_password"
+placeholder="Mínimo 8 caracteres">
+<button class="btn btn-outline-secondary" type="button" id="toggleNuevaPassword">
+<i class="bi bi-eye"></i>
+</button>
+</div>
+<div class="form-text">Dejar en blanco para mantener la contraseña actual</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="confirmar_password" class="form-label">Confirmar Nueva Contraseña</label>
+<div class="input-group">
+<span class="input-group-text">
+<i class="bi bi-lock-fill"></i>
+</span>
+<input type="password" class="form-control" id="confirmar_password" name="confirmar_password"
+placeholder="Repetir nueva contraseña">
+<button class="btn btn-outline-secondary" type="button" id="toggleConfirmarPassword">
+<i class="bi bi-eye"></i>
+</button>
+</div>
+<div id="passwordMatch" class="form-text"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<hr class="my-4">
+
+<div class="d-flex justify-content-between">
+<a href="{{ url_for('usuarios_listar') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Cancelar
+</a>
+<div>
+<button type="button" class="btn btn-outline-info me-" onclick="history.back()">
+<i class="bi bi-arrow-return-left"></i> Volver
+</button>
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-check-circle"></i> Guardar Cambios
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+
+<-- Información del Usuario -->
+<div class="row mt-4">
+<div class="col-lg-6">
+<div class="card">
+<div class="card-header">
+<h6 class="card-title mb-0">
+<i class="bi bi-info-circle"></i> Información del Registro
+</h6>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-sm-6">
+<strong>ID del Usuario:</strong>
+<br><code>{{ usuario.id }}</code>
+</div>
+<div class="col-sm-6">
+<strong>Fecha de Registro:</strong>
+<br>{{ usuario.fecha_registro.strftime('%d/%m/%Y %H:%M') if usuario.fecha_registro else 'No disponible' }}
+</div>
+</div>
+<hr>
+<div class="row">
+<div class="col-sm-6">
+<strong>Último Acceso:</strong>
+<br>{{ usuario.ultimo_acceso.strftime('%d/%m/%Y %H:%M') if usuario.ultimo_acceso else 'Nunca' }}
+</div>
+<div class="col-sm-6">
+<strong>Estado:</strong>
+<br><span class="badge bg-{{ 'success' if usuario.activo else 'danger' }}">
+{{ 'ACTIVO' if usuario.activo else 'INACTIVO' }}
+</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-lg-6">
+<div class="card">
+<div class="card-header">
+<h6 class="card-title mb-0">
+<i class="bi bi-shield-check"></i> Permisos del Rol
+</h6>
+</div>
+<div class="card-body">
+{% set permisos = {
+'SUPERADMIN': ['Gestión completa de usuarios', 'Configuraciones críticas', 'Todas las funcionalidades', 'Reportes avanzados', 'Acceso total'],
+'ADMIN': ['Gestión de usuarios (excepto SUPERADMIN)', 'Gestión de equipos', 'Configuraciones operativas', 'Reportes y estadísticas'],
+'SUPERVISOR': ['Visualización completa', 'Generación de reportes', 'Supervisión de operaciones', 'Estadísticas del sistema'],
+'TECNICO': ['Gestión de equipos', 'Reportes de mantenimiento', 'Gestión de fallas', 'Fotografías técnicas'],
+'VISUALIZADOR': ['Visualización de dashboards', 'Consulta de información', 'Acceso limitado', 'Sin permisos de edición']
+} %}
+
+<ul class="list-unstyled">
+{% for permiso in permisos.get(usuario.rol, []) %}
+<li><i class="bi bi-check text-success"></i> {{ permiso }}</li>
+{% endfor %}
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Toggle sección de contraseña
+const togglePasswordSection = document.getElementById('togglePasswordSection');
+const passwordSection = document.getElementById('passwordSection');
+const nuevaPassword = document.getElementById('nueva_password');
+const confirmarPassword = document.getElementById('confirmar_password');
+const passwordMatch = document.getElementById('passwordMatch');
+
+togglePasswordSection.addEventListener('click', function() {
+if (passwordSection.classList.contains('show')) {
+passwordSection.classList.remove('show');
+this.innerHTML = '<i class="bi bi-eye"></i> Cambiar Contraseña';
+// Limpiar campos de contraseña al ocultar
+nuevaPassword.value = '';
+confirmarPassword.value = '';
+passwordMatch.innerHTML = '';
+} else {
+passwordSection.classList.add('show');
+this.innerHTML = '<i class="bi bi-eye-slash"></i> Ocultar Contraseña';
+nuevaPassword.focus();
+}
+});
+
+// Toggle visibilidad de contraseña
+function setupPasswordToggle(passwordId, toggleId) {
+const passwordField = document.getElementById(passwordId);
+const toggleButton = document.getElementById(toggleId);
+
+toggleButton.addEventListener('click', function() {
+const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+passwordField.setAttribute('type', type);
+this.querySelector('i').classList.toggle('bi-eye');
+this.querySelector('i').classList.toggle('bi-eye-slash');
+});
+}
+
+setupPasswordToggle('nueva_password', 'toggleNuevaPassword');
+setupPasswordToggle('confirmar_password', 'toggleConfirmarPassword');
+
+// Validación de contraseñas
+function validatePasswords() {
+const nueva = nuevaPassword.value;
+const confirmar = confirmarPassword.value;
+
+if (confirmar === '') {
+passwordMatch.innerHTML = '';
+return false;
+}
+
+if (nueva === confirmar) {
+if (nueva.length === 0) {
+passwordMatch.innerHTML = '<span class="text-info">ℹ Campos vacíos - se mantendrá la contraseña actual</span>';
+return true; // Permitir campos vacíos
+} else if (nueva.length < 8) {
+passwordMatch.innerHTML = '<span class="text-warning"> La contraseña debe tener al menos 8 caracteres</span>';
+return false;
+} else {
+passwordMatch.innerHTML = '<span class="text-success"> Las contraseñas coinciden</span>';
+return true;
+}
+} else {
+passwordMatch.innerHTML = '<span class="text-danger"> Las contraseñas no coinciden</span>';
+return false;
+}
+}
+
+nuevaPassword.addEventListener('input', validatePasswords);
+confirmarPassword.addEventListener('input', validatePasswords);
+
+// Validación del formulario
+const form = document.querySelector('form');
+form.addEventListener('submit', function(e) {
+const nombre = document.getElementById('nombre').value;
+const email = document.getElementById('email').value;
+const rol = document.getElementById('rol').value;
+
+let errors = [];
+
+if (nombre.trim()) errors.push('El nombre es obligatorio');
+if (email.trim()) errors.push('El email es obligatorio');
+if (rol) errors.push('Debe seleccionar un rol');
+
+// Validar nueva contraseña si se proporciona
+const nuevaPass = nuevaPassword.value;
+const confirmarPass = confirmarPassword.value;
+
+if (nuevaPass || confirmarPass) {
+if (validatePasswords()) {
+errors.push('Las contraseñas no son válidas o no coinciden');
+}
+if (nuevaPass.length > 0 && nuevaPass.length < 8) {
+errors.push('La nueva contraseña debe tener al menos 8 caracteres');
+}
+}
+
+// Validar formato de email
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+if (email && emailRegex.test(email)) {
+errors.push('El formato del email no es válido');
+}
+
+if (errors.length > 0) {
+e.preventDefault();
+alert('Errores en el formulario:\n ' + errors.join('\n '));
+}
+});
+
+// Confirmación para SUPERADMIN
+const rolSelect = document.getElementById('rol');
+const activoCheckbox = document.getElementById('activo');
+
+rolSelect.addEventListener('change', function() {
+const nuevoRol = this.value;
+if (nuevoRol === 'SUPERADMIN' && confirm('¿Está seguro de asignar rol SUPERADMIN a este usuario? Esto le dará acceso completo al sistema.')) {
+this.value = '{{ usuario.rol }}'; // Restaurar valor anterior
+}
+});
+
+activoCheckbox.addEventListener('change', function() {
+if (this.checked && confirm('¿Está seguro de desactivar este usuario? No podrá acceder al sistema.')) {
+this.checked = true; // Restaurar valor anterior
+}
+});
+
+// Auto-hide alertas después de 5 segundos
+const alerts = document.querySelectorAll('.alert-dismissible');
+alerts.forEach(function(alert) {
+setTimeout(function() {
+const bsAlert = new bootstrap.Alert(alert);
+bsAlert.close();
+}, 5000);
+});
+});
+</script>
+
+<style>
+.card {
+border: none;
+box-shadow: 0 0.15rem 0.5rem rgba(0, 0, 0, 0.075);
+}
+
+.form-label {
+font-weight: 600;
+color: #495057;
+}
+
+.form-control:focus, .form-select:focus {
+border-color: #007bff;
+box-shadow: 0 0 0 0.rem rgba(0, 13, 55, 0.5);
+}
+
+.breadcrumb {
+background-color: transparent;
+padding: 0;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+content: "/";
+}
+
+.btn {
+font-weight: 500;
+}
+
+.collapse {
+transition: all 0.3s ease;
+}
+
+code {
+background-color: #f8f9fa;
+padding: 0.5rem 0.5rem;
+border-radius: 0.5rem;
+font-size: 0.875em;
+}
+
+@media (max-width: 768px) {
+.col-md-6 {
+margin-bottom: rem;
+}
+
+.d-flex.justify-content-between {
+flex-direction: column;
+gap: 1rem;
+}
+}
+</style>
+{% endblock %}

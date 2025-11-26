@@ -1,0 +1,422 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Usuario - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+<div class="row">
+<div class="col-1">
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<h><i class="bi bi-person-plus"></i> Crear Nuevo Usuario</h>
+<nav aria-label="breadcrumb">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('usuarios_listar') }}">Gestión Usuarios</a></li>
+<li class="breadcrumb-item active">Crear Usuario</li>
+</ol>
+</nav>
+</div>
+<a href="{{ url_for('usuarios_listar') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Volver a Lista
+</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+{{ message }}
+<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="row justify-content-center">
+<div class="col-lg-8">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-person-badge"></i> Información del Nuevo Usuario
+</h5>
+</div>
+<div class="card-body">
+<form method="POST" action="{{ url_for('usuarios_crear') }}" novalidate>
+<div class="row">
+<-- Información Personal -->
+<div class="col-md-6">
+<h6 class="text-muted mb-3">
+<i class="bi bi-person"></i> Información Personal
+</h6>
+
+<div class="mb-3">
+<label for="email" class="form-label">Email *</label>
+<div class="input-group">
+<span class="input-group-text">
+<i class="bi bi-envelope"></i>
+</span>
+<input type="email" class="form-control" id="email" name="email"
+required value="{{ request.form.email or '' }}"
+placeholder="ejemplo@ufrontera.cl">
+</div>
+<div class="form-text">Debe ser un email válido (preferiblemente @ufrontera.cl)</div>
+</div>
+
+<div class="mb-3">
+<label for="password" class="form-label">Contraseña *</label>
+<div class="input-group">
+<span class="input-group-text">
+<i class="bi bi-lock"></i>
+</span>
+<input type="password" class="form-control" id="password" name="password"
+required placeholder="Mínimo 8 caracteres">
+<button class="btn btn-outline-secondary" type="button" id="togglePassword">
+<i class="bi bi-eye"></i>
+</button>
+</div>
+<div class="form-text">Mínimo 8 caracteres, con mayúsculas y números</div>
+</div>
+
+<div class="mb-3">
+<label for="confirm_password" class="form-label">Confirmar Contraseña *</label>
+<div class="input-group">
+<span class="input-group-text">
+<i class="bi bi-lock-fill"></i>
+</span>
+<input type="password" class="form-control" id="confirm_password"
+name="confirm_password" required placeholder="Repetir contraseña">
+<button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+<i class="bi bi-eye"></i>
+</button>
+</div>
+<div id="passwordMatch" class="form-text"></div>
+</div>
+
+<div class="mb-3">
+<label for="nombre" class="form-label">Nombre Completo *</label>
+<div class="input-group">
+<span class="input-group-text">
+<i class="bi bi-person-circle"></i>
+</span>
+<input type="text" class="form-control" id="nombre" name="nombre"
+required value="{{ request.form.nombre or '' }}"
+placeholder="Juan Pérez González">
+</div>
+</div>
+
+<div class="mb-3">
+<label for="telefono" class="form-label">Teléfono</label>
+<div class="input-group">
+<span class="input-group-text">
+<i class="bi bi-telephone"></i>
+</span>
+<input type="tel" class="form-control" id="telefono" name="telefono"
+value="{{ request.form.telefono or '' }}"
+placeholder="+56 9 134 5678">
+</div>
+</div>
+</div>
+
+<-- Información del Sistema -->
+<div class="col-md-6">
+<h6 class="text-muted mb-3">
+<i class="bi bi-gear"></i> Información del Sistema
+</h6>
+
+<div class="mb-3">
+<label for="rol" class="form-label">Rol en el Sistema *</label>
+<div class="input-group">
+<span class="input-group-text">
+<i class="bi bi-shield-check"></i>
+</span>
+<select class="form-select" id="rol" name="rol" required>
+<option value="">Seleccionar rol...</option>
+<option value="SUPERADMIN" {{ 'selected' if request.form.rol == 'SUPERADMIN' else '' }}>
+SUPERADMIN - Acceso total al sistema
+</option>
+<option value="ADMIN" {{ 'selected' if request.form.rol == 'ADMIN' else '' }}>
+ADMIN - Gestión completa sin configuraciones críticas
+</option>
+<option value="SUPERVISOR" {{ 'selected' if request.form.rol == 'SUPERVISOR' else '' }}>
+SUPERVISOR - Supervisión y reportes avanzados
+</option>
+<option value="TECNICO" {{ 'selected' if request.form.rol == 'TECNICO' else '' }}>
+TECNICO - Gestión técnica y mantenimiento
+</option>
+<option value="VISUALIZADOR" {{ 'selected' if request.form.rol == 'VISUALIZADOR' else '' }}>
+VISUALIZADOR - Solo visualización de información
+</option>
+</select>
+</div>
+<div class="mt-">
+<div id="roleDescription" class="alert alert-info alert-sm">
+Selecciona un rol para ver sus permisos específicos
+</div>
+</div>
+</div>
+
+<div class="mb-3">
+<label for="departamento" class="form-label">Departamento/Área</label>
+<div class="input-group">
+<span class="input-group-text">
+<i class="bi bi-building"></i>
+</span>
+<select class="form-select" id="departamento" name="departamento">
+<option value="">Seleccionar departamento...</option>
+<option value="Infraestructura" {{ 'selected' if request.form.departamento == 'Infraestructura' else '' }}>
+Infraestructura
+</option>
+<option value="Mantenimiento" {{ 'selected' if request.form.departamento == 'Mantenimiento' else '' }}>
+Mantenimiento
+</option>
+<option value="Tecnologías de la Información" {{ 'selected' if request.form.departamento == 'Tecnologías de la Información' else '' }}>
+Tecnologías de la Información
+</option>
+<option value="Seguridad" {{ 'selected' if request.form.departamento == 'Seguridad' else '' }}>
+Seguridad
+</option>
+<option value="Operaciones" {{ 'selected' if request.form.departamento == 'Operaciones' else '' }}>
+Operaciones
+</option>
+<option value="Recursos Humanos" {{ 'selected' if request.form.departamento == 'Recursos Humanos' else '' }}>
+Recursos Humanos
+</option>
+<option value="Otro" {{ 'selected' if request.form.departamento == 'Otro' else '' }}>
+Otro (especificar en comentarios)
+</option>
+</select>
+</div>
+</div>
+
+<div class="mb-3">
+<div class="form-check form-switch">
+<input class="form-check-input" type="checkbox" id="activo" name="activo"
+checked {{ 'checked' if request.form.activo else '' }}>
+<label class="form-check-label" for="activo">
+<strong>Usuario Activo</strong>
+</label>
+<div class="form-text">Los usuarios inactivos no pueden acceder al sistema</div>
+</div>
+</div>
+
+<div class="mb-3">
+<label for="comentarios" class="form-label">Comentarios Adicionales</label>
+<textarea class="form-control" id="comentarios" name="comentarios" rows="3"
+placeholder="Notas adicionales sobre el usuario, responsabilidades especiales, etc.">{{ request.form.comentarios or '' }}</textarea>
+</div>
+</div>
+</div>
+
+<hr>
+
+<div class="d-flex justify-content-between">
+<a href="{{ url_for('usuarios_listar') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Cancelar
+</a>
+<div>
+<button type="reset" class="btn btn-outline-secondary me-">
+<i class="bi bi-arrow-clockwise"></i> Limpiar
+</button>
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-person-plus"></i> Crear Usuario
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Configuración de roles y sus permisos
+const rolePermissions = {
+'SUPERADMIN': {
+description: 'Acceso completo al sistema. Puede gestionar usuarios, configuraciones críticas, y todos los módulos del sistema.',
+color: 'danger',
+permissions: ['Gestión completa de usuarios', 'Configuraciones del sistema', 'Todas las funcionalidades', 'Acceso a reportes avanzados']
+},
+'ADMIN': {
+description: 'Gestión completa sin acceso a configuraciones críticas del sistema. Puede administrar la mayoría de funciones.',
+color: 'primary',
+permissions: ['Gestión de usuarios (excepto SUPERADMIN)', 'Gestión de equipos y dispositivos', 'Reportes y estadísticas', 'Configuraciones operativas']
+},
+'SUPERVISOR': {
+description: 'Supervisión y reportes avanzados. Puede revisar información del sistema y generar reportes detallados.',
+color: 'warning',
+permissions: ['Visualización de todos los datos', 'Generación de reportes', 'Supervisión de operaciones', 'Acceso a estadísticas']
+},
+'TECNICO': {
+description: 'Gestión técnica y mantenimiento. Puede gestionar equipos, cámaras, y trabajos técnicos.',
+color: 'success',
+permissions: ['Gestión de equipos y dispositivos', 'Reportes de mantenimiento', 'Gestión de fallas', 'Acceso a fotografías técnicas']
+},
+'VISUALIZADOR': {
+description: 'Solo visualización de información. No puede realizar modificaciones en el sistema.',
+color: 'secondary',
+permissions: ['Visualización de dashboards', 'Consulta de información básica', 'Sin permisos de edición', 'Acceso limitado']
+}
+};
+
+// Mostrar descripción del rol seleccionado
+const rolSelect = document.getElementById('rol');
+const roleDescription = document.getElementById('roleDescription');
+
+function updateRoleDescription() {
+const selectedRole = rolSelect.value;
+if (selectedRole && rolePermissions[selectedRole]) {
+const role = rolePermissions[selectedRole];
+let description = `<strong>${selectedRole}</strong><br>${role.description}<br><br><strong>Permisos:</strong><ul class="mb-0">`;
+role.permissions.forEach(permission => {
+description += `<li>${permission}</li>`;
+});
+description += '</ul>';
+
+roleDescription.innerHTML = description;
+roleDescription.className = `alert alert-${role.color} alert-sm`;
+} else {
+roleDescription.innerHTML = 'Selecciona un rol para ver sus permisos específicos';
+roleDescription.className = 'alert alert-info alert-sm';
+}
+}
+
+rolSelect.addEventListener('change', updateRoleDescription);
+updateRoleDescription(); // Inicializar
+
+// Validación de contraseñas
+const password = document.getElementById('password');
+const confirmPassword = document.getElementById('confirm_password');
+const passwordMatch = document.getElementById('passwordMatch');
+
+function validatePasswords() {
+if (confirmPassword.value === '') {
+passwordMatch.innerHTML = '';
+return false;
+}
+
+if (password.value === confirmPassword.value) {
+passwordMatch.innerHTML = '<span class="text-success"> Las contraseñas coinciden</span>';
+return true;
+} else {
+passwordMatch.innerHTML = '<span class="text-danger"> Las contraseñas no coinciden</span>';
+return false;
+}
+}
+
+password.addEventListener('input', validatePasswords);
+confirmPassword.addEventListener('input', validatePasswords);
+
+// Toggle password visibility
+function setupPasswordToggle(passwordId, toggleId) {
+const passwordField = document.getElementById(passwordId);
+const toggleButton = document.getElementById(toggleId);
+
+toggleButton.addEventListener('click', function() {
+const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+passwordField.setAttribute('type', type);
+this.querySelector('i').classList.toggle('bi-eye');
+this.querySelector('i').classList.toggle('bi-eye-slash');
+});
+}
+
+setupPasswordToggle('password', 'togglePassword');
+setupPasswordToggle('confirm_password', 'toggleConfirmPassword');
+
+// Validación del formulario
+const form = document.querySelector('form');
+form.addEventListener('submit', function(e) {
+const email = document.getElementById('email').value;
+const password = document.getElementById('password').value;
+const confirmPassword = document.getElementById('confirm_password').value;
+const rol = document.getElementById('rol').value;
+
+let errors = [];
+
+if (email) errors.push('El email es obligatorio');
+if (password) errors.push('La contraseña es obligatoria');
+if (confirmPassword) errors.push('Debe confirmar la contraseña');
+if (rol) errors.push('Debe seleccionar un rol');
+
+if (password && confirmPassword && password == confirmPassword) {
+errors.push('Las contraseñas no coinciden');
+}
+
+if (password && password.length < 8) {
+errors.push('La contraseña debe tener al menos 8 caracteres');
+}
+
+if (errors.length > 0) {
+e.preventDefault();
+alert('Errores en el formulario:\n ' + errors.join('\n '));
+}
+});
+
+// Mejorar UX del selector de departamento
+const departamentoSelect = document.getElementById('departamento');
+departamentoSelect.addEventListener('change', function() {
+if (this.value === 'Otro') {
+// Aquí podrías agregar un campo adicional para especificar
+console.log('Departamento: Otro seleccionado');
+}
+});
+});
+</script>
+
+<style>
+.alert-sm {
+padding: 0.5rem 0.75rem;
+font-size: 0.875rem;
+}
+
+.input-group-text {
+min-width: 40px;
+justify-content: center;
+}
+
+.breadcrumb {
+background-color: transparent;
+padding: 0;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+content: "/";
+}
+
+.card {
+border: none;
+box-shadow: 0 0.15rem 0.5rem rgba(0, 0, 0, 0.075);
+}
+
+.form-label {
+font-weight: 600;
+color: #495057;
+}
+
+.form-control:focus, .form-select:focus {
+border-color: #007bff;
+box-shadow: 0 0 0 0.rem rgba(0, 13, 55, 0.5);
+}
+
+.btn {
+font-weight: 500;
+}
+
+@media (max-width: 768px) {
+.col-md-6 {
+margin-bottom: rem;
+}
+
+.d-flex.justify-content-between {
+flex-direction: column;
+gap: 1rem;
+}
+}
+</style>
+{% endblock %}

@@ -1,0 +1,530 @@
+"""
+Rutas CRUD para el manejo de Fallas
+"""
+from flask import request, jsonify, current_app
+from sqlalchemy import or_, and_, desc, func, case
+from datetime import datetime, timedelta
+from .. import fallas_bp
+from models import Falla, FallaComentario, Usuario, Camara, Nvr, Switch, Ups, Gabinete, db
+from models.fuente import Fuente
+from utils.validators import validate_json, validate_required_fields, validate_pagination
+from utils.decorators import token_required, require_permission
+
+# Mapeo de tipos de equipo a modelos
+EQUIPOS_MAP = {
+'camara': Camara,
+'nvr': Nvr,
+'switch': Switch,
+'ups': Ups,
+'fuente': Fuente,
+'gabinete': Gabinete
+}
+
+@fallas_bp.route('', methods=['GET'])
+@token_required
+def get_fallas(current_user):
+    """
+    Obtener lista de fallas con filtros y paginación
+    """
+    try:
+        # Validar paginación
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 0, type=int)
+
+        if per_page > 100:
+            per_page = 100
+
+        # Parámetros de filtro
+        estado = request.args.get('estado', '')
+        prioridad = request.args.get('prioridad', '')
+        tipo = request.args.get('tipo', '')
+        asignado_a = request.args.get('asignado_a', '')
+        search = request.args.get('search', '')
+        fecha_desde = request.args.get('fecha_desde', '')
+        fecha_hasta = request.args.get('fecha_hasta', '')
+        orden = request.args.get('orden', 'fecha_creacion')
+        direccion = request.args.get('direccion', 'desc')
+
+        # Query base
+        query = Falla.query
+
+        # Aplicar filtros
+        if estado:
+            query = query.filter(Falla.estado == estado)
+        if prioridad:
+            query = query.filter(Falla.prioridad == prioridad)
+        if tipo:
+        query = query.filter(Falla.tipo == tipo)
+        query = query.filter(Falla.tipo == tipo)
+        if asignado_a:
+        query = query.filter(Falla.asignado_a_id == asignado_a)
+        if search:
+        query = query.filter(
+        or_(
+        Falla.titulo.like(f'%{search}%'),
+        Falla.descripcion.like(f'%{search}%')
+        )
+        )
+        if fecha_desde:
+        try:
+        fecha_desde_dt = datetime.fromisoformat(fecha_desde.replace('Z', '+00:00'))
+        query = query.filter(Falla.fecha_creacion >= fecha_desde_dt)
+    except ValueError:
+        pass
+        try:
+        fecha_hasta_dt = datetime.fromisoformat(fecha_hasta.replace('Z', '+00:00'))
+        query = query.filter(Falla.fecha_creacion <= fecha_hasta_dt)
+    except ValueError:
+        pass
+
+    # Ordenamiento
+        # Prioridad: critica > alta > media > baja
+        orden_field = case(
+        (Falla.prioridad == 'critica', 1),
+        (Falla.prioridad == 'alta', 2),
+        (Falla.prioridad == 'media', 3),
+        (Falla.prioridad == 'baja', 4),
+        else_=5
+        )
+        query = query.order_by(orden_field.desc(), Falla.fecha_creacion.desc())
+    else:
+        query = query.order_by(orden_field.asc(), Falla.fecha_creacion.asc())
+    else:
+        orden_field = getattr(Falla, orden, Falla.fecha_creacion)
+        query = query.order_by(orden_field.desc())
+    else:
+        query = query.order_by(orden_field.asc())
+
+    # Paginación
+    pagination = query.paginate(
+    page=page, per_page=per_page, error_out=False
+    )
+
+    fallas = []
+    for f in pagination.items:
+    # Obtener información del equipo
+    equipo_info = None
+        equipo = EQUIPOS_MAP[f.tipo].query.filter_by(id=f.equipo_id).first()
+        equipo_info = {
+        'id': equipo.id,
+        'nombre': equipo.nombre,
+        'ubicacion': getattr(equipo, 'ubicacion', ''),
+        'tipo': f.tipo
+        }
+
+        fallas.append({
+        'id': f.id,
+        'titulo': f.titulo,
+        'descripcion': f.descripcion,
+        'prioridad': f.prioridad,
+        'estado': f.estado,
+        'tipo': f.tipo,
+        'equipo_id': f.equipo_id,
+        'equipo': equipo_info,
+        'fecha_creacion': f.fecha_creacion.isoformat(),
+        'fecha_actualizacion': f.fecha_actualizacion.isoformat() if f.fecha_actualizacion else None,
+        'fecha_resolucion': f.fecha_resolucion.isoformat() if f.fecha_resolucion else None,
+        'asignado_a': {
+        'id': f.asignado_a.id if f.asignado_a else None,
+        'nombre': f.asignado_a.nombre if f.asignado_a else None,
+        'apellido': f.asignado_a.apellido if f.asignado_a else None
+        } if f.asignado_a else None,
+        'creado_por': {
+        'id': f.creado_por.id if f.creado_por else None,
+        'nombre': f.creado_por.nombre if f.creado_por else None,
+        'apellido': f.creado_por.apellido if f.creado_por else None
+        } if f.creado_por else None,
+        'comentarios_count': len(f.comentarios) if hasattr(f, 'comentarios') else 0
+        })
+
+        return jsonify({
+        'fallas': fallas,
+        'pagination': {
+        'page': pagination.page,
+        'pages': pagination.pages,
+        'per_page': pagination.per_page,
+        'total': pagination.total,
+        'has_next': pagination.has_next,
+        'has_prev': pagination.has_prev
+        },
+        'filters': {
+        'estado': estado,
+        'prioridad': prioridad,
+        'tipo': tipo,
+        'asignado_a': asignado_a,
+        'search': search,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+        'orden': orden,
+        'direccion': direccion
+        }
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Error al obtener fallas: {str(e)}'}), 500
+
+@fallas_bp.route('/<int:fallas_id>', methods=['GET'])
+@token_required
+def get_falla(current_user, fallas_id):
+    """
+    Obtener detalle de una falla específica
+    """
+    try:
+        falla = Falla.query.get_or_404(fallas_id)
+
+        # Información del equipo
+        equipo_info = None
+        if falla.equipo_id and falla.tipo in EQUIPOS_MAP:
+        equipo = EQUIPOS_MAP[falla.tipo].query.filter_by(id=falla.equipo_id).first()
+        if equipo:
+        equipo_info = {
+        'id': equipo.id,
+        'nombre': equipo.nombre,
+        'ubicacion': getattr(equipo, 'ubicacion', ''),
+        'ip_address': getattr(equipo, 'ip_address', ''),
+        'modelo': getattr(equipo, 'modelo', ''),
+        'marca': getattr(equipo, 'marca', ''),
+        'tipo': falla.tipo
+        }
+
+        # Comentarios de la falla
+        comentarios = []
+        if hasattr(falla, 'comentarios'):
+        comentarios = [{
+        'id': c.id,
+        'comentario': c.comentario,
+        'fecha_creacion': c.fecha_creacion.isoformat(),
+        'usuario': {
+        'id': c.usuario.id,
+        'nombre': c.usuario.nombre,
+        'apellido': c.usuario.apellido
+        } if c.usuario else None
+        } for c in falla.comentarios.order_by(Falla.comentarios.fecha_creacion.asc()).all()]
+
+        return jsonify({
+        'id': falla.id,
+        'titulo': falla.titulo,
+        'descripcion': falla.descripcion,
+        'prioridad': falla.prioridad,
+        'estado': falla.estado,
+        'tipo': falla.tipo,
+        'equipo_id': falla.equipo_id,
+        'equipo': equipo_info,
+        'fecha_creacion': falla.fecha_creacion.isoformat(),
+        'fecha_actualizacion': falla.fecha_actualizacion.isoformat() if falla.fecha_actualizacion else None,
+        'fecha_resolucion': falla.fecha_resolucion.isoformat() if falla.fecha_resolucion else None,
+        'asignado_a': {
+        'id': falla.asignado_a.id if falla.asignado_a else None,
+        'nombre': falla.asignado_a.nombre if falla.asignado_a else None,
+        'apellido': falla.asignado_a.apellido if falla.asignado_a else None
+        } if falla.asignado_a else None,
+        'creado_por': {
+        'id': falla.creado_por.id if falla.creado_por else None,
+        'nombre': falla.creado_por.nombre if falla.creado_por else None,
+        'apellido': falla.creado_por.apellido if falla.creado_por else None
+        } if falla.creado_por else None,
+        'comentarios': comentarios
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Error al obtener falla: {str(e)}'}), 500
+
+@fallas_bp.route('', methods=['POST'])
+@token_required
+@require_permission('fallas_crear')
+@validate_json
+def create_falla(current_user):
+    """
+    Crear una nueva falla
+    """
+    try:
+        data = request.get_json()
+
+        # Validar campos requeridos
+        required_fields = ['titulo', 'descripcion', 'prioridad', 'tipo']
+        if not validate_required_fields(data, required_fields):
+        return jsonify({'error': 'Campos requeridos: titulo, descripcion, prioridad, tipo'}), 400
+
+        # Validar prioridad
+        prioridades_validas = ['baja', 'media', 'alta', 'critica']
+        if data['prioridad'] not in prioridades_validas:
+        return jsonify({'error': f'Prioridad debe ser una de: {prioridades_validas}'}), 400
+
+        # Validar tipo de equipo
+        if data['tipo'] not in EQUIPOS_MAP:
+        return jsonify({'error': f'Tipo de equipo inválido. Válidos: {list(EQUIPOS_MAP.keys())}'}), 400
+
+        # Validar que el equipo existe si se especifica
+        equipo_id = data.get('equipo_id')
+        if equipo_id:
+        equipo = EQUIPOS_MAP[data['tipo']].query.filter_by(id=equipo_id, activo=True).first()
+        if not equipo:
+        return jsonify({'error': f'Equipo {data["tipo"]} no encontrado o inactivo'}), 400
+
+        # Crear falla
+        falla = Falla(
+        titulo=data['titulo'].strip(),
+        descripcion=data['descripcion'].strip(),
+        prioridad=data['prioridad'],
+        estado='abierta', # Estado inicial
+        tipo=data['tipo'],
+        equipo_id=equipo_id,
+        asignado_a_id=data.get('asignado_a_id'),
+        creado_por_id=current_user.id,
+        fecha_creacion=datetime.utcnow()
+        )
+
+        db.session.add(falla)
+        db.session.commit()
+
+        return jsonify({
+        'message': 'Falla creada exitosamente',
+        'falla_id': falla.id
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+    return jsonify({'error': f'Error al crear falla: {str(e)}'}), 500
+
+@fallas_bp.route('/<int:fallas_id>', methods=['PUT'])
+@token_required
+@require_permission('fallas_editar')
+@validate_json
+def update_falla(current_user, fallas_id):
+    """
+    Actualizar una falla existente
+    """
+    try:
+        falla = Falla.query.get_or_404(fallas_id)
+        data = request.get_json()
+
+        # Campos que se pueden actualizar
+        campos_actualizables = ['titulo', 'descripcion', 'prioridad', 'estado', 'asignado_a_id']
+
+        for campo in campos_actualizables:
+        if campo in data:
+        if campo == 'titulo' and data[campo]:
+        falla.titulo = data[campo].strip()
+    elif campo == 'descripcion' and data[campo]:
+        falla.descripcion = data[campo].strip()
+    elif campo == 'prioridad':
+        prioridades_validas = ['baja', 'media', 'alta', 'critica']
+        if data[campo] not in prioridades_validas:
+        return jsonify({'error': f'Prioridad debe ser una de: {prioridades_validas}'}), 400
+        falla.prioridad = data[campo]
+    elif campo == 'estado':
+        estados_validos = ['abierta', 'en_proceso', 'cerrada']
+        if data[campo] not in estados_validos:
+        return jsonify({'error': f'Estado debe ser uno de: {estados_validos}'}), 400
+        falla.estado = data[campo]
+
+        # Si se cierra la falla, establecer fecha de resolución
+        if data[campo] == 'cerrada' and not falla.fecha_resolucion:
+        falla.fecha_resolucion = datetime.utcnow()
+    elif campo == 'asignado_a_id':
+        if data[campo]:
+        # Verificar que el usuario existe
+        usuario = Usuario.query.filter_by(id=data[campo], activo=True).first()
+        if not usuario:
+        return jsonify({'error': 'Usuario asignado no encontrado'}), 400
+        falla.asignado_a_id = data[campo]
+    else:
+        falla.asignado_a_id = None
+
+    falla.fecha_actualizacion = datetime.utcnow()
+
+    db.session.commit()
+
+    return jsonify({
+    'message': 'Falla actualizada exitosamente'
+    })
+
+    except Exception as e:
+        db.session.rollback()
+    return jsonify({'error': f'Error al actualizar falla: {str(e)}'}), 500
+
+@fallas_bp.route('/<int:fallas_id>', methods=['DELETE'])
+@token_required
+@require_permission('fallas_eliminar')
+def delete_falla(current_user, fallas_id):
+    """
+    Eliminar una falla (soft delete)
+    """
+    try:
+        falla = Falla.query.get_or_404(fallas_id)
+
+        # Solo permitir eliminar fallas cerradas
+        if falla.estado == 'cerrada':
+        return jsonify({'error': 'Solo se pueden eliminar fallas cerradas'}), 400
+
+        falla.activo = False
+        falla.fecha_actualizacion = datetime.utcnow()
+
+        db.session.commit()
+
+        return jsonify({
+        'message': 'Falla eliminada exitosamente'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+    return jsonify({'error': f'Error al eliminar falla: {str(e)}'}), 500
+
+@fallas_bp.route('/<int:fallas_id>/comentarios', methods=['POST'])
+@token_required
+@validate_json
+def add_comentario(current_user, fallas_id):
+    """
+    Agregar comentario a una falla
+    """
+    try:
+        falla = Falla.query.get_or_404(fallas_id)
+        data = request.get_json()
+
+        # Validar que existe el comentario
+        if not data.get('comentario') or not data['comentario'].strip():
+        return jsonify({'error': 'El comentario es requerido'}), 400
+
+        # Create comment
+        from models import FallaComentario
+        comentario = FallaComentario(
+        falla_id=fallas_id,
+        comentario=data['comentario'].strip(),
+        usuario_id=current_user.id,
+        fecha_creacion=datetime.utcnow()
+        )
+
+        # Actualizar fecha de actualización de la falla
+        falla.fecha_actualizacion = datetime.utcnow()
+
+        db.session.add(comentario)
+        db.session.commit()
+
+        return jsonify({
+        'message': 'Comentario agregado exitosamente',
+        'comentario_id': comentario.id
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+    return jsonify({'error': f'Error al agregar comentario: {str(e)}'}), 500
+
+@fallas_bp.route('/<int:fallas_id>/cambiar-estado', methods=['POST'])
+@token_required
+@validate_json
+def cambiar_estado_falla(current_user, fallas_id):
+    """
+    Cambiar el estado de una falla
+    """
+    try:
+        falla = Falla.query.get_or_404(fallas_id)
+        data = request.get_json()
+
+        # Validar nuevo estado
+        estados_validos = ['abierta', 'en_proceso', 'cerrada']
+        if 'estado' not in data or data['estado'] not in estados_validos:
+        return jsonify({'error': f'Estado debe ser uno de: {estados_validos}'}), 400
+
+        estado_anterior = falla.estado
+        falla.estado = data['estado']
+        falla.fecha_actualizacion = datetime.utcnow()
+
+        # Establecer fecha de resolución si se cierra
+        if data['estado'] == 'cerrada':
+        falla.fecha_resolucion = datetime.utcnow()
+
+        # Agregar comentario automático sobre el cambio de estado
+        comentario = FallaComentario(
+        falla_id=fallas_id,
+        comentario=f'Estado cambiado de "{estado_anterior}" a "{data["estado"]}" por {current_user.nombre} {current_user.apellido}',
+        usuario_id=current_user.id,
+        fecha_creacion=datetime.utcnow()
+        )
+
+        db.session.add(comentario)
+        db.session.commit()
+
+        return jsonify({
+        'message': 'Estado de falla actualizado exitosamente',
+        'nuevo_estado': falla.estado
+        })
+
+    except Exception as e:
+        db.session.rollback()
+    return jsonify({'error': f'Error al cambiar estado: {str(e)}'}), 500
+
+@fallas_bp.route('/estadisticas', methods=['GET'])
+@token_required
+def get_fallas_estadisticas(current_user):
+    """
+    Obtener estadísticas de fallas
+    """
+    try:
+        # Contar por estado
+        por_estado = db.session.query(
+        Falla.estado,
+        func.count(Falla.id)
+        ).group_by(Falla.estado).all()
+
+        # Contar por prioridad
+        por_prioridad = db.session.query(
+        Falla.prioridad,
+        func.count(Falla.id)
+        ).group_by(Falla.prioridad).all()
+
+        # Contar por tipo de equipo
+        por_tipo = db.session.query(
+        Falla.tipo,
+        func.count(Falla.id)
+        ).group_by(Falla.tipo).all()
+
+        # Fallas abiertas por usuario asignado
+        asignadas = db.session.query(
+        Usuario.nombre,
+        Usuario.apellido,
+        func.count(Falla.id)
+        ).join(
+        Falla, Falla.asignado_a_id == Usuario.id
+        ).filter(
+        Falla.estado.in_(['abierta', 'en_proceso'])
+        ).group_by(Usuario.id).all()
+
+        # Promedio de tiempo de resolución (últimos 30 días)
+        fecha_limite = datetime.utcnow() - timedelta(days=30)
+        fallas_resueltas = db.session.query(
+        Falla.fecha_creacion,
+        Falla.fecha_resolucion
+        ).filter(
+        Falla.estado == 'cerrada',
+        Falla.fecha_resolucion >= fecha_limite,
+        Falla.fecha_resolucion.isnot(None)
+        ).all()
+
+        tiempo_promedio = None
+        if fallas_resueltas:
+        tiempos = []
+        for fecha_creacion, fecha_resolucion in fallas_resueltas:
+        if fecha_resolucion:
+        tiempo_resolucion = fecha_resolucion - fecha_creacion
+        tiempos.append(tiempo_resolucion.total_seconds() / 3600) # Horas
+
+        if tiempos:
+        tiempo_promedio = sum(tiempos) / len(tiempos)
+
+        return jsonify({
+        'por_estado': {estado: cantidad for estado, cantidad in por_estado},
+        'por_prioridad': {prioridad: cantidad for prioridad, cantidad in por_prioridad},
+        'por_tipo': {tipo: cantidad for tipo, cantidad in por_tipo},
+        'asignadas_por_usuario': [
+        {
+        'nombre': f'{nombre} {apellido}',
+        'cantidad': cantidad
+        } for nombre, apellido, cantidad in asignadas
+        ],
+        'tiempo_promedio_resolucion_horas': round(tiempo_promedio, 2) if tiempo_promedio else None,
+        'total_fallas': sum(cantidad for _, cantidad in por_estado),
+        'fallas_abiertas': sum(cantidad for estado, cantidad in por_estado if estado in ['abierta', 'en_proceso'])
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Error al obtener estadísticas: {str(e)}'}), 500

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de NVR - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1><i class="bi bi-tv"></i> Gestionar Equipos NVR</h1>
+<a href="{{ url_for('nvr_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Nuevo NVR
+</a>
+</div>
+
+<-- Filtros -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="card-title mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+</div>
+<div class="card-body">
+<form method="GET" class="row g-3">
+<div class="col-md-3">
+<label for="marca" class="form-label">Marca</label>
+<select name="marca" id="marca" class="form-select">
+<option value="">Todas las marcas</option>
+<option value="Hikvision" {% if request.args.get('marca') == 'Hikvision' %}selected{% endif %}>Hikvision</option>
+<option value="Dahua" {% if request.args.get('marca') == 'Dahua' %}selected{% endif %}>Dahua</option>
+<option value="Axis" {% if request.args.get('marca') == 'Axis' %}selected{% endif %}>Axis</option>
+<option value="Bosch" {% if request.args.get('marca') == 'Bosch' %}selected{% endif %}>Bosch</option>
+</select>
+</div>
+<div class="col-md-3">
+<label for="estado" class="form-label">Estado</label>
+<select name="estado" id="estado" class="form-select">
+<option value="">Todos los estados</option>
+<option value="activo" {% if request.args.get('estado') == 'activo' %}selected{% endif %}>Activo</option>
+<option value="inactivo" {% if request.args.get('estado') == 'inactivo' %}selected{% endif %}>Inactivo</option>
+<option value="mantenimiento" {% if request.args.get('estado') == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+</select>
+</div>
+<div class="col-md-4">
+<label for="buscar" class="form-label">Buscar</label>
+<input type="text" name="buscar" id="buscar" class="form-control"
+value="{{ request.args.get('buscar', '') }}" placeholder="Modelo o IP...">
+</div>
+<div class="col-md-">
+<label class="form-label">&nbsp;</label>
+<div class="d-grid">
+<button type="submit" class="btn btn-outline-primary">
+<i class="bi bi-search"></i> Filtrar
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+
+<-- Lista de NVRs -->
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-collection"></i> Lista de Equipos NVR
+<span class="badge bg-primary ms-">{{ nvrs|length }}</span>
+</h5>
+</div>
+<div class="card-body p-0">
+{% if nvrs %}
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+<thead class="table-light">
+<tr>
+<th>Marca</th>
+<th>Modelo</th>
+<th>IP</th>
+<th>Canales</th>
+<th>Almacenamiento</th>
+<th>Estado</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody>
+{% for nvr in nvrs %}
+<tr>
+<td>
+<strong>{{ nvr.marca }}</strong>
+</td>
+<td>{{ nvr.modelo }}</td>
+<td>
+<code>{{ nvr.ip }}</code>
+</td>
+<td>
+<span class="badge bg-info">{{ nvr.canales }} canales</span>
+</td>
+<td>
+{% if nvr.almacenamiento %}
+{{ nvr.almacenamiento }} TB
+{% else %}
+<span class="text-muted">No especificado</span>
+{% endif %}
+</td>
+<td>
+{% if nvr.estado == 'activo' %}
+<span class="badge bg-success">Activo</span>
+{% elif nvr.estado == 'inactivo' %}
+<span class="badge bg-danger">Inactivo</span>
+{% elif nvr.estado == 'mantenimiento' %}
+<span class="badge bg-warning">Mantenimiento</span>
+{% endif %}
+</td>
+<td>
+<div class="btn-group btn-group-sm" role="group">
+<a href="{{ url_for('nvr_detalle', nvr_id=nvr.id) }}"
+class="btn btn-outline-primary" title="Ver detalles">
+<i class="bi bi-eye"></i>
+</a>
+<a href="{{ url_for('nvr_editar', nvr_id=nvr.id) }}"
+class="btn btn-outline-warning" title="Editar">
+<i class="bi bi-pencil"></i>
+</a>
+<button type="button" class="btn btn-outline-danger"
+onclick="confirmarEliminacion({{ nvr.id }})" title="Eliminar">
+<i class="bi bi-trash"></i>
+</button>
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="text-center py-5">
+<i class="bi bi-tv display-1 text-muted"></i>
+<h3 class="text-muted mt-3">No hay equipos NVR registrados</h3>
+<p class="text-muted">Comienza agregando un nuevo equipo NVR al sistema.</p>
+<a href="{{ url_for('nvr_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Agregar primer NVR
+</a>
+</div>
+{% endif %}
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarEliminacion(nvrId) {
+if (confirm('¿Estás seguro de que deseas eliminar este equipo NVR?')) {
+fetch(`/nvr/eliminar/${nvrId}`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+location.reload();
+} else {
+alert('Error al eliminar el equipo: ' + data.message);
+}
+})
+.catch(error => {
+console.error('Error:', error);
+alert('Error de conexión al eliminar el equipo');
+});
+}
+}
+</script>
+{% endblock %}

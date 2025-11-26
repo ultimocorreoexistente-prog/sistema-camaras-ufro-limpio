@@ -1,0 +1,66 @@
+ El volumen de la unidad C no tiene etiqueta.
+ El n£mero de serie del volumen es: 424E-DF92
+
+ Directorio de C:\Users\Usuario\sistema-camaras-ufro-limpio\templates
+
+24-11-2025  14:16    <DIR>          .
+24-11-2025  14:16    <DIR>          ..
+14-11-2025  15:45             5.854 01_usuarios_listar.html
+14-11-2025  15:45            13.366 02_usuarios_crear.html
+14-11-2025  15:45            15.255 03_usuarios_editar.html
+14-11-2025  15:45            19.328 04_geolocalizacion_mapa.html
+14-11-2025  15:45            22.847 05_topologia_red.html
+14-11-2025  15:45            16.692 06_fotografias_listar.html
+14-11-2025  15:45            17.495 07_fotografias_subir.html
+14-11-2025  15:45            16.060 08_fotografias_ver.html
+15-11-2025  11:12             2.348 base.html
+17-11-2025  13:03             5.913 camara.html
+15-11-2025  12:11    <DIR>          camaras
+14-11-2025  15:45             2.650 camaras_detalle.html
+17-11-2025  13:04             7.817 camaras_editar.html
+22-11-2025  00:06             5.483 camaras_form.html
+14-11-2025  15:45             4.560 camaras_list.html
+15-11-2025  11:13             6.823 dashboard.html
+14-11-2025  15:45    <DIR>          equipos
+15-11-2025  12:10             4.896 error.html
+15-11-2025  12:11    <DIR>          errors
+15-11-2025  12:11    <DIR>          fallas
+14-11-2025  15:45             2.816 fallas_detalle.html
+14-11-2025  15:45             4.490 fallas_form.html
+14-11-2025  15:45             2.324 fallas_list.html
+14-11-2025  15:45             1.466 fallas_reparar.html
+15-11-2025  12:11    <DIR>          fotografias
+15-11-2025  12:11    <DIR>          fuentes
+14-11-2025  15:45             4.677 fuentes_detalle.html
+14-11-2025  15:45             6.604 fuentes_form.html
+14-11-2025  15:45             5.109 fuentes_list.html
+15-11-2025  12:11    <DIR>          gabinetes
+14-11-2025  15:45             1.545 gabinetes_list.html
+14-11-2025  15:45            13.145 gabinetes_mantencion.html
+15-11-2025  12:11    <DIR>          geolocalizacion
+14-11-2025  15:45            18.051 informes_avanzados.html
+22-11-2025  00:32             4.292 login.html
+15-11-2025  12:11    <DIR>          mantenimientos
+14-11-2025  15:45             3.087 mantenimientos_form.html
+14-11-2025  15:45             1.692 mantenimientos_list.html
+14-11-2025  15:45             1.585 mapa_geolocalizacion.html
+14-11-2025  15:45             1.707 mapa_red.html
+17-11-2025  13:04             8.861 nueva_camara.html
+15-11-2025  12:11    <DIR>          nvr
+14-11-2025  15:45             5.082 nvr_detalle.html
+14-11-2025  15:45             6.510 nvr_form.html
+14-11-2025  15:45             5.306 nvr_list.html
+14-11-2025  15:45             6.941 README_TEMPLATES_NUEVOS.md
+15-11-2025  12:11    <DIR>          switches
+14-11-2025  15:45             4.552 switches_detalle.html
+14-11-2025  15:45             5.426 switches_form.html
+14-11-2025  15:45             5.227 switches_list.html
+15-11-2025  12:11    <DIR>          topologia
+24-11-2025  14:16                 0 txt
+15-11-2025  12:11    <DIR>          ups
+14-11-2025  15:45             4.770 ups_detalle.html
+14-11-2025  15:45             5.760 ups_form.html
+14-11-2025  15:45             4.746 ups_list.html
+15-11-2025  12:11    <DIR>          usuarios
+              43 archivos        303.158 bytes
+              16 dirs  101.901.406.208 bytes libres

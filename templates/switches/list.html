@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Gabinetes - Sistema de Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="card">
+<h style="margin-bottom: rem; color: #1e93b;">Gabinetes y Racks</h>
+
+{% if gabinetes %}
+<table class="table">
+<thead>
+<tr>
+<th>Código</th>
+<th>Nombre</th>
+<th>Ubicación</th>
+<th>Tipo</th>
+<th>Estado</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+{% for gabinete in gabinetes %}
+<tr>
+<td><strong>{{ gabinete.codigo }}</strong></td>
+<td>{{ gabinete.nombre }}</td>
+<td>{{ gabinete.ubicacion or '-' }}</td>
+<td>{{ gabinete.tipo or '-' }}</td>
+<td>
+{% if gabinete.estado == 'activo' %}
+<span class="badge badge-success">Activo</span>
+{% else %}
+<span class="badge badge-danger">{{ gabinete.estado }}</span>
+{% endif %}
+</td>
+<td>{{ gabinete.descripcion or '-' }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p style="color: #64748b;">No hay gabinetes registrados.</p>
+{% endif %}
+</div>
+{% endblock %}

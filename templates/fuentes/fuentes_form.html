@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}{% if fuente %}Editar{% else %}Crear{% endif %} Fuente de Poder - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<nav aria-label="breadcrumb">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('fuentes_list') }}">Fuentes de Poder</a></li>
+<li class="breadcrumb-item active">{% if fuente %}Editar{% else %}Crear{% endif %}</li>
+</ol>
+</nav>
+<h1 class="mb-0">
+<i class="bi bi-lightning-charge"></i>
+{% if fuente %}Editar Fuente{% else %}Nueva Fuente de Poder{% endif %}
+</h1>
+</div>
+</div>
+
+<form method="POST" id="fuenteForm">
+<div class="row">
+<-- Formulario principal -->
+<div class="col-md-8">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-person-lines-fill"></i> Información Básica
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="nombre" class="form-label">Nombre de la Fuente <span class="text-danger">*</span></label>
+<input type="text" class="form-control" id="nombre" name="nombre"
+value="{{ fuente.nombre if fuente else '' }}" required
+placeholder="Ej: FUENTE-SWITCH-PISO1">
+<div class="form-text">Identificador único de la fuente</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="marca" class="form-label">Marca <span class="text-danger">*</span></label>
+<select class="form-select" id="marca" name="marca" required>
+<option value="">Seleccionar marca...</option>
+<option value="Mean Well" {% if fuente and fuente.marca == 'Mean Well' %}selected{% endif %}>Mean Well</option>
+<option value="Phoenix Contact" {% if fuente and fuente.marca == 'Phoenix Contact' %}selected{% endif %}>Phoenix Contact</option>
+<option value="Siemens" {% if fuente and fuente.marca == 'Siemens' %}selected{% endif %}>Siemens</option>
+<option value="Omron" {% if fuente and fuente.marca == 'Omron' %}selected{% endif %}>Omron</option>
+<option value="Schneider" {% if fuente and fuente.marca == 'Schneider' %}selected{% endif %}>Schneider</option>
+<option value="Generic" {% if fuente and fuente.marca == 'Generic' %}selected{% endif %}>Genérica</option>
+</select>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="potencia" class="form-label">Potencia (W) <span class="text-danger">*</span></label>
+<input type="number" class="form-control" id="potencia" name="potencia"
+value="{{ fuente.potencia if fuente else '' }}" required min="1" max="10000"
+placeholder="Ej: 150">
+<div class="form-text">Potencia máxima en Watts</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="voltaje_salida" class="form-label">Voltaje de Salida <span class="text-danger">*</span></label>
+<select class="form-select" id="voltaje_salida" name="voltaje_salida" required>
+<option value="">Seleccionar voltaje...</option>
+<option value="5V" {% if fuente and fuente.voltaje_salida == '5V' %}selected{% endif %}>5V</option>
+<option value="1V" {% if fuente and fuente.voltaje_salida == '1V' %}selected{% endif %}>1V</option>
+<option value="4V" {% if fuente and fuente.voltaje_salida == '4V' %}selected{% endif %}>4V</option>
+<option value="48V" {% if fuente and fuente.voltaje_salida == '48V' %}selected{% endif %}>48V</option>
+<option value="5V/1V" {% if fuente and fuente.voltaje_salida == '5V/1V' %}selected{% endif %}>5V/1V (Dual)</option>
+</select>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="campus" class="form-label">Campus <span class="text-danger">*</span></label>
+<select class="form-select" id="campus" name="campus" required>
+<option value="">Seleccionar campus...</option>
+<option value="Campus Principal" {% if fuente and fuente.campus == 'Campus Principal' %}selected{% endif %}>Campus Principal</option>
+<option value="Campus Sur" {% if fuente and fuente.campus == 'Campus Sur' %}selected{% endif %}>Campus Sur</option>
+<option value="Campus Norte" {% if fuente and fuente.campus == 'Campus Norte' %}selected{% endif %}>Campus Norte</option>
+<option value="Campus Centro" {% if fuente and fuente.campus == 'Campus Centro' %}selected{% endif %}>Campus Centro</option>
+</select>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="edificio" class="form-label">Edificio <span class="text-danger">*</span></label>
+<input type="text" class="form-control" id="edificio" name="edificio"
+value="{{ fuente.edificio if fuente else '' }}" required
+placeholder="Ej: Edificio A">
+</div>
+</div>
+</div>
+
+<div class="mb-3">
+<label for="ubicacion" class="form-label">Ubicación Específica <span class="text-danger">*</span></label>
+<input type="text" class="form-control" id="ubicacion" name="ubicacion"
+value="{{ fuente.ubicacion if fuente else '' }}" required
+placeholder="Ej: Piso 1 - Sala de Servidores">
+<div class="form-text">Descripción detallada de la ubicación</div>
+</div>
+
+<div class="mb-3">
+<label for="equipos_alimentados" class="form-label">Equipos que Alimenta</label>
+<textarea class="form-control" id="equipos_alimentados" name="equipos_alimentados" rows="3"
+placeholder="Listar equipos conectados (separados por comas)">{{ fuente.equipos_alimentados if fuente else '' }}</textarea>
+<div class="form-text">Ej: Switch-01, NVR-Piso1, Cámara-01</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Panel lateral -->
+<div class="col-md-4">
+<-- Estado y configuración -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-gear"></i> Estado
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<label for="estado" class="form-label">Estado Actual</label>
+<select class="form-select" id="estado" name="estado">
+<option value="activo" {% if fuente and fuente.estado == 'activo' %}selected{% endif %}>Activo</option>
+<option value="inactivo" {% if fuente and fuente.estado == 'inactivo' %}selected{% endif %}>Inactivo</option>
+<option value="mantenimiento" {% if fuente and fuente.estado == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+<option value="sobrecarga" {% if fuente and fuente.estado == 'sobrecarga' %}selected{% endif %}>Sobrecarga</option>
+<option value="falla" {% if fuente and fuente.estado == 'falla' %}selected{% endif %}>Con fallas</option>
+</select>
+</div>
+
+<div class="mb-3">
+<div class="form-check">
+<input class="form-check-input" type="checkbox" id="proteccion_surgen" name="proteccion_surgen"
+{% if fuente and fuente.proteccion_surgen %}checked{% endif %}>
+<label class="form-check-label" for="proteccion_surgen">
+Protección contra sobretensiones
+</label>
+</div>
+</div>
+
+<div class="mb-3">
+<div class="form-check">
+<input class="form-check-input" type="checkbox" id="monitor_remoto" name="monitor_remoto"
+{% if fuente and fuente.monitor_remoto %}checked{% endif %}>
+<label class="form-check-label" for="monitor_remoto">
+Monitoreo remoto habilitado
+</label>
+</div>
+</div>
+</div>
+</div>
+
+<-- Especificaciones técnicas -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-cpu"></i> Especificaciones
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<label for="eficiencia" class="form-label">Eficiencia (%)</label>
+<input type="number" class="form-control" id="eficiencia" name="eficiencia"
+value="{{ fuente.eficiencia if fuente and fuente.eficiencia else '85' }}" min="50" max="100">
+</div>
+
+<div class="mb-3">
+<label for="corriente_maxima" class="form-label">Corriente Máxima (A)</label>
+<input type="number" class="form-control" id="corriente_maxima" name="corriente_maxima"
+value="{{ fuente.corriente_maxima if fuente and fuente.corriente_maxima else '' }}" min="0.1" step="0.1"
+placeholder="Auto-calculado">
+<div class="form-text">Se calcula automáticamente: Potencia/Voltaje</div>
+</div>
+
+<div class="mb-3">
+<label for="proteccion_ip" class="form-label">Grado de Protección IP</label>
+<select class="form-select" id="proteccion_ip" name="proteccion_ip">
+<option value="">Seleccionar...</option>
+<option value="IP0" {% if fuente and fuente.proteccion_ip == 'IP0' %}selected{% endif %}>IP0</option>
+<option value="IP40" {% if fuente and fuente.proteccion_ip == 'IP40' %}selected{% endif %}>IP40</option>
+<option value="IP65" {% if fuente and fuente.proteccion_ip == 'IP65' %}selected{% endif %}>IP65</option>
+</select>
+</div>
+</div>
+</div>
+
+<-- Notas -->
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-sticky"></i> Notas
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<label for="notas" class="form-label">Notas Adicionales</label>
+<textarea class="form-control" id="notas" name="notas" rows="4"
+placeholder="Observaciones, comentarios técnicos...">{{ fuente.notas if fuente else '' }}</textarea>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Botones de acción -->
+<div class="row mt-4">
+<div class="col-1">
+<div class="d-flex justify-content-between">
+<a href="{{ url_for('fuentes_list') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Cancelar
+</a>
+<div>
+<button type="button" class="btn btn-outline-primary me-" onclick="guardarBorrador()">
+<i class="bi bi-save"></i> Guardar Borrador
+</button>
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-check-circle"></i> {% if fuente %}Actualizar{% else %}Crear{% endif %} Fuente
+</button>
+</div>
+</div>
+</div>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Calcular corriente automáticamente
+const potencia = document.getElementById('potencia');
+const voltaje = document.getElementById('voltaje_salida');
+const corrienteMaxima = document.getElementById('corriente_maxima');
+
+function calcularCorriente() {
+if (potencia.value && voltaje.value) {
+const voltajeNum = parseFloat(voltaje.value.replace('V', ''));
+const corriente = (potencia.value / voltajeNum).toFixed(1);
+corrienteMaxima.value = corriente;
+}
+}
+
+potencia.addEventListener('input', calcularCorriente);
+voltaje.addEventListener('change', calcularCorriente);
+
+// Validación del formulario
+const form = document.getElementById('fuenteForm');
+form.addEventListener('submit', function(e) {
+if (validarFormulario()) {
+e.preventDefault();
+return false;
+}
+});
+
+function validarFormulario() {
+let valido = true;
+const camposRequeridos = ['nombre', 'marca', 'potencia', 'voltaje_salida', 'campus', 'edificio', 'ubicacion'];
+
+camposRequeridos.forEach(campo => {
+const elemento = document.getElementById(campo);
+if (elemento.value.trim()) {
+elemento.classList.add('is-invalid');
+valido = false;
+} else {
+elemento.classList.remove('is-invalid');
+}
+});
+
+if (valido) {
+alert('Por favor, complete todos los campos requeridos.');
+}
+
+return valido;
+}
+
+// Vista previa de eficiencia basada en marca
+document.getElementById('marca').addEventListener('change', function() {
+const eficiencia = document.getElementById('eficiencia');
+const marcasEficiencia = {
+'Mean Well': '90-95',
+'Phoenix Contact': '88-9',
+'Siemens': '85-90',
+'Omron': '87-91',
+'Schneider': '86-90',
+'Generic': '80-85'
+};
+
+if (marcasEficiencia[this.value]) {
+if (eficiencia.value) {
+eficiencia.value = marcasEficiencia[this.value].split('-')[0];
+}
+}
+});
+
+// Actualizar valores en tiempo real
+setInterval(function() {
+calcularCorriente();
+}, 1000);
+});
+
+function guardarBorrador() {
+const form = document.getElementById('fuenteForm');
+const formData = new FormData(form);
+
+fetch('/fuentes/guardar-borrador', {
+method: 'POST',
+body: formData,
+headers: {
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+alert('Borrador guardado exitosamente');
+} else {
+alert('Error al guardar borrador: ' + data.message);
+}
+})
+.catch(error => {
+console.error('Error:', error);
+alert('Error de conexión al guardar borrador');
+});
+}
+</script>
+{% endblock %}

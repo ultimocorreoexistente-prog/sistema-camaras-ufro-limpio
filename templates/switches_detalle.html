@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}Switch {{ switch.codigo }} - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Detalle de Switch - {{ switch.codigo }}</h1>
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white"><h5 class="mb-0">Información del Switch</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4"><strong>Código:</strong> {{ switch.codigo }}</div>
+                <div class="col-md-4"><strong>Nombre/Modelo:</strong> {{ switch.nombre_modelo }}</div>
+                <div class="col-md-4"><strong>Marca:</strong> {{ switch.marca }}</div>
+                <div class="col-md-4 mt-2"><strong>N° Serie:</strong> {{ switch.numero_serie or 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Gabinete:</strong> {{ switch.gabinete_asociado or 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Puertos Total:</strong> {{ switch.puertos_total or 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Puertos Usados:</strong> {{ switch.puertos_usados or 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Puertos Disponibles:</strong> {{ (switch.puertos_total - switch.puertos_usados) if switch.puertos_total and switch.puertos_usados else 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Soporta PoE:</strong> 
+                    <span class="badge bg-{{ 'success' if switch.soporta_poe == 'Sí' else 'secondary' }}">{{ switch.soporta_poe }}</span>
+                </div>
+                <div class="col-md-4 mt-2"><strong>Estado:</strong> 
+                    <span class="badge bg-{{ 'success' if switch.estado == 'Funcionando' else 'danger' }}">{{ switch.estado }}</span>
+                </div>
+                <div class="col-md-4 mt-2"><strong>Fecha Instalación:</strong> {{ switch.fecha_instalacion.strftime('%d/%m/%Y') if switch.fecha_instalacion else 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Último Mantenimiento:</strong> {{ switch.fecha_ultimo_mantenimiento.strftime('%d/%m/%Y') if switch.fecha_ultimo_mantenimiento else 'N/A' }}</div>
+                <div class="col-12 mt-3"><strong>Observaciones:</strong> {{ switch.observaciones or 'Sin observaciones' }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Equipos Conectados</h5></div>
+        <div class="card-body">
+            {% if equipos_conectados %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Equipo</th><th>Tipo</th><th>Puerto</th><th>Estado</th></tr></thead>
+                    <tbody>
+                        {% for equipo in equipos_conectados %}
+                        <tr>
+                            <td>{{ equipo.nombre }}</td>
+                            <td>{{ equipo.tipo }}</td>
+                            <td>{{ equipo.puerto }}</td>
+                            <td><span class="badge bg-success">Conectado</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No hay equipos conectados registrados</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h5 class="mb-0">Historial de Mantenimientos</h5></div>
+        <div class="card-body">
+            {% if mantenimientos %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Técnico</th></tr></thead>
+                    <tbody>
+                        {% for mantenimiento in mantenimientos %}
+                        <tr>
+                            <td>{{ mantenimiento.fecha.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ mantenimiento.tipo }}</td>
+                            <td>{{ mantenimiento.descripcion }}</td>
+                            <td>{{ mantenimiento.tecnico }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No hay mantenimientos registrados</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

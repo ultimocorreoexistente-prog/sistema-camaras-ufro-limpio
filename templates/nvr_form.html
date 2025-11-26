@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if nvr else 'Nuevo' }} NVR/DVR - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">{{ 'Editar' if nvr else 'Nuevo' }} NVR/DVR</h1>
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Código *</label>
+                        <input type="text" name="codigo" class="form-control" value="{{ nvr.codigo if nvr else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Tipo *</label>
+                        <select name="tipo" class="form-select" required>
+                            <option value="NVR" {{ 'selected' if nvr and nvr.tipo == 'NVR' else '' }}>NVR</option>
+                            <option value="DVR" {{ 'selected' if nvr and nvr.tipo == 'DVR' else '' }}>DVR</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Modelo *</label>
+                        <input type="text" name="modelo" class="form-control" value="{{ nvr.modelo if nvr else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Marca *</label>
+                        <input type="text" name="marca" class="form-control" value="{{ nvr.marca if nvr else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Número de Canales *</label>
+                        <input type="number" name="canales_total" class="form-control" value="{{ nvr.canales_total if nvr else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Canales Usados</label>
+                        <input type="number" name="canales_usados" class="form-control" value="{{ nvr.canales_usados if nvr else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">IP</label>
+                        <input type="text" name="ip" class="form-control" value="{{ nvr.ip if nvr else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Capacidad Almacenamiento (TB)</label>
+                        <input type="number" step="0.1" name="capacidad_almacenamiento" class="form-control" value="{{ nvr.capacidad_almacenamiento if nvr else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Gabinete Asociado</label>
+                        <select name="gabinete_asociado" class="form-select">
+                            <option value="">Seleccione...</option>
+                            {% for gabinete in gabinetes %}
+                            <option value="{{ gabinete.codigo }}" {{ 'selected' if nvr and nvr.gabinete_asociado == gabinete.codigo else '' }}>
+                                {{ gabinete.codigo }} - {{ gabinete.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Ubicación *</label>
+                        <select name="ubicacion_id" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                            {% for ub in ubicaciones %}
+                            <option value="{{ ub.id }}" {{ 'selected' if nvr and nvr.ubicacion_id == ub.id else '' }}>
+                                {{ ub.campus }} - {{ ub.edificio }} - {{ ub.piso }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Estado</label>
+                        <select name="estado" class="form-select">
+                            <option value="Operativo" {{ 'selected' if nvr and nvr.estado == 'Operativo' else '' }}>Operativo</option>
+                            <option value="Mantenimiento" {{ 'selected' if nvr and nvr.estado == 'Mantenimiento' else '' }}>Mantenimiento</option>
+                            <option value="Fuera de Servicio" {{ 'selected' if nvr and nvr.estado == 'Fuera de Servicio' else '' }}>Fuera de Servicio</option>
+                            <option value="Baja" {{ 'selected' if nvr and nvr.estado == 'Baja' else '' }}>Baja</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Fecha Instalación</label>
+                        <input type="date" name="fecha_instalacion" class="form-control" value="{{ nvr.fecha_instalacion if nvr and nvr.fecha_instalacion else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Último Mantenimiento</label>
+                        <input type="date" name="ultimo_mantenimiento" class="form-control" value="{{ nvr.ultimo_mantenimiento if nvr and nvr.ultimo_mantenimiento else '' }}">
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Cámaras Conectadas</label>
+                        <textarea name="camaras_conectadas" class="form-control" rows="2">{{ nvr.camaras_conectadas if nvr else '' }}</textarea>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Observaciones</label>
+                        <textarea name="observaciones" class="form-control" rows="3">{{ nvr.observaciones if nvr else '' }}</textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a href="{{ url_for('nvr_list') }}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

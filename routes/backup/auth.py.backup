@@ -1,0 +1,173 @@
+"""
+Rutas de Autenticación y Autorización
+"""
+from flask import request, jsonify, current_app
+from werkzeug.security import check_password_hash, generate_password_hash
+from datetime import datetime, timedelta
+from .. import auth_bp
+from models import Usuario, db
+from utils.validators import validate_json, validate_required_fields
+from utils.decorators import token_required, require_permission, rate_limit
+
+@auth_bp.route('/login', methods=['POST'])
+@rate_limit(5, 300) # 5 intentos por 5 minutos
+@validate_json
+def login():
+    """
+    Autenticación de usuario
+    """
+    data = request.get_json()
+
+    # Validar campos requeridos
+    required_fields = ['email', 'password']
+    if not data or not all(field in data for field in required_fields):
+    return jsonify({'error': 'Campos requeridos: email, password'}), 400
+
+    usuario = Usuario.query.filter_by(email=data['email'].lower().strip()).first()
+    
+    if not usuario or not usuario.check_password(data['password']):
+    return jsonify({'error': 'Credenciales inválidas'}), 401
+    
+    if not usuario.activo:
+    return jsonify({'error': 'Cuenta desactivada'}), 403
+    
+    # Actualizar último acceso
+    usuario.ultimo_acceso = datetime.utcnow()
+    db.session.commit()
+
+    # Generar token
+    token = jwt.encode({
+        'user_id': usuario.id,
+            'email': usuario.email,
+        'exp': datetime.utcnow() + timedelta(hours=4),
+        'iat': datetime.utcnow()
+    }, current_app.config['SECRET_KEY'], algorithm='HS256')
+
+    return jsonify({
+        'token': token,
+            'user': {
+                'id': usuario.id,
+                'email': usuario.email,
+                'nombre': usuario.nombre,
+                'apellido': usuario.apellido,
+                'rol': usuario.rol.nombre if usuario.rol else None,
+                'permisos': [p.nombre for p in usuario.rol.permisos] if usuario.rol else []
+        }
+            })
+
+        @auth_bp.route('/register', methods=['POST'])
+        @validate_json
+        @token_required
+        @require_permission('usuarios_crear')
+@require_permission('usuarios_crear')
+def register():
+    """
+    Registro de nuevo usuario (requiere permisos)
+    """
+    data = request.get_json()
+
+    required_fields = ['email', 'password', 'nombre', 'apellido']
+    return jsonify({'error': 'Campos requeridos: email, password, nombre, apellido'}), 400
+
+        # Validar formato de email
+        import re
+    return jsonify({'error': 'Formato de email inválido'}), 400
+
+        # Validar longitud de contraseña
+    return jsonify({'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
+
+        # Verificar si el email ya existe
+    return jsonify({'error': 'El email ya está registrado'}), 400
+
+        # Crear usuario
+        usuario = Usuario(
+        email=data['email'].lower().strip(),
+        password_hash=generate_password_hash(data['password']),
+        nombre=data['nombre'].strip(),
+        apellido=data['apellido'].strip(),
+        activo=True
+        )
+
+        try:
+        db.session.add(usuario)
+        db.session.commit()
+
+    return jsonify({
+        'message': 'Usuario creado exitosamente',
+        'user_id': usuario.id
+            }), 201
+
+    except Exception as e:
+        db.session.rollback()
+    return jsonify({'error': f'Error al crear usuario: {str(e)}'}), 500
+
+@auth_bp.route('/verify-token', methods=['GET'])
+@token_required
+def verify_token(current_user):
+    """
+    Verificar validez del token
+    """
+    return jsonify({
+    'valid': True,
+    'user': {
+    'id': current_user.id,
+    'email': current_user.email,
+    'nombre': current_user.nombre,
+    'apellido': current_user.apellido,
+    'rol': current_user.rol.nombre if current_user.rol else None,
+        'permisos': [p.nombre for p in current_user.rol.permisos] if current_user.rol else []
+        }
+    })
+
+@auth_bp.route('/refresh', methods=['POST'])
+@token_required
+def refresh_token(current_user):
+    """
+    Renovar token de autenticación
+    """
+    token = jwt.encode({
+    'user_id': current_user.id,
+    'email': current_user.email,
+    'exp': datetime.utcnow() + timedelta(hours=4),
+    'iat': datetime.utcnow()
+    }, current_app.config['SECRET_KEY'], algorithm='HS56')
+
+    return jsonify({'token': token})
+
+@auth_bp.route('/change-password', methods=['POST'])
+@token_required
+@validate_json
+def change_password(current_user):
+    """
+    Cambiar contraseña del usuario
+    """
+    data = request.get_json()
+
+    required_fields = ['current_password', 'new_password']
+    return jsonify({'error': 'Campos requeridos: current_password, new_password'}), 400
+
+        # Verificar contraseña actual
+    return jsonify({'error': 'Contraseña actual incorrecta'}), 400
+
+        # Validar nueva contraseña
+    return jsonify({'error': 'La nueva contraseña debe tener al menos 6 caracteres'}), 400
+
+        # Actualizar contraseña
+        current_user.password_hash = generate_password_hash(data['new_password'])
+        current_user.ultimo_cambio_password = datetime.utcnow()
+
+        try:
+        db.session.commit()
+    return jsonify({'message': 'Contraseña actualizada exitosamente'})
+    except Exception as e:
+        db.session.rollback()
+    return jsonify({'error': f'Error al actualizar contraseña: {str(e)}'}), 500
+
+@auth_bp.route('/logout', methods=['POST'])
+@token_required
+def logout(current_user):
+    """
+    Cerrar sesión (invalidar token)
+    """
+    # En una implementación más robusta, almacenaríamos tokens revocados
+    return jsonify({'message': 'Sesión cerrada exitosamente'})

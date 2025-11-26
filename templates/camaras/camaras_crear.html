@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Cámara - Sistema de Gestión de Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<nav aria-label="breadcrumb">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('camaras_listar') }}">Cámaras</a></li>
+<li class="breadcrumb-item active">Nueva Cámara</li>
+</ol>
+</nav>
+<h1><i class="bi bi-plus-circle"></i> Registrar Nueva Cámara</h1>
+</div>
+<div>
+<a href="{{ url_for('camaras_listar') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Volver a la Lista
+</a>
+</div>
+</div>
+
+<div class="row">
+<div class="col-lg-8">
+<form action="{{ url_for('camaras_crear') }}" method="POST" id="formCamara">
+{{ form.hidden_tag() }}
+
+<-- Información Básica -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-info-circle"></i> Información Básica</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-8">
+<div class="mb-3">
+{{ form.ubicacion.label(class="form-label") }}
+{{ form.ubicacion(class="form-control", placeholder="Ej: Edificio A - Pasillo Principal - Piso ") }}
+{% if form.ubicacion.errors %}
+<div class="text-danger small mt-1">
+{{ form.ubicacion.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="mb-3">
+{{ form.estado.label(class="form-label") }}
+{{ form.estado(class="form-select") }}
+{% if form.estado.errors %}
+<div class="text-danger small mt-1">
+{{ form.estado.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.marca.label(class="form-label") }}
+{{ form.marca(class="form-select", id="marcaSelect") }}
+{% if form.marca.errors %}
+<div class="text-danger small mt-1">
+{{ form.marca.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.modelo.label(class="form-label") }}
+{{ form.modelo(class="form-control", placeholder="Ej: DS-CD14FWD-I") }}
+{% if form.modelo.errors %}
+<div class="text-danger small mt-1">
+{{ form.modelo.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.ip.label(class="form-label") }}
+{{ form.ip(class="form-control", placeholder="19.168.1.100") }}
+{% if form.ip.errors %}
+<div class="text-danger small mt-1">
+{{ form.ip.errors[0] }}
+</div>
+{% endif %}
+<div class="form-text">Dirección IP de la cámara en la red local</div>
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.responsable.label(class="form-label") }}
+{{ form.responsable(class="form-control", placeholder="Nombre del responsable técnico") }}
+{% if form.responsable.errors %}
+<div class="text-danger small mt-1">
+{{ form.responsable.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Ubicación Física -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-geo-alt"></i> Ubicación Física</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-4">
+<div class="mb-3">
+{{ form.campus.label(class="form-label") }}
+{{ form.campus(class="form-select", id="campusSelect") }}
+{% if form.campus.errors %}
+<div class="text-danger small mt-1">
+{{ form.campus.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="mb-3">
+{{ form.edificio.label(class="form-label") }}
+{{ form.edificio(class="form-select", id="edificioSelect") }}
+{% if form.edificio.errors %}
+<div class="text-danger small mt-1">
+{{ form.edificio.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="mb-3">
+{{ form.fecha_instalacion.label(class="form-label") }}
+{{ form.fecha_instalacion(class="form-control", type="date") }}
+{% if form.fecha_instalacion.errors %}
+<div class="text-danger small mt-1">
+{{ form.fecha_instalacion.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<-- Coordenadas GPS (Opcional) -->
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.latitud.label(class="form-label") }}
+<div class="input-group">
+{{ form.latitud(class="form-control", placeholder="-38.9456", id="latitud") }}
+<button type="button" class="btn btn-outline-secondary" onclick="obtenerGPS()">
+<i class="bi bi-geo-alt"></i> GPS
+</button>
+</div>
+<div class="form-text">Coordenada latitude (opcional)</div>
+{% if form.latitud.errors %}
+<div class="text-danger small mt-1">
+{{ form.latitud.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.longitud.label(class="form-label") }}
+{{ form.longitud(class="form-control", placeholder="-7.3306", id="longitud") }}
+<div class="form-text">Coordenada longitude (opcional)</div>
+{% if form.longitud.errors %}
+<div class="text-danger small mt-1">
+{{ form.longitud.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Información Adicional -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-plus-circle"></i> Información Adicional</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+{{ form.observaciones.label(class="form-label") }}
+{{ form.observaciones(class="form-control", rows="4", placeholder="Observaciones adicionales, características especiales, notas técnicas...") }}
+{% if form.observaciones.errors %}
+<div class="text-danger small mt-1">
+{{ form.observaciones.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<-- Botones de Acción -->
+<div class="card">
+<div class="card-body">
+<div class="d-flex justify-content-between">
+<div>
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-check-circle"></i> Registrar Cámara
+</button>
+<button type="reset" class="btn btn-secondary">
+<i class="bi bi-arrow-clockwise"></i> Limpiar
+</button>
+</div>
+<a href="{{ url_for('camaras_listar') }}" class="btn btn-outline-secondary">
+<i class="bi bi-x-circle"></i> Cancelar
+</a>
+</div>
+</div>
+</div>
+</form>
+</div>
+
+<-- Sidebar con ayuda y validación -->
+<div class="col-lg-4">
+<-- Ayuda -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-question-circle"></i> Ayuda</h5>
+</div>
+<div class="card-body">
+<h6>Campos Obligatorios:</h6>
+<ul class="small">
+<li><strong>Ubicación:</strong> Descripción detallada de dónde está instalada</li>
+<li><strong>Marca:</strong> Fabricante de la cámara</li>
+<li><strong>IP:</strong> Dirección de red única</li>
+<li><strong>Campus y Edificio:</strong> Para clasificar la ubicación</li>
+</ul>
+
+<hr>
+
+<h6>Consejos:</h6>
+<ul class="small">
+<li>Usa nombres descriptivos para la ubicación</li>
+<li>Verifica que la IP esté disponible</li>
+<li>Incluye coordenadas GPS si las tienes</li>
+<li>Documenta cualquier configuración especial</li>
+</ul>
+</div>
+</div>
+
+<-- Validación en Tiempo Real -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-shield-check"></i> Validación</h5>
+</div>
+<div class="card-body">
+<div id="validation-panel">
+<div class="alert alert-info">
+<i class="bi bi-info-circle"></i>
+La validación se realizará al completar los campos
+</div>
+</div>
+</div>
+</div>
+
+<-- Vista Previa -->
+<div class="card">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-eye"></i> Vista Previa</h5>
+</div>
+<div class="card-body">
+<div id="preview-panel">
+<div class="alert alert-light">
+<p class="mb-1"><strong>Ubicación:</strong> <span id="preview-ubicacion">-</span></p>
+<p class="mb-1"><strong>Marca:</strong> <span id="preview-marca">-</span></p>
+<p class="mb-1"><strong>Modelo:</strong> <span id="preview-modelo">-</span></p>
+<p class="mb-1"><strong>IP:</strong> <span id="preview-ip">-</span></p>
+<p class="mb-0"><strong>Estado:</strong> <span id="preview-estado">-</span></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Validación de IP en tiempo real
+const ipInput = document.getElementById('{{ form.ip.id }}');
+if (ipInput) {
+ipInput.addEventListener('blur', validarIP);
+}
+
+// Vista previa en tiempo real
+const campos = ['{{ form.ubicacion.id }}', '{{ form.marca.id }}', '{{ form.modelo.id }}',
+'{{ form.ip.id }}', '{{ form.estado.id }}'];
+
+campos.forEach(campoId => {
+const campo = document.getElementById(campoId);
+if (campo) {
+campo.addEventListener('input', actualizarVistaPrevia);
+}
+});
+});
+
+function validarIP() {
+const ip = document.getElementById('{{ form.ip.id }}').value;
+const ipRegex = /^(([0-9]|[1-9][0-9]|1[0-9]{}|[0-4][0-9]|5[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{}|[0-4][0-9]|5[0-5])$/;
+
+if (ip && ipRegex.test(ip)) {
+mostrarValidacion('error', 'Formato de IP inválido');
+} else if (ip) {
+mostrarValidacion('success', 'IP válida');
+}
+}
+
+function actualizarVistaPrevia() {
+document.getElementById('preview-ubicacion').textContent =
+document.getElementById('{{ form.ubicacion.id }}').value || '-';
+document.getElementById('preview-marca').textContent =
+document.getElementById('{{ form.marca.id }}').selectedOptions[0].text || '-';
+document.getElementById('preview-modelo').textContent =
+document.getElementById('{{ form.modelo.id }}').value || '-';
+document.getElementById('preview-ip').textContent =
+document.getElementById('{{ form.ip.id }}').value || '-';
+document.getElementById('preview-estado').textContent =
+document.getElementById('{{ form.estado.id }}').selectedOptions[0].text || '-';
+}
+
+function mostrarValidacion(tipo, mensaje) {
+const panel = document.getElementById('validation-panel');
+panel.innerHTML = `
+<div class="alert alert-${tipo === 'error' ? 'danger' : 'success'}">
+<i class="bi bi-${tipo === 'error' ? 'exclamation-circle' : 'check-circle'}"></i>
+${mensaje}
+</div>
+`;
+}
+
+function obtenerGPS() {
+if (navigator.geolocation) {
+navigator.geolocation.getCurrentPosition(
+function(position) {
+document.getElementById('latitud').value = position.coords.latitude.toFixed(6);
+document.getElementById('longitud').value = position.coords.longitude.toFixed(6);
+mostrarValidacion('success', 'Coordenadas GPS obtenidas correctamente');
+},
+function(error) {
+mostrarValidacion('error', 'Error al obtener GPS: ' + error.message);
+}
+);
+} else {
+mostrarValidacion('error', 'Geolocalización no soportada por este navegador');
+}
+}
+
+// Validación antes del envío
+document.getElementById('formCamara').addEventListener('submit', function(e) {
+const ip = document.getElementById('{{ form.ip.id }}').value;
+const ipRegex = /^(([0-9]|[1-9][0-9]|1[0-9]{}|[0-4][0-9]|5[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{}|[0-4][0-9]|5[0-5])$/;
+
+if (ipRegex.test(ip)) {
+e.preventDefault();
+mostrarValidacion('error', 'Por favor corrige el formato de IP antes de enviar');
+document.getElementById('{{ form.ip.id }}').focus();
+return false;
+}
+});
+</script>
+{% endblock %}
