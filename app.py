@@ -342,6 +342,21 @@ def register_error_handlers(app):
         return render_template('403.html'), 403
 
 # ========================================
+# 🚀 INSTANCIA PARA GUNICORN
+# ========================================
+
+# ✅ CORRECCIÓN CRÍTICA: Crear instancia de app para Gunicorn
+# Esto es lo que Gunicorn necesita para ejecutar app:app
+try:
+    app = create_app()
+    logger.info("✅ Instancia de app creada para Gunicorn")
+except Exception as e:
+    logger.error(f"❌ Error al crear instancia de app: {e}")
+    # Crear app básica como fallback
+    app = Flask(__name__)
+    logger.warning("⚠️ Usando app básica como fallback")
+
+# ========================================
 # 🚀 PUNTO DE ENTRADA PRINCIPAL
 # ========================================
 
