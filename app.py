@@ -224,6 +224,8 @@ def register_routes(app):
                 'total_ubicaciones': Ubicacion.query.count(),
                 'ubicaciones_activas': Ubicacion.query.filter_by(activo=True).count(),
                 'total_switches': Switch.query.count(),
+                'total_nvr_dvr': NvrDvr.query.count(),
+                'total_gabinetes': Gabinete.query.count(),
                 'total_ups': Ups.query.count(),
                 'usuarios_activos': Usuario.query.filter_by(activo=True).count()
             }
@@ -233,7 +235,7 @@ def register_routes(app):
         except Exception as e:
             logger.error(f"❌ Error al obtener estadísticas: {e}")
             flash("Error al cargar estadísticas del dashboard.", "warning")
-            stats = {key: 0 for key in ['total_camaras', 'camaras_activas', 'total_ubicaciones', 'ubicaciones_activas', 'total_switches', 'total_ups', 'usuarios_activos']}
+            stats = {key: 0 for key in ['total_camaras', 'camaras_activas', 'total_ubicaciones', 'ubicaciones_activas', 'total_switches', 'total_nvr_dvr', 'total_gabinetes', 'total_ups', 'usuarios_activos']}
 
         return render_template('index.html', 
                                 stats=stats,
@@ -297,7 +299,10 @@ def register_routes(app):
                 'usuarios': Usuario.query.count(),
                 'ubicaciones': Ubicacion.query.count(),
                 'camaras': Camara.query.count(),
-                'switches': Switch.query.count()
+                'switches': Switch.query.count(),
+                'nvr_dvr': NvrDvr.query.count(),
+                'gabinetes': Gabinete.query.count(),
+                'ups': Ups.query.count()
             }
             
             logger.info(f"🧪 Test DB exitoso: {stats}")
