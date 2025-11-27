@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, render_template, redirect, url_for, flash, request
+from flask import Flask, render_template, redirect, url_for, flash, request, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -694,6 +694,21 @@ def register_routes(app):
     def health():
         """❤️ Ruta de health check para Railway."""
         return {'status': 'healthy', 'timestamp': datetime.utcnow().isoformat()}
+
+    @app.route('/favicon.ico')
+    def favicon():
+        """🔒 Servir el favicon.ico"""
+        try:
+            favicon_path = os.path.join(app.static_folder, 'favicon.ico')
+            if os.path.exists(favicon_path):
+                return send_file(favicon_path, mimetype='image/x-icon')
+            else:
+                # Retornar una respuesta vacía si no existe el archivo
+                logger.warning("⚠️ Favicon no encontrado")
+                return '', 404
+        except Exception as e:
+            logger.error(f"❌ Error sirviendo favicon: {e}")
+            return '', 404
 
 def register_error_handlers(app):
     """📝 Registrar manejadores de errores."""
