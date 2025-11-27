@@ -132,6 +132,366 @@ class Ups(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # ========================================
+# 🗃️ MODELOS FALTANTES - SISTEMA COMPLETO UFRO
+# ========================================
+
+class CatalogoTipoFalla(db.Model):
+    """🛠️ Catálogo de tipos de fallas."""
+    __tablename__ = 'catalogo_tipo_falla'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(255), nullable=False)
+    categoria = db.Column(db.String(100))
+    descripcion = db.Column(db.Text)
+    gravedad = db.Column(db.String(50))
+    tiempo_estimado_resolucion = db.Column(db.Integer)
+
+class EquipoTecnico(db.Model):
+    """👨‍🔧 Equipo técnico disponible."""
+    __tablename__ = 'equipo_tecnico'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    apellido = db.Column(db.String(100), nullable=False)
+    especialidad = db.Column(db.String(100))
+    telefono = db.Column(db.String(20))
+    email = db.Column(db.String(120))
+    estado = db.Column(db.String(20), default='activo')
+    fecha_ingreso = db.Column(db.DateTime)
+
+class Equipos(db.Model):
+    """💻 Equipos generales del sistema."""
+    __tablename__ = 'equipos'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    tipo = db.Column(db.String(50), nullable=False)
+    marca = db.Column(db.String(100))
+    modelo = db.Column(db.String(100))
+    serie = db.Column(db.String(100))
+    ip_address = db.Column(db.String(15))
+    estado = db.Column(db.String(20), default='activo')
+    activo = db.Column(db.Boolean, default=True)
+    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
+    created_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    deleted = db.Column(db.Boolean, default=False)
+    hostname = db.Column(db.String(100))
+    mac_address = db.Column(db.String(17))
+    firmware_version = db.Column(db.String(50))
+    warranty_expiry = db.Column(db.Date)
+    installation_date = db.Column(db.Date)
+    last_heartbeat = db.Column(db.DateTime)
+    uptime_percentage = db.Column(db.Float)
+    notes = db.Column(db.Text)
+
+class EquiposBase(db.Model):
+    """🏠 Base de equipos."""
+    __tablename__ = 'equipos_base'
+    id = db.Column(db.Integer, primary_key=True)
+    modelo = db.Column(db.String(100), nullable=False)
+    serie = db.Column(db.String(100), nullable=False)
+    fecha_instalacion = db.Column(db.Date)
+    id_ubicacion = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
+    estado_id = db.Column(db.Integer)
+    tipo = db.Column(db.String(50), nullable=False)
+
+class EstadosEquipo(db.Model):
+    """📊 Estados de equipos."""
+    __tablename__ = 'estados_equipo'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+
+class EstadosFalla(db.Model):
+    """⚠️ Estados de fallas."""
+    __tablename__ = 'estados_falla'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+
+class Fallas(db.Model):
+    """🚨 Registro de fallas."""
+    __tablename__ = 'fallas'
+    id = db.Column(db.Integer, primary_key=True)
+    fecha_reporte = db.Column(db.DateTime, default=datetime.utcnow)
+    reportado_por = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+    tipo = db.Column(db.String(100))
+    subtipo = db.Column(db.String(100))
+    camara_id = db.Column(db.Integer, db.ForeignKey('camaras.id'))
+    camara_afectada = db.Column(db.String(255))
+    ubicacion = db.Column(db.Text)
+    descripcion = db.Column(db.Text)
+    impacto_visibilidad = db.Column(db.String(20))
+    afecta_vision_nocturna = db.Column(db.Boolean)
+    estado = db.Column(db.String(20), default='reportado')
+    prioridad = db.Column(db.String(20))
+    tecnico_asignado = db.Column(db.Integer, db.ForeignKey('equipo_tecnico.id'))
+    fecha_inicio = db.Column(db.DateTime)
+    fecha_resolucion = db.Column(db.DateTime)
+    solucion = db.Column(db.Text)
+    gravedad = db.Column(db.String(20))
+    componente_afectado = db.Column(db.String(100))
+    observaciones = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    deleted = db.Column(db.Boolean, default=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+    updated_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+
+class Fotografias(db.Model):
+    """📷 Fotografías del sistema."""
+    __tablename__ = 'fotografias'
+    id = db.Column(db.Integer, primary_key=True)
+    width = db.Column(db.Integer)
+    height = db.Column(db.Integer)
+    white_balance = db.Column(db.String(50))
+    web_optimized_path = db.Column(db.String(255))
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+    url = db.Column(db.String(255))
+    updated_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
+    titulo = db.Column(db.String(255))
+    tipo = db.Column(db.String(50))
+    thumbnail_path = db.Column(db.String(255))
+    tags = db.Column(db.Text)
+    status = db.Column(db.String(20), default='active')
+    sort_order = db.Column(db.Integer)
+    software_used = db.Column(db.String(100))
+    quality_score = db.Column(db.Float)
+    public_url = db.Column(db.String(255))
+    preview_path = db.Column(db.String(255))
+    original_camera = db.Column(db.String(100))
+    notes = db.Column(db.Text)
+    mime_type = db.Column(db.String(100))
+    metadata = db.Column(db.Text)
+    last_accessed = db.Column(db.DateTime)
+    iso = db.Column(db.Integer)
+    is_featured = db.Column(db.Boolean, default=False)
+    gps_coordinates = db.Column(db.String(100))
+    full_size_path = db.Column(db.String(255))
+    focal_length = db.Column(db.Float)
+    flash = db.Column(db.String(50))
+    file_size = db.Column(db.Integer)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    falla_id = db.Column(db.Integer, db.ForeignKey('fallas.id'))
+    exposure_time = db.Column(db.Float)
+    entidad_tipo = db.Column(db.String(50))
+    entidad_id = db.Column(db.Integer)
+    download_count = db.Column(db.Integer, default=0)
+    descripcion = db.Column(db.Text)
+    deleted = db.Column(db.Boolean, default=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    compression_quality = db.Column(db.Integer)
+    color_profile = db.Column(db.String(50))
+    categoria = db.Column(db.String(100))
+    capture_date = db.Column(db.DateTime)
+    archivo = db.Column(db.String(255))
+    approved_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+    approval_date = db.Column(db.DateTime)
+    aperture = db.Column(db.Float)
+    access_count = db.Column(db.Integer, default=0)
+
+class FuentesPoder(db.Model):
+    """⚡ Fuentes de poder."""
+    __tablename__ = 'fuentes_poder'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    marca = db.Column(db.String(100))
+    modelo = db.Column(db.String(100))
+    serial = db.Column(db.String(100))
+    tipo = db.Column(db.String(50))
+    voltaje_entrada = db.Column(db.String(50))
+    voltaje_salida = db.Column(db.String(50))
+    corriente_salida = db.Column(db.String(50))
+    potencia = db.Column(db.String(50))
+    capacidad_ah = db.Column(db.Integer)
+    tecnologia = db.Column(db.String(50))
+    estado = db.Column(db.String(20), default='activo')
+    ubicacion = db.Column(db.String(255))
+    dependencia = db.Column(db.String(255))
+    fecha_instalacion = db.Column(db.Date)
+    fecha_mantenimiento = db.Column(db.Date)
+    fecha_ultima_revision = db.Column(db.Date)
+    fecha_proxima_revision = db.Column(db.Date)
+    observaciones = db.Column(db.Text)
+    garantia_meses = db.Column(db.Integer)
+    proveedor = db.Column(db.String(100))
+    costo = db.Column(db.Float)
+    nivel_bateria = db.Column(db.String(20))
+    temperatura_operacion = db.Column(db.String(20))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class HistorialEstadoEquipo(db.Model):
+    """📈 Historial de cambios de estado."""
+    __tablename__ = 'historial_estado_equipo'
+    id = db.Column(db.Integer, primary_key=True)
+    equipo_tipo = db.Column(db.String(50), nullable=False)
+    equipo_id = db.Column(db.Integer, nullable=False)
+    estado_anterior = db.Column(db.String(50))
+    estado_nuevo = db.Column(db.String(50))
+    fecha_cambio = db.Column(db.DateTime, default=datetime.utcnow)
+    motivo = db.Column(db.Text)
+
+class Mantenimientos(db.Model):
+    """🔧 Registro de mantenimientos."""
+    __tablename__ = 'mantenimientos'
+    id = db.Column(db.Integer, primary_key=True)
+    fecha_programada = db.Column(db.DateTime)
+    fecha_realizacion = db.Column(db.DateTime)
+    tipo = db.Column(db.String(50))
+    categoria = db.Column(db.String(50))
+    equipo_gabinete = db.Column(db.String(255))
+    ubicacion = db.Column(db.String(255))
+    descripcion = db.Column(db.Text)
+    estado = db.Column(db.String(20), default='programado')
+    tecnico_responsable = db.Column(db.Integer, db.ForeignKey('equipo_tecnico.id'))
+    materiales_utilizados = db.Column(db.Text)
+    costo_aproximado = db.Column(db.Float)
+    equipos_camaras_afectadas = db.Column(db.Text)
+    tiempo_ejecucion = db.Column(db.Integer)
+    observaciones = db.Column(db.Text)
+    titulo = db.Column(db.String(255))
+    equipment_id = db.Column(db.Integer)
+    equipment_type = db.Column(db.String(50))
+    camara_id = db.Column(db.Integer, db.ForeignKey('camaras.id'))
+    nvr_id = db.Column(db.Integer, db.ForeignKey('nvr_dvr.id'))
+    switch_id = db.Column(db.Integer, db.ForeignKey('switches.id'))
+    ups_id = db.Column(db.Integer, db.ForeignKey('ups.id'))
+    fuente_poder_id = db.Column(db.Integer, db.ForeignKey('fuentes_poder.id'))
+    gabinete_id = db.Column(db.Integer, db.ForeignKey('gabinetes.id'))
+    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
+    falla_id = db.Column(db.Integer, db.ForeignKey('fallas.id'))
+    priority = db.Column(db.String(20))
+    scheduled_start = db.Column(db.DateTime)
+    scheduled_end = db.Column(db.DateTime)
+    actual_start = db.Column(db.DateTime)
+    duration_estimated = db.Column(db.Integer)
+    duration_actual = db.Column(db.Integer)
+    technician_id = db.Column(db.Integer, db.ForeignKey('equipo_tecnico.id'))
+    supervisor_id = db.Column(db.Integer, db.ForeignKey('equipo_tecnico.id'))
+    completion_criteria = db.Column(db.Text)
+    maintenance_cost = db.Column(db.Float)
+    parts_cost = db.Column(db.Float)
+    labor_cost = db.Column(db.Float)
+    downtime_minutes = db.Column(db.Integer)
+    is_recurring = db.Column(db.Boolean, default=False)
+    next_maintenance_date = db.Column(db.Date)
+    quality_score = db.Column(db.Float)
+    follow_up_required = db.Column(db.Boolean, default=False)
+    follow_up_date = db.Column(db.Date)
+    approved_by = db.Column(db.Integer, db.ForeignKey('equipo_tecnico.id'))
+    approval_date = db.Column(db.DateTime)
+    photos_taken = db.Column(db.Boolean, default=False)
+    notes = db.Column(db.Text)
+    deleted = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+    updated_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+
+class NetworkConnections(db.Model):
+    """🌐 Conexiones de red."""
+    __tablename__ = 'network_connections'
+    id = db.Column(db.Integer, primary_key=True)
+    source_equipment_id = db.Column(db.Integer, nullable=False)
+    source_equipment_type = db.Column(db.String(50), nullable=False)
+    target_equipment_id = db.Column(db.Integer, nullable=False)
+    target_equipment_type = db.Column(db.String(50), nullable=False)
+    connection_type = db.Column(db.String(50))
+    cable_type = db.Column(db.String(50))
+    cable_length = db.Column(db.Float)
+    port_source = db.Column(db.String(20))
+    port_target = db.Column(db.String(20))
+    is_active = db.Column(db.Boolean, default=True)
+    vlan_id = db.Column(db.Integer)
+    bandwidth_limit = db.Column(db.Integer)
+    latency_ms = db.Column(db.Float)
+    packet_loss = db.Column(db.Float)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    deleted = db.Column(db.Boolean, default=False)
+
+class Nvrs(db.Model):
+    """📺 NVRs adicionales."""
+    __tablename__ = 'nvrs'
+    id = db.Column(db.Integer, primary_key=True)
+    canales = db.Column(db.Integer, default=16)
+    almacenamiento_tb = db.Column(db.Float, default=1.0)
+
+class Prioridades(db.Model):
+    """🔝 Sistema de prioridades."""
+    __tablename__ = 'prioridades'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+
+class PuertosSwitch(db.Model):
+    """🔌 Puertos de switch."""
+    __tablename__ = 'puertos_switch'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    marca = db.Column(db.String(100))
+    modelo = db.Column(db.String(100))
+    serial = db.Column(db.String(100))
+    puertos_total = db.Column(db.Integer, default=24)
+    puertos_usados = db.Column(db.Integer, default=0)
+    puertos_libres = db.Column(db.Integer, default=24)
+    puertos_gigabit = db.Column(db.Integer, default=24)
+    puertos_10g = db.Column(db.Integer, default=0)
+    puertos_sfp = db.Column(db.Integer, default=0)
+    velocidad_puertos = db.Column(db.String(20), default='1Gbps')
+    protocolos_soportados = db.Column(db.Text)
+    table_mac = db.Column(db.Integer)
+    memoria_buffer = db.Column(db.String(50))
+    capacidad_switching = db.Column(db.String(50))
+    apilable = db.Column(db.Boolean, default=False)
+    poe_support = db.Column(db.Boolean, default=False)
+    poe_puertos = db.Column(db.Integer, default=0)
+    poe_presupuesto = db.Column(db.Float)
+    consumo_energia = db.Column(db.String(20))
+    ip_management = db.Column(db.String(15))
+    vlan_support = db.Column(db.Boolean, default=True)
+    protocolos_gestion = db.Column(db.Text)
+    interfaz_web = db.Column(db.Boolean, default=True)
+    cli_support = db.Column(db.Boolean, default=True)
+    estado = db.Column(db.String(20), default='activo')
+    ubicacion = db.Column(db.String(255))
+    temperatura_sistema = db.Column(db.String(20))
+    uso_ancho_banda = db.Column(db.Float)
+    errores_puertos = db.Column(db.Integer, default=0)
+    fecha_instalacion = db.Column(db.Date)
+    fecha_mantenimiento = db.Column(db.Date)
+    fecha_ultimo_firmware = db.Column(db.Date)
+    fecha_proximo_mantenimiento = db.Column(db.Date)
+    observaciones = db.Column(db.Text)
+    garantia_meses = db.Column(db.Integer)
+    proveedor = db.Column(db.String(100))
+    costo = db.Column(db.Float)
+    version_firmware = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Roles(db.Model):
+    """👥 Sistema de roles."""
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+
+class UsuarioLogs(db.Model):
+    """📋 Logs de usuarios."""
+    __tablename__ = 'usuario_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    action = db.Column(db.String(100), nullable=False)
+    details = db.Column(db.Text)
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    deleted = db.Column(db.Boolean, default=False)
+
+# ========================================
 # 🔐 CONFIGURACIÓN FLASK-LOGIN
 # ========================================
 
