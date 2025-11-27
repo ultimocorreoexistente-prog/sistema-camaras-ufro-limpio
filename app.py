@@ -14,7 +14,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Importamos la función de configuración MEJORADA
-from config_MEJORADO import get_config
+from config import get_config
 
 # ========================================
 # 🔧 INICIALIZACIÓN DE EXTENSIONES

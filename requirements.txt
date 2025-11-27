@@ -3,6 +3,7 @@
 # REQUIREMENTS.TXT DEFINITIVO PARA RAILWAY
 # ✅ VERSIÓN LIMPIA SIN CONFLICTOS
 # ==============================================
+
 # FLASK FRAMEWORK CORE
 Flask==3.1.2
 Flask-Login==0.6.3
@@ -10,9 +11,11 @@ Flask-WTF==1.2.1
 Flask-SQLAlchemy==3.1.1
 Flask-CORS==6.0.1
 Flask-Migrate==4.0.5
+
 # DATABASE & SQL
 SQLAlchemy==2.0.44
 psycopg2-binary==2.9.11
+
 # SEGURIDAD
 bcrypt==4.1.3
 PyJWT==2.8.0
@@ -20,17 +23,21 @@ itsdangerous==2.2.0
 
 # DEPLOYMENT
 gunicorn==23.0.0
+
 # UTILIDADES
 python-dotenv==1.2.1
 requests==2.31.0
 python-dateutil==2.8.2
 pytz==2023.3
+
 # PROCESAMIENTO DE DATOS (OPCIONAL)
 pandas==2.1.4
 openpyxl==3.1.2
 Pillow==10.1.0
+
 # VISUALIZACIÓN (OPCIONAL)
 matplotlib==3.8.2
 numpy==1.25.2
+
 # WERKZEUG (MANEJADOR HTTP PARA FLASK)
 Werkzeug==3.1.0
