@@ -36,7 +36,7 @@ class Usuario(db.Model, UserMixin):
     full_name = db.Column(db.String(120), nullable=True)
     role = db.Column(db.String(20), default='LECTURA')  # ADMIN, TECNICO, LECTURA
     password_hash = db.Column(db.String(256), nullable=False)
-    activo = db.Column(db.Boolean, default=True)  # Columna añadida en db_setup.py
+    activo = db.Column(db.Boolean, default=True)  # NOTA: Esta columna requiere migración de BD
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, password):
@@ -257,18 +257,25 @@ def register_routes(app):
                 return render_template('login.html', title='Iniciar Sesión')
             
             try:
+                logger.info(f"🔍 Intentando login para usuario: {username}")
                 user = Usuario.query.filter_by(username=username).first()
+                logger.info(f"👤 Usuario encontrado: {bool(user)}")
 
                 if user and user.check_password(password):
+                    logger.info(f"🔐 Contraseña verificada para usuario: {user.username}")
+                    logger.info(f"🟢 Estado activo del usuario: {user.activo}")
+                    
                     if not user.activo:
                         flash('Tu cuenta está desactivada. Contacta al administrador.', 'danger')
                         return render_template('login.html', title='Iniciar Sesión')
                     
+                    logger.info(f"🔑 Iniciando sesión para usuario: {user.username}")
                     login_user(user, remember=True)
                     logger.info(f"✅ Login exitoso para usuario: {user.username}")
                     
                     next_page = request.args.get('next')
                     flash(f'¡Bienvenido, {user.username}!', 'success')
+                    logger.info(f"📄 Redirigiendo a página: {next_page or 'index'}")
                     return redirect(next_page or url_for('index'))
                 else:
                     logger.warning(f"❌ Intento de login fallido para usuario: {username}")
@@ -276,6 +283,9 @@ def register_routes(app):
             
             except Exception as e:
                 logger.error(f"❌ Error durante login: {e}")
+                logger.error(f"📋 Tipo de error: {type(e).__name__}")
+                import traceback
+                logger.error(f"🔍 Traceback: {traceback.format_exc()}")
                 flash('Error interno del servidor. Intenta nuevamente.', 'danger')
 
         return render_template('login.html', title='Iniciar Sesión')
