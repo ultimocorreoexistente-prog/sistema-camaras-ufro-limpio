@@ -231,4 +231,12 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"❌ Error inesperado en imports directos: {e}")
 
+# ✅ CRITICAL: Exportar todas las clases para que sean importables
+__all__ = [
+    'db',
+    'Usuario', 'Camara', 'Ubicacion', 'Falla', 'FallaComentario', 'Switch', 
+    'NvrDvr', 'Ups', 'Gabinete', 'FuentePoder', 'Mantenimiento', 
+    'Fotografia', 'HistorialEstadoEquipo', 'CatalogoTipoFalla', 'EquipoTecnico'
+]
+
 # Fin del archivo models/__init__.py

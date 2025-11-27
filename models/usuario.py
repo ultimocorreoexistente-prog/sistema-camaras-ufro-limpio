@@ -1,74 +1,26 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270
-from datetime import datetime
-import bcrypt
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
-from sqlalchemy.orm import relationship
-from flask_sqlalchemy import SQLAlchemy
-from models.base import BaseModelMixin
-=======
-from datetime import datetime, timezone # ✅ Corregido: Importar timezone
+from datetime import datetime, timezone
 import bcrypt
 from flask_login import UserMixin
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy.orm import relationship
 from . import db
-from models.base import BaseModel  # ✅ Usa BaseModel (que sí existe)
-<<<<<<< HEAD
->>>>>>> 490f0beca4eaa0ced06723ea308d2616d581f5a4
+from models.base import BaseModel
 
-db = SQLAlchemy()
-
-<<<<<<< HEAD
-=======
-
-
-db = SQLAlchemy()
-
-
->>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270
-class Usuario(BaseModelMixin, db.Model):
+class Usuario(UserMixin, BaseModel):
     __tablename__ = 'usuarios'
-
-    username = Column(String(50), unique=True, nullable=False, index=True)
-    email = Column(String(100), unique=True, nullable=False, index=True)
-    password_hash = Column(String(255), nullable=False)  # Corregido: era String(18)
-    full_name = Column(String(100), nullable=False)  # Campo correcto para templates
-    role = Column(String(20), nullable=False, default='visualizador')  # Corregido: era String(0)
-    phone = Column(String(20), nullable=True)  # Corregido: era String(0)
-<<<<<<< HEAD
-=======
-=======
-
->>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270
-class Usuario(UserMixin, BaseModel):  # ✅ Hereda solo de BaseModel
-    __tablename__ = 'usuarios'
-    id = Column(Integer, primary_key=True)
-
+    
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(100), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(100), nullable=False)
     role = Column(String(20), nullable=False, default='visualizador')
     phone = Column(String(20), nullable=True)
-<<<<<<< HEAD
->>>>>>> 490f0beca4eaa0ced06723ea308d2616d581f5a4
-=======
-
->>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270
     department = Column(String(50), nullable=True)
     is_active = Column(Boolean, default=True)
     last_login = Column(DateTime, nullable=True)
     failed_login_attempts = Column(Integer, default=0)
     locked_until = Column(DateTime, nullable=True)
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270
-    password_changed_at = Column(DateTime, default=datetime.utcnow)
+    password_changed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     must_change_password = Column(Boolean, default=False)
     preferences = Column(Text, nullable=True)
 
@@ -77,19 +29,6 @@ class Usuario(UserMixin, BaseModel):  # ✅ Hereda solo de BaseModel
     fallas_asignadas = relationship("Falla", foreign_keys="Falla.asignado_a_id", back_populates="asignado_a")
     falla_comentarios = relationship("FallaComentario", back_populates="usuario")
 
-    # Relaciones opcionales (pueden causar problemas)
-    # logs = relationship("UsuarioLog", back_populates="usuario", cascade="all, delete-orphan")
-
-    def set_password(self, password):
-        """Establecer contraseña con bcrypt"""
-        try:
-            self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            self.password_changed_at = datetime.utcnow()
-=======
-    password_changed_at = Column(DateTime, default=datetime.now(timezone.utc)) # ✅ Corregido
-    must_change_password = Column(Boolean, default=False)
-    preferences = Column(Text, nullable=True)
-
     def set_password(self, password):
         """Establecer contraseña con bcrypt (seguro)"""
         try:
@@ -97,35 +36,12 @@ class Usuario(UserMixin, BaseModel):  # ✅ Hereda solo de BaseModel
                 password.encode('utf-8'), 
                 bcrypt.gensalt()
             ).decode('utf-8')
-            self.password_changed_at = datetime.now(timezone.utc) # ✅ Corregido
-<<<<<<< HEAD
->>>>>>> 490f0beca4eaa0ced06723ea308d2616d581f5a4
-=======
-
->>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270
+            self.password_changed_at = datetime.now(timezone.utc)
             self.must_change_password = False
         except Exception as e:
             raise Exception(f"Error estableciendo contraseña: {e}")
 
     def check_password(self, password):
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270
-        """Verificar contraseña"""
-        try:
-            return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
-        except Exception as e:
-            return False
-
-    def is_locked(self):
-        """Verificar si el usuario está bloqueado"""
-        return self.locked_until and self.locked_until > datetime.utcnow()
-
-    def has_role(self, role):
-        """Verificar si tiene rol específico"""
-=======
         """Verificar contraseña con bcrypt"""
         try:
             return bcrypt.checkpw(
@@ -137,42 +53,19 @@ class Usuario(UserMixin, BaseModel):  # ✅ Hereda solo de BaseModel
             return False
 
     def is_locked(self):
-        return self.locked_until and self.locked_until > datetime.now(timezone.utc) # ✅ Corregido
+        """Verificar si el usuario está bloqueado"""
+        return self.locked_until and self.locked_until > datetime.now(timezone.utc)
 
     def has_role(self, role):
         """Verificación jerárquica de roles"""
-<<<<<<< HEAD
->>>>>>> 490f0beca4eaa0ced06723ea308d2616d581f5a4
-=======
-
->>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270
         if self.role == 'superadmin':
             return True
         return self.role == role
 
     @classmethod
     def get_by_email(cls, email):
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270
         """Obtener usuario por email"""
         return cls.query.filter_by(email=email, deleted=False).first()
 
     def __repr__(self):
-        return f"<Usuario(username='{self.username}', email='{self.email}');>"
-<<<<<<< HEAD
-=======
-=======
-
->>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270
-        return cls.query.filter_by(email=email).first()
-
-    def __repr__(self):
         return f"<Usuario(id={self.id}, username='{self.username}', email='{self.email}')>"
-<<<<<<< HEAD
->>>>>>> 490f0beca4eaa0ced06723ea308d2616d581f5a4
-=======
-
->>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270
