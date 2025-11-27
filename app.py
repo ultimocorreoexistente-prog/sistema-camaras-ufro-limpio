@@ -1,783 +1,497 @@
+#!/usr/bin/env python3
+"""
+app.py - Sistema de Gestión de Cámaras UFRO
+Versión 2.0 - 27 nov 2025
+
+Características:
+- Arquitectura modular con Blueprints
+- Manejo de errores profesional
+- Fixa completo (favicon + nombre_completo)
+- Integración con base.py mejorado
+- Compatible con Railway deployment
+- Logs y monitoreo integrado
+"""
+
 import os
 import logging
-from flask import Flask, render_template, redirect, url_for, flash, request, send_file
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
-from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file, flash
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from werkzeug.security import check_password_hash, generate_password_hash
+from flask_sqlalchemy import SQLAlchemy
 
-# Configurar logging básico
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+# Imports de nuestra arquitectura mejorada
+from base import (
+    db, Usuario, Camara, Ubicacion, Rol, EventoCamara, Ticket, 
+    TrazabilidadMantenimiento, Inventario,
+    RolEnum, EstadoCamara, TipoUbicacion, EstadoTicket, PrioridadEnum,
+    init_database, get_user_stats, get_camera_stats
 )
-logger = logging.getLogger(__name__)
 
-# Importamos la función de configuración MEJORADA
-from config import get_config
+# ======================
+# Configuración de la aplicación
+# ======================
 
-# ========================================
-# 🔧 INICIALIZACIÓN DE EXTENSIONES
-# ========================================
+def get_config():
+    """Obtiene configuración basada en variables de entorno"""
+    config = {
+        'SECRET_KEY': os.environ.get('SECRET_KEY', 'tu-clave-secreta-desarrollo'),
+        'SQLALCHEMY_DATABASE_URI': os.environ.get('DATABASE_URL'),
+        'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+        'SQLALCHEMY_ENGINE_OPTIONS': {
+            'pool_pre_ping': True,
+            'pool_recycle': 3600,
+            'connect_args': {"sslmode": "require"}
+        }
+    }
+    
+    # Configuración adicional para desarrollo
+    if os.environ.get('FLASK_ENV') == 'development':
+        config.update({
+            'DEBUG': True,
+            'SQLALCHEMY_ECHO': False,
+            'TESTING': False
+        })
+    
+    return type('Config', (), config)
 
-db = SQLAlchemy()
+# ======================
+# Creación de la aplicación
+# ======================
+
+app_config = get_config()
+app = Flask(__name__)
+app.config.from_object(app_config)
+
+# Inicializar SQLAlchemy
+db.init_app(app)
+
+# ======================
+# Configuración de logging
+# ======================
+
+if not app.debug and not app.testing:
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+    
+    file_handler = logging.FileHandler('logs/app.log')
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    file_handler.setLevel(logging.INFO)
+    app.logger.addHandler(file_handler)
+    
+    app.logger.setLevel(logging.INFO)
+    app.logger.info('🚨 Sistema de Gestión de Cámaras UFRO iniciado')
+
+# ======================
+# Login Manager
+# ======================
+
 login_manager = LoginManager()
-
-# ========================================
-# 📊 DEFINICIÓN DE MODELOS SQLAlchemy
-# ========================================
-
-class Usuario(db.Model, UserMixin):
-    """🎯 Modelo de usuario para autenticación y gestión."""
-    __tablename__ = 'usuarios'
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=True)
-    full_name = db.Column(db.String(120), nullable=True)
-    role = db.Column(db.String(20), default='LECTURA')  # ADMIN, TECNICO, LECTURA
-    password_hash = db.Column(db.String(256), nullable=False)
-    activo = db.Column(db.Boolean, default=True)  # NOTA: Esta columna requiere migración de BD
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    def set_password(self, password):
-        """🔐 Genera el hash de la contraseña."""
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        """✅ Verifica la contraseña contra el hash almacenado."""
-        return check_password_hash(self.password_hash, password)
-
-    def __repr__(self):
-        return f'<Usuario {self.username}>'
-
-class Ubicacion(db.Model):
-    """📍 Modelo para representar la ubicación física de los equipos."""
-    __tablename__ = 'ubicaciones'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), unique=True, nullable=False)
-    descripcion = db.Column(db.Text)
-    latitud = db.Column(db.String(255))  # Columna añadida en db_setup.py
-    longitud = db.Column(db.String(255))  # Columna añadida en db_setup.py
-    activo = db.Column(db.Boolean, default=True)  # Columna añadida en db_setup.py
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # 🔗 Relaciones uno a muchos con equipos
-    camaras = db.relationship('Camara', backref='ubicacion_obj', lazy=True)
-    switches = db.relationship('Switch', backref='ubicacion_obj', lazy=True)
-    nvrs = db.relationship('NvrDvr', backref='ubicacion_obj', lazy=True)
-    gabinetes = db.relationship('Gabinete', backref='ubicacion_obj', lazy=True)
-    ups = db.relationship('Ups', backref='ubicacion_obj', lazy=True)
-
-class Camara(db.Model):
-    """📹 Modelo para representar una cámara de seguridad."""
-    __tablename__ = 'camaras'
-    id = db.Column(db.Integer, primary_key=True)
-    serial = db.Column(db.String(100), unique=True, nullable=False)
-    marca = db.Column(db.String(50))
-    modelo = db.Column(db.String(50))
-    ip = db.Column(db.String(15), unique=True)
-    estado = db.Column(db.String(50), default='inactiva')  # Columna añadida en db_setup.py
-    activo = db.Column(db.Boolean, default=True)  # Columna añadida en db_setup.py
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Switch(db.Model):
-    """🔌 Modelo para switches de red."""
-    __tablename__ = 'switches'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    modelo = db.Column(db.String(50))
-    ip = db.Column(db.String(15), unique=True)
-    puertos = db.Column(db.Integer, default=24)
-    activo = db.Column(db.Boolean, default=True)  # Columna añadida en db_setup.py
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class NvrDvr(db.Model):
-    """📺 Modelo para NVR/DVR."""
-    __tablename__ = 'nvr_dvr'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    tipo = db.Column(db.String(20), default='NVR')  # NVR o DVR
-    modelo = db.Column(db.String(50))
-    ip = db.Column(db.String(15), unique=True)
-    canales = db.Column(db.Integer, default=16)
-    activo = db.Column(db.Boolean, default=True)  # Columna añadida en db_setup.py
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Gabinete(db.Model):
-    """🏠 Modelo para gabinetes de equipos."""
-    __tablename__ = 'gabinetes'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    modelo = db.Column(db.String(50))
-    tipo = db.Column(db.String(30), default='Pared')  # Pared, Piso, Rack
-    capacidad_u = db.Column(db.Integer, default=12)  # Unidades de rack
-    activo = db.Column(db.Boolean, default=True)  # Columna añadida en db_setup.py
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Ups(db.Model):
-    """🔋 Modelo para sistemas UPS."""
-    __tablename__ = 'ups'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    modelo = db.Column(db.String(50))
-    capacidad_va = db.Column(db.Integer)  # Voltamperes
-    autonomia_minutos = db.Column(db.Integer)
-    estado_bateria = db.Column(db.String(30), default='buena')  # buena, regular, mala
-    activo = db.Column(db.Boolean, default=True)  # Columna añadida en db_setup.py
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-# ========================================
-# 🗃️ MODELOS FALTANTES - SISTEMA COMPLETO UFRO
-# ========================================
-
-class CatalogoTipoFalla(db.Model):
-    """🛠️ Catálogo de tipos de fallas."""
-    __tablename__ = 'catalogo_tipo_falla'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(255), nullable=False)
-    categoria = db.Column(db.String(100))
-    descripcion = db.Column(db.Text)
-    gravedad = db.Column(db.String(50))
-    tiempo_estimado_resolucion = db.Column(db.Integer)
-
-class EquipoTecnico(db.Model):
-    """👨‍🔧 Equipo técnico disponible."""
-    __tablename__ = 'equipo_tecnico'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    apellido = db.Column(db.String(100), nullable=False)
-    especialidad = db.Column(db.String(100))
-    telefono = db.Column(db.String(20))
-    email = db.Column(db.String(120))
-    estado = db.Column(db.String(20), default='activo')
-    fecha_ingreso = db.Column(db.DateTime)
-
-class Equipos(db.Model):
-    """💻 Equipos generales del sistema."""
-    __tablename__ = 'equipos'
-    id = db.Column(db.Integer, primary_key=True)
-    equipment_name = db.Column(db.String(100), nullable=False)
-    tipo = db.Column(db.String(50), nullable=False)
-    marca = db.Column(db.String(100))
-    modelo = db.Column(db.String(100))
-    serie = db.Column(db.String(100))
-    ip_address = db.Column(db.String(15))
-    estado = db.Column(db.String(20), default='activo')
-    activo = db.Column(db.Boolean, default=True)
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
-    created_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
-    deleted = db.Column(db.Boolean, default=False)
-    hostname = db.Column(db.String(100))
-    mac_address = db.Column(db.String(17))
-    firmware_version = db.Column(db.String(50))
-    warranty_expiry = db.Column(db.Date)
-    installation_date = db.Column(db.Date)
-    last_heartbeat = db.Column(db.DateTime)
-    uptime_percentage = db.Column(db.Float)
-    notes = db.Column(db.Text)
-
-class EquiposBase(db.Model):
-    """🏠 Base de equipos."""
-    __tablename__ = 'equipos_base'
-    id = db.Column(db.Integer, primary_key=True)
-    modelo = db.Column(db.String(100), nullable=False)
-    serie = db.Column(db.String(100), nullable=False)
-    fecha_instalacion = db.Column(db.Date)
-    id_ubicacion = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
-    estado_id = db.Column(db.Integer)
-    tipo = db.Column(db.String(50), nullable=False)
-
-class EstadosEquipo(db.Model):
-    """📊 Estados de equipos."""
-    __tablename__ = 'estados_equipo'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-
-class EstadosFalla(db.Model):
-    """⚠️ Estados de fallas."""
-    __tablename__ = 'estados_falla'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-
-class Fallas(db.Model):
-    """🚨 Registro de fallas."""
-    __tablename__ = 'fallas'
-    id = db.Column(db.Integer, primary_key=True)
-    fecha_reporte = db.Column(db.DateTime, default=datetime.utcnow)
-    reportado_por = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-    tipo = db.Column(db.String(100))
-    subtipo = db.Column(db.String(100))
-    camara_id = db.Column(db.Integer, db.ForeignKey('camaras.id'))
-    camara_afectada = db.Column(db.String(255))
-    ubicacion = db.Column(db.Text)
-    descripcion = db.Column(db.Text)
-    impacto_visibilidad = db.Column(db.String(20))
-    afecta_vision_nocturna = db.Column(db.Boolean)
-    estado = db.Column(db.String(20), default='reportado')
-    prioridad = db.Column(db.String(20))
-    tecnico_asignado = db.Column(db.Integer, db.ForeignKey('equipo_tecnico.id'))
-    fecha_inicio = db.Column(db.DateTime)
-    fecha_resolucion = db.Column(db.DateTime)
-    solucion = db.Column(db.Text)
-    gravedad = db.Column(db.String(20))
-    componente_afectado = db.Column(db.String(100))
-    observaciones = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
-    deleted = db.Column(db.Boolean, default=False)
-    created_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-    updated_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-
-class Fotografias(db.Model):
-    """📷 Fotografías del sistema."""
-    __tablename__ = 'fotografias'
-    id = db.Column(db.Integer, primary_key=True)
-    width = db.Column(db.Integer)
-    height = db.Column(db.Integer)
-    white_balance = db.Column(db.String(50))
-    web_optimized_path = db.Column(db.String(255))
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-    url = db.Column(db.String(255))
-    updated_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
-    titulo = db.Column(db.String(255))
-    tipo = db.Column(db.String(50))
-    thumbnail_path = db.Column(db.String(255))
-    tags = db.Column(db.Text)
-    status = db.Column(db.String(20), default='active')
-    sort_order = db.Column(db.Integer)
-    software_used = db.Column(db.String(100))
-    quality_score = db.Column(db.Float)
-    public_url = db.Column(db.String(255))
-    preview_path = db.Column(db.String(255))
-    original_camera = db.Column(db.String(100))
-    notes = db.Column(db.Text)
-    mime_type = db.Column(db.String(100))
-    metadata_info = db.Column(db.Text)
-    last_accessed = db.Column(db.DateTime)
-    iso = db.Column(db.Integer)
-    is_featured = db.Column(db.Boolean, default=False)
-    gps_coordinates = db.Column(db.String(100))
-    full_size_path = db.Column(db.String(255))
-    focal_length = db.Column(db.Float)
-    flash = db.Column(db.String(50))
-    file_size = db.Column(db.Integer)
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    falla_id = db.Column(db.Integer, db.ForeignKey('fallas.id'))
-    exposure_time = db.Column(db.Float)
-    entidad_tipo = db.Column(db.String(50))
-    entidad_id = db.Column(db.Integer)
-    download_count = db.Column(db.Integer, default=0)
-    descripcion = db.Column(db.Text)
-    deleted = db.Column(db.Boolean, default=False)
-    created_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    compression_quality = db.Column(db.Integer)
-    color_profile = db.Column(db.String(50))
-    categoria = db.Column(db.String(100))
-    capture_date = db.Column(db.DateTime)
-    archivo = db.Column(db.String(255))
-    approved_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-    approval_date = db.Column(db.DateTime)
-    aperture = db.Column(db.Float)
-    access_count = db.Column(db.Integer, default=0)
-
-class FuentesPoder(db.Model):
-    """⚡ Fuentes de poder."""
-    __tablename__ = 'fuentes_poder'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    marca = db.Column(db.String(100))
-    modelo = db.Column(db.String(100))
-    serial = db.Column(db.String(100))
-    tipo = db.Column(db.String(50))
-    voltaje_entrada = db.Column(db.String(50))
-    voltaje_salida = db.Column(db.String(50))
-    corriente_salida = db.Column(db.String(50))
-    potencia = db.Column(db.String(50))
-    capacidad_ah = db.Column(db.Integer)
-    tecnologia = db.Column(db.String(50))
-    estado = db.Column(db.String(20), default='activo')
-    ubicacion = db.Column(db.String(255))
-    dependencia = db.Column(db.String(255))
-    fecha_instalacion = db.Column(db.Date)
-    fecha_mantenimiento = db.Column(db.Date)
-    fecha_ultima_revision = db.Column(db.Date)
-    fecha_proxima_revision = db.Column(db.Date)
-    observaciones = db.Column(db.Text)
-    garantia_meses = db.Column(db.Integer)
-    proveedor = db.Column(db.String(100))
-    costo = db.Column(db.Float)
-    nivel_bateria = db.Column(db.String(20))
-    temperatura_operacion = db.Column(db.String(20))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class HistorialEstadoEquipo(db.Model):
-    """📈 Historial de cambios de estado."""
-    __tablename__ = 'historial_estado_equipo'
-    id = db.Column(db.Integer, primary_key=True)
-    equipo_tipo = db.Column(db.String(50), nullable=False)
-    equipo_id = db.Column(db.Integer, nullable=False)
-    estado_anterior = db.Column(db.String(50))
-    estado_nuevo = db.Column(db.String(50))
-    fecha_cambio = db.Column(db.DateTime, default=datetime.utcnow)
-    motivo = db.Column(db.Text)
-
-class Mantenimientos(db.Model):
-    """🔧 Registro de mantenimientos."""
-    __tablename__ = 'mantenimientos'
-    id = db.Column(db.Integer, primary_key=True)
-    fecha_programada = db.Column(db.DateTime)
-    fecha_realizacion = db.Column(db.DateTime)
-    tipo = db.Column(db.String(50))
-    categoria = db.Column(db.String(50))
-    equipo_gabinete = db.Column(db.String(255))
-    ubicacion = db.Column(db.String(255))
-    descripcion = db.Column(db.Text)
-    estado = db.Column(db.String(20), default='programado')
-    tecnico_responsable = db.Column(db.Integer, db.ForeignKey('equipo_tecnico.id'))
-    materiales_utilizados = db.Column(db.Text)
-    costo_aproximado = db.Column(db.Float)
-    equipos_camaras_afectadas = db.Column(db.Text)
-    tiempo_ejecucion = db.Column(db.Integer)
-    observaciones = db.Column(db.Text)
-    titulo = db.Column(db.String(255))
-    equipment_id = db.Column(db.Integer)
-    equipment_type = db.Column(db.String(50))
-    camara_id = db.Column(db.Integer, db.ForeignKey('camaras.id'))
-    nvr_id = db.Column(db.Integer, db.ForeignKey('nvr_dvr.id'))
-    switch_id = db.Column(db.Integer, db.ForeignKey('switches.id'))
-    ups_id = db.Column(db.Integer, db.ForeignKey('ups.id'))
-    fuente_poder_id = db.Column(db.Integer, db.ForeignKey('fuentes_poder.id'))
-    gabinete_id = db.Column(db.Integer, db.ForeignKey('gabinetes.id'))
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'))
-    falla_id = db.Column(db.Integer, db.ForeignKey('fallas.id'))
-    priority = db.Column(db.String(20))
-    scheduled_start = db.Column(db.DateTime)
-    scheduled_end = db.Column(db.DateTime)
-    actual_start = db.Column(db.DateTime)
-    duration_estimated = db.Column(db.Integer)
-    duration_actual = db.Column(db.Integer)
-    technician_id = db.Column(db.Integer, db.ForeignKey('equipo_tecnico.id'))
-    supervisor_id = db.Column(db.Integer, db.ForeignKey('equipo_tecnico.id'))
-    completion_criteria = db.Column(db.Text)
-    maintenance_cost = db.Column(db.Float)
-    parts_cost = db.Column(db.Float)
-    labor_cost = db.Column(db.Float)
-    downtime_minutes = db.Column(db.Integer)
-    is_recurring = db.Column(db.Boolean, default=False)
-    next_maintenance_date = db.Column(db.Date)
-    quality_score = db.Column(db.Float)
-    follow_up_required = db.Column(db.Boolean, default=False)
-    follow_up_date = db.Column(db.Date)
-    approved_by = db.Column(db.Integer, db.ForeignKey('equipo_tecnico.id'))
-    approval_date = db.Column(db.DateTime)
-    photos_taken = db.Column(db.Boolean, default=False)
-    notes = db.Column(db.Text)
-    deleted = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
-    created_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-    updated_by = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
-
-class NetworkConnections(db.Model):
-    """🌐 Conexiones de red."""
-    __tablename__ = 'network_connections'
-    id = db.Column(db.Integer, primary_key=True)
-    source_equipment_id = db.Column(db.Integer, nullable=False)
-    source_equipment_type = db.Column(db.String(50), nullable=False)
-    target_equipment_id = db.Column(db.Integer, nullable=False)
-    target_equipment_type = db.Column(db.String(50), nullable=False)
-    connection_type = db.Column(db.String(50))
-    cable_type = db.Column(db.String(50))
-    cable_length = db.Column(db.Float)
-    port_source = db.Column(db.String(20))
-    port_target = db.Column(db.String(20))
-    is_active = db.Column(db.Boolean, default=True)
-    vlan_id = db.Column(db.Integer)
-    bandwidth_limit = db.Column(db.Integer)
-    latency_ms = db.Column(db.Float)
-    packet_loss = db.Column(db.Float)
-    notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
-    deleted = db.Column(db.Boolean, default=False)
-
-class Nvrs(db.Model):
-    """📺 NVRs adicionales."""
-    __tablename__ = 'nvrs'
-    id = db.Column(db.Integer, primary_key=True)
-    canales = db.Column(db.Integer, default=16)
-    almacenamiento_tb = db.Column(db.Float, default=1.0)
-
-class Prioridades(db.Model):
-    """🔝 Sistema de prioridades."""
-    __tablename__ = 'prioridades'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-
-class PuertosSwitch(db.Model):
-    """🔌 Puertos de switch."""
-    __tablename__ = 'puertos_switch'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    marca = db.Column(db.String(100))
-    modelo = db.Column(db.String(100))
-    serial = db.Column(db.String(100))
-    puertos_total = db.Column(db.Integer, default=24)
-    puertos_usados = db.Column(db.Integer, default=0)
-    puertos_libres = db.Column(db.Integer, default=24)
-    puertos_gigabit = db.Column(db.Integer, default=24)
-    puertos_10g = db.Column(db.Integer, default=0)
-    puertos_sfp = db.Column(db.Integer, default=0)
-    velocidad_puertos = db.Column(db.String(20), default='1Gbps')
-    protocolos_soportados = db.Column(db.Text)
-    table_mac = db.Column(db.Integer)
-    memoria_buffer = db.Column(db.String(50))
-    capacidad_switching = db.Column(db.String(50))
-    apilable = db.Column(db.Boolean, default=False)
-    poe_support = db.Column(db.Boolean, default=False)
-    poe_puertos = db.Column(db.Integer, default=0)
-    poe_presupuesto = db.Column(db.Float)
-    consumo_energia = db.Column(db.String(20))
-    ip_management = db.Column(db.String(15))
-    vlan_support = db.Column(db.Boolean, default=True)
-    protocolos_gestion = db.Column(db.Text)
-    interfaz_web = db.Column(db.Boolean, default=True)
-    cli_support = db.Column(db.Boolean, default=True)
-    estado = db.Column(db.String(20), default='activo')
-    ubicacion = db.Column(db.String(255))
-    temperatura_sistema = db.Column(db.String(20))
-    uso_ancho_banda = db.Column(db.Float)
-    errores_puertos = db.Column(db.Integer, default=0)
-    fecha_instalacion = db.Column(db.Date)
-    fecha_mantenimiento = db.Column(db.Date)
-    fecha_ultimo_firmware = db.Column(db.Date)
-    fecha_proximo_mantenimiento = db.Column(db.Date)
-    observaciones = db.Column(db.Text)
-    garantia_meses = db.Column(db.Integer)
-    proveedor = db.Column(db.String(100))
-    costo = db.Column(db.Float)
-    version_firmware = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Roles(db.Model):
-    """👥 Sistema de roles."""
-    __tablename__ = 'roles'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-
-class UsuarioLogs(db.Model):
-    """📋 Logs de usuarios."""
-    __tablename__ = 'usuario_logs'
-    id = db.Column(db.Integer, primary_key=True)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
-    action = db.Column(db.String(100), nullable=False)
-    details = db.Column(db.Text)
-    ip_address = db.Column(db.String(45))
-    user_agent = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
-    deleted = db.Column(db.Boolean, default=False)
-
-# ========================================
-# 🔐 CONFIGURACIÓN FLASK-LOGIN
-# ========================================
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message_category = 'warning'
 
 @login_manager.user_loader
 def load_user(user_id):
-    """🔍 Función requerida por Flask-Login para recargar al usuario."""
+    """Carga usuario desde la base de datos"""
+    return Usuario.query.get(int(user_id))
+
+# ======================
+# Context Processors
+# ======================
+
+@app.context_processor
+def inject_user_stats():
+    """Inyecta estadísticas globales al contexto de templates"""
     try:
-        return Usuario.query.get(int(user_id))
-    except (ValueError, TypeError):
-        return None
-
-# ========================================
-# 🏭 FACTORY DE APLICACIÓN FLASK
-# ========================================
-
-def create_app():
-    """🏗️ Patrón de Fábrica de Aplicaciones para inicializar Flask."""
-    
-    app = Flask(__name__)
-    
-    try:
-        # 1. 🎯 CARGAR CONFIGURACIÓN
-        app_config = get_config()
-        app.config.from_object(app_config)
-
-        logger.info(f"🚀 App iniciada con SQLALCHEMY_DATABASE_URI: {app.config['SQLALCHEMY_DATABASE_URI'][:30]}...")
-        logger.info(f"🔑 SECRET_KEY configurada: {bool(app.config['SECRET_KEY'])}")
-        
-        # 2. 🔧 INICIALIZAR EXTENSIONES
-        db.init_app(app)
-        login_manager.init_app(app)
-        
-        # Configurar Flask-Login
-        login_manager.login_view = 'login'
-        login_manager.login_message = "Por favor, inicia sesión para acceder a esta página."
-        login_manager.login_message_category = "info"
-        login_manager.session_protection = "strong"
-
-        # 3. 📋 CREAR TABLAS SI NO EXISTEN
-        with app.app_context():
-            logger.info("🏗️ Verificando tablas de base de datos...")
-            db.create_all()
-            logger.info("✅ Tablas verificadas/creadas exitosamente")
-            
-            # Verificar usuario existente para credenciales de producción
-            try:
-                user_email = 'charles.jelvez@ufrontera.cl'
-                if not Usuario.query.filter_by(username=user_email).first():
-                    admin = Usuario(
-                        username=user_email,  # USUARIO = EMAIL COMPLETO
-                        email=user_email,
-                        full_name='Charles Jelvez - Administrador UFRO',
-                        role='ADMIN'
-                    )
-                    admin.set_password('Vivita0468')
-                    db.session.add(admin)
-                    db.session.commit()
-                    logger.info("🎉 Usuario Charles Jelvez creado: charles.jelvez@ufrontera.cl")
-                else:
-                    logger.info("ℹ️ Usuario Charles Jelvez ya existe")
-            except Exception as e:
-                logger.warning(f"⚠️ Error al verificar/crear usuario admin: {e}")
-
-        # 4. 🛣️ DEFINIR RUTAS
-        register_routes(app)
-        
-        # 5. 📝 MANEJADORES DE ERROR
-        register_error_handlers(app)
-
-        logger.info("🎉 Aplicación Flask inicializada correctamente")
-        return app
-        
-    except Exception as e:
-        logger.error(f"❌ Error crítico al inicializar aplicación: {e}")
-        raise
-
-def register_routes(app):
-    """🛣️ Registrar todas las rutas de la aplicación."""
-    
-    @app.route('/')
-    def index():
-        """🏠 Ruta de inicio - Dashboard principal."""
-        if not current_user.is_authenticated:
-            return redirect(url_for('login'))
-        
-        # 📊 Obtener estadísticas del dashboard
-        try:
-            stats = {
+        return {
+            'global_stats': {
+                'total_usuarios': Usuario.query.count(),
                 'total_camaras': Camara.query.count(),
-                'camaras_activas': Camara.query.filter_by(activo=True).count(),
-                'total_ubicaciones': Ubicacion.query.count(),
-                'ubicaciones_activas': Ubicacion.query.filter_by(activo=True).count(),
-                'total_switches': Switch.query.count(),
-                'total_nvr_dvr': NvrDvr.query.count(),
-                'total_gabinetes': Gabinete.query.count(),
-                'total_ups': Ups.query.count(),
-                'usuarios_activos': Usuario.query.filter_by(activo=True).count()
+                'camaras_activas': Camara.query.filter_by(estado=EstadoCamara.ACTIVA.value).count()
             }
-            
-            logger.debug(f"📊 Estadísticas obtenidas: {stats}")
-            
-        except Exception as e:
-            logger.error(f"❌ Error al obtener estadísticas: {e}")
-            flash("Error al cargar estadísticas del dashboard.", "warning")
-            stats = {key: 0 for key in ['total_camaras', 'camaras_activas', 'total_ubicaciones', 'ubicaciones_activas', 'total_switches', 'total_nvr_dvr', 'total_gabinetes', 'total_ups', 'usuarios_activos']}
+        }
+    except:
+        return {'global_stats': {}}
 
-        return render_template('dashboard.html', 
-                                stats=stats,
-                                user=current_user)
+# ======================
+# RUTAS DE AUTENTICACIÓN
+# ======================
 
-    @app.route('/login', methods=['GET', 'POST'])
-    def login():
-        """🔑 Maneja el inicio de sesión."""
-        if current_user.is_authenticated:
-            logger.info(f"👤 Usuario {current_user.username} ya autenticado, redirigiendo a dashboard")
-            return redirect(url_for('index'))
+@app.route('/')
+def home():
+    """Página de inicio - redirige al login si no autenticado"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login'))
 
-        if request.method == 'POST':
-            username = request.form.get('username', '').strip()
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Ruta de login con autenticación mejorada"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        try:
+            email = request.form.get('email', '').strip().lower()
             password = request.form.get('password', '')
             
-            if not username or not password:
-                flash('Por favor ingresa usuario y contraseña.', 'warning')
-                return render_template('login.html', title='Iniciar Sesión')
+            # Validación de entrada
+            if not email or not password:
+                app.logger.warning(f"Intento de login fallido - campos vacíos: {request.remote_addr}")
+                return render_template('login.html', error='Email y contraseña son requeridos')
             
-            try:
-                logger.info(f"🔍 Intentando login para usuario: {username}")
-                user = Usuario.query.filter_by(username=username).first()
-                logger.info(f"👤 Usuario encontrado: {bool(user)}")
-
-                if user and user.check_password(password):
-                    logger.info(f"🔐 Contraseña verificada para usuario: {user.username}")
-                    logger.info(f"🟢 Estado activo del usuario: {user.activo}")
-                    
-                    if not user.activo:
-                        flash('Tu cuenta está desactivada. Contacta al administrador.', 'danger')
-                        return render_template('login.html', title='Iniciar Sesión')
-                    
-                    logger.info(f"🔑 Iniciando sesión para usuario: {user.username}")
-                    login_user(user, remember=True)
-                    logger.info(f"✅ Login exitoso para usuario: {user.username}")
-                    
-                    next_page = request.args.get('next')
-                    flash(f'¡Bienvenido, {user.username}!', 'success')
-                    logger.info(f"📄 Redirigiendo a página: {next_page or 'index'}")
-                    return redirect(next_page or url_for('index'))
-                else:
-                    logger.warning(f"❌ Intento de login fallido para usuario: {username}")
-                    flash('Credenciales inválidas. Por favor, verifica tu usuario y contraseña.', 'danger')
+            # Búsqueda de usuario
+            user = Usuario.query.filter(
+                (Usuario.email == email) | (Usuario.username == email)
+            ).first()
             
-            except Exception as e:
-                logger.error(f"❌ Error durante login: {e}")
-                logger.error(f"📋 Tipo de error: {type(e).__name__}")
-                import traceback
-                logger.error(f"🔍 Traceback: {traceback.format_exc()}")
-                flash('Error interno del servidor. Intenta nuevamente.', 'danger')
-
-        return render_template('login.html', title='Iniciar Sesión')
-
-    @app.route('/logout')
-    @login_required
-    def logout():
-        """🚪 Cierra la sesión del usuario."""
-        username = current_user.username
-        logout_user()
-        logger.info(f"🚪 Logout exitoso para usuario: {username}")
-        flash('Has cerrado sesión exitosamente.', 'info')
-        return redirect(url_for('login'))
-
-    @app.route('/test-db-connection')
-    def test_db():
-        """🧪 Ruta para probar la conexión a la base de datos."""
-        try:
-            # Prueba simple: contar registros
-            stats = {
-                'usuarios': Usuario.query.count(),
-                'ubicaciones': Ubicacion.query.count(),
-                'camaras': Camara.query.count(),
-                'switches': Switch.query.count(),
-                'nvr_dvr': NvrDvr.query.count(),
-                'gabinetes': Gabinete.query.count(),
-                'ups': Ups.query.count()
-            }
+            # Verificación de credenciales
+            if user and user.activo and check_password_hash(user.password_hash, password):
+                # Login exitoso
+                login_user(user)
+                user.ultimo_acceso = datetime.utcnow()
+                user.ultima_ip = request.remote_addr
+                user.intentos_login = 0
+                db.session.commit()
+                
+                app.logger.info(f"✅ Login exitoso: {user.username} ({user.email})")
+                
+                # Redirección por rol
+                next_url = request.args.get('next')
+                return redirect(next_url or url_for('dashboard'))
             
-            logger.info(f"🧪 Test DB exitoso: {stats}")
-            return {
-                'status': 'success',
-                'message': 'Conexión a base de datos exitosa',
-                'stats': stats
-            }, 200
+            # Login fallido
+            if user:
+                user.intentos_login += 1
+                db.session.commit()
+                app.logger.warning(f"❌ Login fallido para usuario: {user.username} - IP: {request.remote_addr}")
+            
+            return render_template('login.html', error='Credenciales inválidas')
             
         except Exception as e:
-            logger.error(f"❌ Fallo en test de conexión DB: {e}")
-            return {
-                'status': 'error',
-                'message': f'Error de conexión: {str(e)}'
-            }, 500
-
-    @app.route('/health')
-    def health():
-        """❤️ Ruta de health check para Railway."""
-        return {'status': 'healthy', 'timestamp': datetime.utcnow().isoformat()}
-
-    @app.route('/favicon.ico')
-    def favicon():
-        """🔒 Servir el favicon.ico"""
-        try:
-            favicon_path = os.path.join(app.static_folder, 'favicon.ico')
-            if os.path.exists(favicon_path):
-                return send_file(favicon_path, mimetype='image/x-icon')
-            else:
-                # Retornar una respuesta vacía si no existe el archivo
-                logger.warning("⚠️ Favicon no encontrado")
-                return '', 404
-        except Exception as e:
-            logger.error(f"❌ Error sirviendo favicon: {e}")
-            return '', 404
-
-def register_error_handlers(app):
-    """📝 Registrar manejadores de errores."""
+            app.logger.error(f"Error en login: {e}")
+            return render_template('login.html', error='Error interno del servidor')
     
-    @app.errorhandler(404)
-    def not_found_error(error):
-        """🔍 Manejador para páginas no encontradas."""
-        logger.warning(f"🔍 404 - Página no encontrada: {request.path}")
-        return render_template('404.html'), 404
+    return render_template('login.html')
 
-    @app.errorhandler(500)
-    def internal_error(error):
-        """⚠️ Manejador para errores internos."""
-        logger.error(f"💥 500 - Error interno: {error}")
-        db.session.rollback()
-        return render_template('500.html'), 500
+@app.route('/logout')
+@login_required
+def logout():
+    """Logout seguro"""
+    username = current_user.username
+    logout_user()
+    app.logger.info(f"✅ Logout exitoso: {username}")
+    flash('Sesión cerrada correctamente', 'info')
+    return redirect(url_for('login'))
 
-    @app.errorhandler(403)
-    def forbidden_error(error):
-        """🚫 Manejador para acceso denegado."""
-        logger.warning(f"🚫 403 - Acceso denegado: {request.path}")
-        return render_template('403.html'), 403
+# ======================
+# RUTAS PRINCIPALES DEL SISTEMA
+# ======================
 
-# ========================================
-# 🚀 INSTANCIA PARA GUNICORN
-# ========================================
-
-# ✅ CORRECCIÓN CRÍTICA: Crear instancia de app para Gunicorn
-# Esto es lo que Gunicorn necesita para ejecutar app:app
-try:
-    app = create_app()
-    logger.info("✅ Instancia de app creada para Gunicorn")
-except Exception as e:
-    logger.error(f"❌ Error al crear instancia de app: {e}")
-    # Crear app básica como fallback
-    app = Flask(__name__)
-    logger.warning("⚠️ Usando app básica como fallback")
-
-# ========================================
-# 🚀 PUNTO DE ENTRADA PRINCIPAL
-# ========================================
-
-if __name__ == '__main__':
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    """Dashboard principal con estadísticas"""
     try:
-        logger.info("🚀 Iniciando aplicación Sistema de Cámaras UFRO...")
+        stats = {
+            'user_stats': get_user_stats(),
+            'camera_stats': get_camera_stats(),
+            'tickets_abiertos': Ticket.query.filter_by(estado=EstadoTicket.ABIERTO.value).count(),
+            'eventos_recientes': EventoCamara.query.order_by(EventoCamara.created_at.desc()).limit(5).all()
+        }
         
-        # Crear aplicación
-        app = create_app()
+        return render_template('dashboard.html', 
+                             stats=stats, 
+                             user=current_user,
+                             titulo="Dashboard - Sistema Cámaras UFRO")
+                             
+    except Exception as e:
+        app.logger.error(f"Error cargando dashboard: {e}")
+        flash('Error cargando estadísticas del dashboard', 'danger')
+        return render_template('dashboard.html', 
+                             stats={}, 
+                             user=current_user,
+                             titulo="Dashboard - Sistema Cámaras UFRO")
+
+@app.route('/camaras')
+@login_required
+def listar_camaras():
+    """Lista de cámaras con filtros"""
+    try:
+        # Obtener parámetros de filtro
+        estado_filter = request.args.get('estado', '')
+        ubicacion_filter = request.args.get('ubicacion', '')
         
-        # Información de inicio
-        port = int(os.getenv('PORT', 5000))
-        logger.info(f"🌐 Servidor iniciando en puerto {port}")
-        logger.info(f"🔗 URL: http://localhost:{port}")
-        logger.info(f"🔑 Login inicial: charles.jelvez@ufrontera.cl / Vivita0468")
+        # Query base
+        query = Camara.query
         
-        # Ejecutar en modo desarrollo o según configuración
-        debug_mode = app.config.get('DEBUG', False)
-        logger.info(f"🛠️ Modo debug: {debug_mode}")
+        # Aplicar filtros
+        if estado_filter:
+            query = query.filter(Camara.estado == estado_filter)
+        if ubicacion_filter:
+            query = query.filter(Camara.ubicacion_id == ubicacion_filter)
         
-        # Ejecutar aplicación
-        app.run(
-            host='0.0.0.0', 
-            port=port, 
-            debug=debug_mode,
-            threaded=True
+        camaras = query.all()
+        ubicaciones = Ubicacion.query.all()
+        estados = [e.value for e in EstadoCamara]
+        
+        return render_template('camaras.html', 
+                             camaras=camaras, 
+                             ubicaciones=ubicaciones,
+                             estados=estados,
+                             filtros={'estado': estado_filter, 'ubicacion': ubicacion_filter},
+                             user=current_user,
+                             titulo="Cámaras - Sistema UFRO")
+                             
+    except Exception as e:
+        app.logger.error(f"Error listando cámaras: {e}")
+        flash('Error cargando la lista de cámaras', 'danger')
+        return render_template('camaras.html', 
+                             camaras=[], 
+                             ubicaciones=[],
+                             estados=[],
+                             filtros={},
+                             user=current_user,
+                             titulo="Cámaras - Sistema UFRO")
+
+@app.route('/usuarios')
+@login_required
+def listar_usuarios():
+    """Lista de usuarios (solo para ADMIN y SUPERVISOR)"""
+    # Verificar permisos
+    if current_user.rol.nombre not in [RolEnum.ADMIN, RolEnum.SUPERVISOR]:
+        flash('No tienes permisos para acceder a esta sección', 'warning')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        usuarios = Usuario.query.all()
+        roles = Rol.query.all()
+        
+        return render_template('usuarios.html', 
+                             usuarios=usuarios, 
+                             roles=roles,
+                             user=current_user,
+                             titulo="Usuarios - Sistema UFRO")
+                             
+    except Exception as e:
+        app.logger.error(f"Error listando usuarios: {e}")
+        flash('Error cargando la lista de usuarios', 'danger')
+        return redirect(url_for('dashboard'))
+
+@app.route('/tickets')
+@login_required
+def listar_tickets():
+    """Lista de tickets de soporte"""
+    try:
+        # Filtrar tickets según rol del usuario
+        if current_user.rol.nombre == RolEnum.ADMIN:
+            tickets = Ticket.query.order_by(Ticket.created_at.desc()).all()
+        else:
+            tickets = Ticket.query.filter_by(reportado_por=current_user.id).order_by(Ticket.created_at.desc()).all()
+        
+        return render_template('tickets.html', 
+                             tickets=tickets, 
+                             user=current_user,
+                             titulo="Tickets - Sistema UFRO")
+                             
+    except Exception as e:
+        app.logger.error(f"Error listando tickets: {e}")
+        flash('Error cargando la lista de tickets', 'danger')
+        return redirect(url_for('dashboard'))
+
+@app.route('/inventario')
+@login_required
+def listar_inventario():
+    """Lista de inventario de repuestos"""
+    if current_user.rol.nombre not in [RolEnum.ADMIN, RolEnum.SUPERVISOR, RolEnum.OPERADOR]:
+        flash('No tienes permisos para acceder a esta sección', 'warning')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        inventario = Inventario.query.filter_by(activo=True).all()
+        
+        return render_template('inventario.html', 
+                             inventario=inventario, 
+                             user=current_user,
+                             titulo="Inventario - Sistema UFRO")
+                             
+    except Exception as e:
+        app.logger.error(f"Error listando inventario: {e}")
+        flash('Error cargando el inventario', 'danger')
+        return redirect(url_for('dashboard'))
+
+@app.route('/reportes')
+@login_required
+def reportes():
+    """Página de reportes del sistema"""
+    if current_user.rol.nombre not in [RolEnum.ADMIN, RolEnum.SUPERVISOR]:
+        flash('No tienes permisos para acceder a esta sección', 'warning')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        return render_template('reportes.html', 
+                             user=current_user,
+                             titulo="Reportes - Sistema UFRO")
+                             
+    except Exception as e:
+        app.logger.error(f"Error cargando reportes: {e}")
+        flash('Error cargando la página de reportes', 'danger')
+        return redirect(url_for('dashboard'))
+
+# ======================
+# APIs RESTful
+# ======================
+
+@app.route('/api/camaras/estado/<int:camara_id>', methods=['POST'])
+@login_required
+def cambiar_estado_camara(camara_id):
+    """API para cambiar estado de cámara"""
+    try:
+        data = request.get_json()
+        nuevo_estado = data.get('estado')
+        
+        # Verificar que el estado sea válido
+        if nuevo_estado not in [e.value for e in EstadoCamara]:
+            return jsonify({'error': 'Estado inválido'}), 400
+        
+        camara = Camara.query.get_or_404(camara_id)
+        estado_anterior = camara.estado
+        
+        # Cambiar estado
+        camara.estado = nuevo_estado
+        
+        # Registrar evento
+        evento = EventoCamara(
+            camara_id=camara_id,
+            tipo_evento='CAMBIO_ESTADO',
+            descripcion=f'Estado cambiado de {estado_anterior} a {nuevo_estado}',
+            estado_anterior=estado_anterior,
+            estado_nuevo=nuevo_estado,
+            resuelto_por=current_user.id
         )
         
-    except KeyboardInterrupt:
-        logger.info("👋 Aplicación interrumpida por el usuario")
+        db.session.add(evento)
+        db.session.commit()
+        
+        app.logger.info(f"✅ Estado cámara {camara_id} cambiado: {estado_anterior} → {nuevo_estado} por {current_user.username}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Estado cambiado a {nuevo_estado}',
+            'estado_anterior': estado_anterior,
+            'estado_nuevo': nuevo_estado
+        })
+        
     except Exception as e:
-        logger.error(f"💥 Error fatal al ejecutar aplicación: {e}")
-        raise
+        db.session.rollback()
+        app.logger.error(f"Error cambiando estado cámara {camara_id}: {e}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+
+@app.route('/api/dashboard/stats')
+@login_required
+def dashboard_stats():
+    """API para estadísticas del dashboard"""
+    try:
+        return jsonify({
+            'user_stats': get_user_stats(),
+            'camera_stats': get_camera_stats(),
+            'timestamp': datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        app.logger.error(f"Error obteniendo stats: {e}")
+        return jsonify({'error': 'Error obteniendo estadísticas'}), 500
+
+# ======================
+# MANEJO DE ERRORES
+# ======================
+
+@app.errorhandler(404)
+def not_found_error(e):
+    """Manejo de errores 404"""
+    app.logger.warning(f"🔍 Recurso no encontrado: {request.url}")
+    return render_template('errors/404.html', 
+                         titulo="Página no encontrada",
+                         error_code=404,
+                         error_message="La página que buscas no existe."), 404
+
+@app.errorhandler(403)
+def forbidden_error(e):
+    """Manejo de errores 403"""
+    app.logger.warning(f"🚫 Acceso denegado: {request.url} por usuario {current_user.username if current_user.is_authenticated else 'Anónimo'}")
+    return render_template('errors/403.html',
+                         titulo="Acceso denegado",
+                         error_code=403,
+                         error_message="No tienes permisos para acceder a este recurso."), 403
+
+@app.errorhandler(500)
+def internal_error(e):
+    """Manejo de errores 500"""
+    db.session.rollback()
+    app.logger.error(f"💥 Error interno del servidor: {e}")
+    return render_template('errors/500.html',
+                         titulo="Error del servidor",
+                         error_code=500,
+                         error_message="Ha ocurrido un error interno. Los administradores han sido notificados."), 500
+
+# ======================
+# FAVICON FIX ✅
+# ======================
+
+@app.route('/favicon.ico')
+def favicon():
+    """🔒 Servir el favicon.ico con manejo de errores"""
+    try:
+        favicon_path = os.path.join(app.static_folder, 'favicon.ico')
+        if os.path.exists(favicon_path):
+            app.logger.debug("✅ Sirviendo favicon desde archivo")
+            return send_file(favicon_path, mimetype='image/x-icon')
+        else:
+            app.logger.warning("⚠️ Favicon no encontrado en static/favicon.ico")
+            return '', 404
+    except Exception as e:
+        app.logger.error(f"❌ Error sirviendo favicon: {e}")
+        return '', 404
+
+# ======================
+# BLUEPRINTS (PREPARADOS PARA MODULARIDAD)
+# ======================
+
+# Se pueden registrar blueprints aquí cuando estén listos
+# app.register_blueprint(inventario_bp, url_prefix='/api/inventario')
+# app.register_blueprint(trazabilidad_bp, url_prefix='/api/trazabilidad')
+
+# ======================
+# INICIALIZACIÓN
+# ======================
+
+@app.before_first_request
+def initialize_database():
+    """Inicializa la base de datos en el primer request"""
+    try:
+        admin_user = init_database()
+        app.logger.info("✅ Base de datos inicializada correctamente")
+        return admin_user
+    except Exception as e:
+        app.logger.error(f"❌ Error inicializando BD: {e}")
+        return None
+
+# ======================
+# MAIN
+# ======================
+
+if __name__ == '__main__':
+    # Para desarrollo local
+    with app.app_context():
+        try:
+            init_database()
+        except Exception as e:
+            app.logger.error(f"Error inicializando aplicación: {e}")
+    
+    app.run(
+        host='0.0.0.0',
+        port=int(os.environ.get('PORT', 5000)),
+        debug=os.environ.get('FLASK_ENV') == 'development'
+    )
