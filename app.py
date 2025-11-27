@@ -237,7 +237,7 @@ def register_routes(app):
             flash("Error al cargar estadísticas del dashboard.", "warning")
             stats = {key: 0 for key in ['total_camaras', 'camaras_activas', 'total_ubicaciones', 'ubicaciones_activas', 'total_switches', 'total_nvr_dvr', 'total_gabinetes', 'total_ups', 'usuarios_activos']}
 
-        return render_template('index.html', 
+        return render_template('dashboard.html', 
                                 stats=stats,
                                 user=current_user)
 
