@@ -7,9 +7,8 @@ Incluye gestión de switches, puertos, VLANs y configuraciones de red.
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from models.base import BaseModel
-from models.equipo import EquipmentBase, ConnectionType
-from models import db, EquipmentStatus
+from models.base import db, EquipmentStatus, BaseModel, EquipmentBase
+from models import db
 import enum
 
 
@@ -51,7 +50,7 @@ class VLANType(enum.Enum):
     DATA = "data"
 
 
-class Switch(EquipmentBase, db.Model):
+class Switch(EquipmentBase):
     """
     Modelo de switches de red.
 
@@ -98,7 +97,6 @@ class Switch(EquipmentBase, db.Model):
                        comment="Número de puertos PoE")
     max_poe_power = Column(Integer, nullable=True,
                            comment="Potencia máxima PoE en watts")
-    # Corregido tamaño de String de 0 a 20
     port_speed = Column(String(20), nullable=True,
                         comment="Velocidad de puertos (ej: 1Gbps)")
 
@@ -122,11 +120,11 @@ class Switch(EquipmentBase, db.Model):
     qos_support = Column(Boolean, default=True, nullable=False,
                          comment="Soporte para QoS")
     poe_plus_support = Column(Boolean, default=False, nullable=False,
-                              comment="Soporte para PoE+")
+                               comment="Soporte para PoE+")
     managed = Column(Boolean, default=True, nullable=False,
                      comment="Si el switch es administrable")
     layer_support = Column(String(10), nullable=True,
-                          comment="Capa OSI soportada (L/L3/L4)")
+                           comment="Capa OSI soportada (L/L3/L4)")
 
     # Capacidades
     mac_address_table_size = Column(Integer, nullable=True,
@@ -165,21 +163,16 @@ class Switch(EquipmentBase, db.Model):
                                    comment="Spanning Tree Protocol habilitado")
 
     # Relaciones
-    # Se asume que Ubicacion y Usuario están definidos en otro lugar e importados correctamente
     ubicacion = relationship("Ubicacion", back_populates="switches")
     created_by_user = relationship("Usuario", back_populates="created_equipos")
 
     # Relaciones con otros modelos
-    mantenimientos = relationship(
-        "Mantenimiento", back_populates="switch", cascade="all, delete-orphan")
-    fotografias = relationship(
-        "Fotografia", back_populates="switch", cascade="all, delete-orphan")
+    mantenimientos = relationship("Mantenimiento", back_populates="switch", cascade="all, delete-orphan")
+    fotografias = relationship("Fotografia", back_populates="switch", cascade="all, delete-orphan")
 
     # Relaciones con puertos y VLANs
-    puertos = relationship(
-        "SwitchPort", back_populates="switch", cascade="all, delete-orphan")
-    vlans = relationship(
-        "SwitchVLAN", back_populates="switch", cascade="all, delete-orphan")
+    puertos = relationship("SwitchPort", back_populates="switch", cascade="all, delete-orphan")
+    vlans = relationship("SwitchVLAN", back_populates="switch", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Switch(name='{self.name}', type='{self.switch_type.value if self.switch_type else 'N/A'}', ports={self.total_ports})>"
@@ -191,7 +184,6 @@ class Switch(EquipmentBase, db.Model):
         Returns:
             int: Número de puertos disponibles
         """
-        # Se asume que is_available() verifica si no hay equipo conectado y si el estado es DOWN
         used_ports = len([p for p in self.puertos if not p.is_available()])
         return self.total_ports - used_ports
 
@@ -225,9 +217,9 @@ class Switch(EquipmentBase, db.Model):
             port_type=port_type,
             **kwargs
         )
-        # Se asume que 'save()' es un método de BaseModel que agrega y commitea la sesión
-        # Si no existe, reemplazar con: db.session.add(port); db.session.commit()
-        return port.save()
+        db.session.add(port)
+        db.session.commit()
+        return port
 
     def get_port_utilization_percentage(self):
         """
@@ -240,7 +232,6 @@ class Switch(EquipmentBase, db.Model):
             return 0
 
         used_ports = len([p for p in self.puertos if not p.is_available()])
-        # Corregido: añadido precisión de 2 decimales para round
         return round((used_ports / self.total_ports) * 100, 2)
 
     def get_poe_power_usage(self):
@@ -361,13 +352,11 @@ class Switch(EquipmentBase, db.Model):
         score = 100
 
         # Penalizar por puertos en error
-        error_ports = len(
-            [p for p in self.puertos if p.status == PortStatus.ERROR])
+        error_ports = len([p for p in self.puertos if p.status == PortStatus.ERROR])
         score -= (error_ports * 15)
 
         # Penalizar por puertos down
-        down_ports = len(
-            [p for p in self.puertos if p.status == PortStatus.DOWN])
+        down_ports = len([p for p in self.puertos if p.status == PortStatus.DOWN])
         score -= (down_ports * 5)
 
         # Penalizar por utilización alta de puertos
@@ -377,13 +366,11 @@ class Switch(EquipmentBase, db.Model):
         elif port_utilization > 80:
             score -= 10
 
-        # Penalizar por estado del equipo (corregido el error de asignación '=' a comparación '==')
+        # Comparación corregida
         if hasattr(self, 'status') and self.status != EquipmentStatus.ACTIVO:
-            # Asumo que el status se almacena como el Enum, si se almacena como String,
-            # la comparación debería ser `self.status != EquipmentStatus.ACTIVO.value`
             score -= 10
 
-        # Penalizar por falta de heartbeat reciente (asumo que is_online es un método de EquipmentBase)
+        # Penalizar por falta de heartbeat reciente
         if hasattr(self, 'is_online') and not self.is_online():
             score -= 5
 
@@ -409,8 +396,9 @@ class Switch(EquipmentBase, db.Model):
             vlan_type=vlan_type,
             **kwargs
         )
-        # Se asume que 'save()' es un método de BaseModel que agrega y commitea la sesión
-        return vlan.save()
+        db.session.add(vlan)
+        db.session.commit()
+        return vlan
 
     @classmethod
     def get_by_type(cls, switch_type):
@@ -469,7 +457,7 @@ class Switch(EquipmentBase, db.Model):
         return cls.query.filter_by(stack_master=True, deleted=False).all()
 
 
-class SwitchPort(BaseModel, db.Model):
+class SwitchPort(BaseModel):
     """
     Modelo de puertos de switch.
 
@@ -513,8 +501,8 @@ class SwitchPort(BaseModel, db.Model):
                      comment="ID de la VLAN asignada")
 
     # Configuración de velocidad
-    port_speed = Column(String(20), nullable=True,
-                        comment="Velocidad del puerto (ej: 1Gbps)") # Usando 'port_speed' para evitar conflicto con la columna de Switch
+    speed = Column(String(20), nullable=True,
+                   comment="Velocidad del puerto (ej: 1Gbps)")
     duplex = Column(String(10), nullable=True,
                     comment="Modo duplex (full/half/auto)")
 
@@ -546,15 +534,15 @@ class SwitchPort(BaseModel, db.Model):
             bool: True si el puerto está disponible
         """
         return (self.status == PortStatus.DOWN and
-                self.connected_equipment_id is None and
-                self.port_type in [PortType.ETHERNET, PortType.GIGABIT, PortType.TEN_GIGABIT]) # Se añadieron más tipos de puerto para disponibilidad
+                not self.connected_equipment_id and
+                self.port_type in [PortType.ETHERNET, PortType.GIGABIT])
 
     def connect_equipment(self, equipment, equipment_type):
         """
         Conecta un equipo al puerto.
 
         Args:
-            equipment: Equipo a conectar (debe tener un atributo 'id')
+            equipment: Equipo a conectar
             equipment_type (str): Tipo del equipo
 
         Returns:
@@ -567,8 +555,7 @@ class SwitchPort(BaseModel, db.Model):
         self.connected_equipment_type = equipment_type
         self.status = PortStatus.UP
         self.last_activity = datetime.utcnow()
-        # Se asume que 'save()' es un método de BaseModel
-        self.save()
+        db.session.commit()
 
         return True
 
@@ -583,8 +570,7 @@ class SwitchPort(BaseModel, db.Model):
         self.connected_equipment_type = None
         self.status = PortStatus.DOWN
         self.last_activity = None
-        # Se asume que 'save()' es un método de BaseModel
-        self.save()
+        db.session.commit()
 
         return True
 
@@ -598,7 +584,7 @@ class SwitchPort(BaseModel, db.Model):
         if not self.connected_equipment_id:
             return None
 
-        # Mapeo de tipos de equipos a modelos (se asume que los modelos están importados globalmente)
+        # Mapeo de tipos de equipos a modelos
         equipment_map = {
             'camara': 'Camara',
             'nvr': 'NVR',
@@ -609,10 +595,8 @@ class SwitchPort(BaseModel, db.Model):
         }
 
         model_name = equipment_map.get(self.connected_equipment_type)
-        if model_name:
-            # Se asume que los modelos están disponibles en el contexto global
-            # y que existe un método 'query' (propio de Flask-SQLAlchemy o de la configuración 'db')
-            return globals().get(model_name).query.get(self.connected_equipment_id)
+        if model_name and hasattr(globals(), model_name):
+            return globals()[model_name].query.get(self.connected_equipment_id)
 
         return None
 
@@ -625,8 +609,7 @@ class SwitchPort(BaseModel, db.Model):
         """
         self.utilization_percentage = max(0, min(100, percentage))
         self.last_activity = datetime.utcnow()
-        # Se asume que 'save()' es un método de BaseModel
-        self.save()
+        db.session.commit()
 
     @classmethod
     def get_available_ports(cls, switch_id):
@@ -657,15 +640,14 @@ class SwitchPort(BaseModel, db.Model):
         Returns:
             list: Lista de puertos conectados
         """
-        # Se corrige el uso incorrecto de isnot(None) en filter_by
         return cls.query.filter(
             cls.switch_id == switch_id,
-            cls.connected_equipment_id.isnot(None),  # Uso de método de columna para "is not None"
+            cls.connected_equipment_id.is_not(None),
             cls.deleted == False
         ).all()
 
 
-class SwitchVLAN(BaseModel, db.Model):
+class SwitchVLAN(BaseModel):
     """
     Modelo de VLANs de switch.
 
@@ -705,7 +687,7 @@ class SwitchVLAN(BaseModel, db.Model):
 
     # Configuración de red
     subnet = Column(String(18), nullable=True,
-                    comment="Subred asignada (ej: 19.168.1.0/24)")
+                    comment="Subred asignada (ej: 192.168.1.0/24)")
     gateway = Column(String(45), nullable=True,
                      comment="Gateway de la VLAN")
 
@@ -722,14 +704,6 @@ class SwitchVLAN(BaseModel, db.Model):
 
     def __repr__(self):
         return f"<SwitchVLAN(switch={self.switch_id}, vlan={self.vlan_id} - {self.vlan_name})>"
-
-    # Se asume que 'save()' es un método de BaseModel que agrega y commitea la sesión
-    # Si no existe, reemplazar con: db.session.add(self); db.session.commit()
-    # def save(self):
-    #     db.session.add(self)
-    #     db.session.commit()
-    #     return self
-
 
     @classmethod
     def get_by_switch(cls, switch_id):
