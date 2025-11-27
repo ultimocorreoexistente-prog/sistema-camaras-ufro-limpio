@@ -1,0 +1,7 @@
+@app.route('/favicon.ico')
+def favicon():
+    """🔒 Servir el favicon.ico"""
+    favicon_path = os.path.join(app.static_folder, 'favicon.ico')
+    if os.path.exists(favicon_path):
+        return send_file(favicon_path, mimetype='image/x-icon')
+    return '', 404
