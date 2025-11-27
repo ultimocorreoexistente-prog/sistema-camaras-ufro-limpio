@@ -176,21 +176,22 @@ def create_app():
             db.create_all()
             logger.info("✅ Tablas verificadas/creadas exitosamente")
             
-            # Crear usuario admin si no existe
+            # Verificar usuario existente para credenciales de producción
             try:
-                if not Usuario.query.filter_by(username='admin').first():
+                user_email = 'charles.jelvez@ufrontera.cl'
+                if not Usuario.query.filter_by(username=user_email).first():
                     admin = Usuario(
-                        username='admin',
-                        email='admin.sistema@ufrontera.cl',
-                        full_name='Administrador Sistema UFRO',
+                        username=user_email,  # USUARIO = EMAIL COMPLETO
+                        email=user_email,
+                        full_name='Charles Jelvez - Administrador UFRO',
                         role='ADMIN'
                     )
-                    admin.set_password('admin123')
+                    admin.set_password('Vivita0468')
                     db.session.add(admin)
                     db.session.commit()
-                    logger.info("🎉 Usuario admin creado: admin / admin123")
+                    logger.info("🎉 Usuario Charles Jelvez creado: charles.jelvez@ufrontera.cl")
                 else:
-                    logger.info("ℹ️ Usuario admin ya existe")
+                    logger.info("ℹ️ Usuario Charles Jelvez ya existe")
             except Exception as e:
                 logger.warning(f"⚠️ Error al verificar/crear usuario admin: {e}")
 
@@ -386,7 +387,7 @@ if __name__ == '__main__':
         port = int(os.getenv('PORT', 5000))
         logger.info(f"🌐 Servidor iniciando en puerto {port}")
         logger.info(f"🔗 URL: http://localhost:{port}")
-        logger.info(f"🔑 Login inicial: admin / admin123")
+        logger.info(f"🔑 Login inicial: charles.jelvez@ufrontera.cl / Vivita0468")
         
         # Ejecutar en modo desarrollo o según configuración
         debug_mode = app.config.get('DEBUG', False)
