@@ -1,0 +1,472 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Cámara - {{ camara.ubicacion if camara.ubicacion else camara.nombre }} - Sistema de Gestión de Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('camaras_listar') }}">Cámaras</a></li>
+                <li class="breadcrumb-item active">{{ camara.ubicacion if camara.ubicacion else camara.nombre }}</li>
+            </ol>
+        </nav>
+        <h1>
+            <i class="bi bi-camera-video"></i> 
+            {{ camara.ubicacion if camara.ubicacion else camara.nombre }}
+            {% if camara.estado == 'activa' %}
+            <span class="badge bg-success ms-2">
+                <i class="bi bi-check-circle me-1"></i>Activa
+            </span>
+            {% elif camara.estado == 'inactiva' %}
+            <span class="badge bg-danger ms-2">
+                <i class="bi bi-x-circle me-1"></i>Inactiva
+            </span>
+            {% elif camara.estado == 'mantenimiento' %}
+            <span class="badge bg-warning ms-2">
+                <i class="bi bi-tools me-1"></i>Mantenimiento
+            </span>
+            {% elif camara.estado == 'fuera_servicio' %}
+            <span class="badge bg-dark ms-2">
+                <i class="bi bi-slash-circle me-1"></i>Fuera de Servicio
+            </span>
+            {% else %}
+            <span class="badge bg-secondary ms-2">{{ camara.estado }}</span>
+            {% endif %}
+        </h1>
+    </div>
+    <div>
+        {% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'TECNICO'] %}
+        <a href="{{ url_for('camaras_editar', id=camara.id) }}" class="btn btn-warning me-2">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+        {% endif %}
+        <a href="{{ url_for('camaras_listar') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Información Principal -->
+    <div class="col-lg-8">
+        <!-- Información General -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información General
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-4">ID:</dt>
+                            <dd class="col-sm-8">{{ camara.id }}</dd>
+
+                            <dt class="col-sm-4">Ubicación:</dt>
+                            <dd class="col-sm-8">{{ camara.ubicacion or camara.nombre }}</dd>
+
+                            <dt class="col-sm-4">Marca:</dt>
+                            <dd class="col-sm-8">{{ camara.marca or 'No especificada' }}</dd>
+
+                            <dt class="col-sm-4">Modelo:</dt>
+                            <dd class="col-sm-8">{{ camara.modelo or 'No especificado' }}</dd>
+
+                            <dt class="col-sm-4">Dirección IP:</dt>
+                            <dd class="col-sm-8">
+                                <code>{{ camara.ip_address if camara.ip_address else camara.ip }}</code>
+                                <button class="btn btn-sm btn-outline-primary ms-2" onclick="pingCamara()">
+                                    <i class="bi bi-wifi"></i>
+                                </button>
+                            </dd>
+                        </dl>
+                    </div>
+
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-4">Campus:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-info">{{ camara.campus.replace('_', ' ').title() if camara.campus else 'No asignado' }}</span>
+                            </dd>
+
+                            <dt class="col-sm-4">Edificio:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-secondary">{{ camara.edificio.upper() if camara.edificio else 'No asignado' }}</span>
+                            </dd>
+
+                            <dt class="col-sm-4">Responsable:</dt>
+                            <dd class="col-sm-8">{{ camara.responsable or 'No asignado' }}</dd>
+
+                            <dt class="col-sm-4">Estado:</dt>
+                            <dd class="col-sm-8">
+                                {% if camara.estado == 'activa' %}
+                                <span class="badge bg-success">Activa</span>
+                                {% elif camara.estado == 'inactiva' %}
+                                <span class="badge bg-danger">Inactiva</span>
+                                {% elif camara.estado == 'mantenimiento' %}
+                                <span class="badge bg-warning">Mantenimiento</span>
+                                {% elif camara.estado == 'fuera_servicio' %}
+                                <span class="badge bg-dark">Fuera de Servicio</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ camara.estado }}</span>
+                                {% endif %}
+                            </dd>
+
+                            <dt class="col-sm-4">Instalación:</dt>
+                            <dd class="col-sm-8">
+                                {% if camara.fecha_instalacion %}
+                                {{ camara.fecha_instalacion.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                <span class="text-muted">No registrada</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+
+                {% if camara.observaciones %}
+                <hr>
+                <h6>Observaciones</h6>
+                <p class="text-muted">{{ camara.observaciones }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Historial de Cambios -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Historial de Cambios
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if historial %}
+                <div class="timeline">
+                    {% for item in historial %}
+                    <div class="timeline-item mb-3">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center"
+                                     style="width: 40px; height: 40px;">
+                                    <i class="bi bi-person text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <strong>{{ item.usuario }}</strong>
+                                    <small class="text-muted">{{ item.fecha.strftime('%d/%m/%Y %H:%M') }}</small>
+                                </div>
+                                <p class="mb-1">{{ item.cambio }}</p>
+                                {% if item.detalles %}
+                                <small class="text-muted">{{ item.detalles }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-clock-history text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2">No hay historial de cambios registrado para esta cámara.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Mantenimientos -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="bi bi-tools"></i> Mantenimientos
+                    {% if mantenimientos %}
+                    <span class="badge bg-primary ms-2">{{ mantenimientos|length }}</span>
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if mantenimientos %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Técnico</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mantenimiento in mantenimientos %}
+                            <tr>
+                                <td>{{ mantenimiento.fecha.strftime('%d/%m/%Y') if mantenimiento.fecha else '-' }}</td>
+                                <td>{{ mantenimiento.tipo or '-' }}</td>
+                                <td>{{ mantenimiento.tecnico or '-' }}</td>
+                                <td>{{ mantenimiento.descripcion[:50] }}{% if mantenimiento.descripcion and mantenimiento.descripcion|length > 50 %}...{% endif %}</td>
+                                <td>
+                                    {% if mantenimiento.estado == 'completado' %}
+                                    <span class="badge bg-success">Completado</span>
+                                    {% elif mantenimiento.estado == 'en_proceso' %}
+                                    <span class="badge bg-warning">En Proceso</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Cancelado</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-tools text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2">No hay registros de mantenimiento para esta cámara.</p>
+                    {% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'TECNICO'] %}
+                    <button class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Programar Mantenimiento
+                    </button>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar con acciones y estadísticas -->
+    <div class="col-lg-4">
+        <!-- Acciones Rápidas -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning"></i> Acciones Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="pingCamara()">
+                        <i class="bi bi-wifi"></i> Probar Conectividad
+                    </button>
+                    <button class="btn btn-outline-info" onclick="verStream()">
+                        <i class="bi bi-play-circle"></i> Ver Stream
+                    </button>
+                    {% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'TECNICO'] %}
+                    <button class="btn btn-outline-warning" onclick="reportarProblema()">
+                        <i class="bi bi-exclamation-triangle"></i> Reportar Problema
+                    </button>
+                    <a href="{{ url_for('camaras_editar', id=camara.id) }}" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Editar Información
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart"></i> Estadísticas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ estadisticas.dias_funcionando if estadisticas.dias_funcionando is defined else 0 }}</h4>
+                        <small class="text-muted">Días Funcionando</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">{{ estadisticas.mantenimientos_realizados if estadisticas.mantenimientos_realizados is defined else 0 }}</h4>
+                        <small class="text-muted">Mantenimientos</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <h6>Estado de Conectividad</h6>
+                    {% if estadisticas.conectividad if estadisticas.conectividad is defined else false %}
+                    <span class="badge bg-success fs-6">
+                        <i class="bi bi-wifi"></i> Conectada
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger fs-6">
+                        <i class="bi bi-wifi-off"></i> Desconectada
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Mapa de Ubicación -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="bi bi-geo-alt"></i> Ubicación
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="mapa-camara" style="height: 200px;">
+                    <div class="d-flex align-items-center justify-content-center h-100">
+                        <div class="text-center">
+                            <i class="bi bi-geo-alt text-muted" style="font-size: 2rem;"></i>
+                            <p class="text-muted mt-2">Mapa de ubicación</p>
+                            {% if camara.latitud and camara.longitud %}
+                            <small class="text-muted">
+                                {{ camara.latitud }}, {{ camara.longitud }}
+                            </small>
+                            {% else %}
+                            <small class="text-muted">Coordenadas no disponibles</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar mapa si hay coordenadas
+    {% if camara.latitud and camara.longitud %}
+    // Aquí se puede inicializar un mapa interactivo
+    console.log('Inicializando mapa para coordenadas:', {{ camara.latitud }}, {{ camara.longitud }});
+    {% endif %}
+});
+
+function pingCamara() {
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Probando...';
+    button.disabled = true;
+    
+    fetch(`/api/camaras/{{ camara.id }}/ping`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                button.innerHTML = '<i class="bi bi-check-circle"></i> Conectada';
+                button.classList.remove('btn-outline-primary');
+                button.classList.add('btn-success');
+            } else {
+                button.innerHTML = '<i class="bi bi-x-circle"></i> Desconectada';
+                button.classList.remove('btn-outline-primary');
+                button.classList.add('btn-danger');
+            }
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('btn-success', 'btn-danger');
+                button.classList.add('btn-outline-primary');
+                button.disabled = false;
+            }, 3000);
+        })
+        .catch(error => {
+            button.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Error';
+            button.classList.remove('btn-outline-primary');
+            button.classList.add('btn-warning');
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('btn-warning');
+                button.classList.add('btn-outline-primary');
+                button.disabled = false;
+            }, 3000);
+        });
+}
+
+function verStream() {
+    const streamUrl = '{{ camara.stream_url if camara.stream_url else "#" }}';
+    if (streamUrl && streamUrl !== '#') {
+        window.open(streamUrl, '_blank', 'width=800,height=600');
+    } else {
+        alert('URL de stream no disponible');
+    }
+}
+
+function reportarProblema() {
+    // Implementar modal o formulario de reporte de problemas
+    const modal = new bootstrap.Modal(document.getElementById('modalReportarProblema'));
+    modal.show();
+}
+
+// Modal para reportar problemas (debe estar en el HTML)
+const modalHTML = `
+<div class="modal fade" id="modalReportarProblema" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reportar Problema</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formReportarProblema">
+                    <div class="mb-3">
+                        <label for="tipoProblema" class="form-label">Tipo de Problema</label>
+                        <select class="form-select" id="tipoProblema" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="conectividad">Problema de Conectividad</option>
+                            <option value="calidad">Problema de Calidad de Imagen</option>
+                            <option value="funcionamiento">No Funciona</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descripcionProblema" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcionProblema" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="enviarReporte()">Enviar Reporte</button>
+            </div>
+        </div>
+    </div>
+</div>
+`;
+
+// Agregar el modal al body si no existe
+if (!document.getElementById('modalReportarProblema')) {
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function enviarReporte() {
+    const tipo = document.getElementById('tipoProblema').value;
+    const descripcion = document.getElementById('descripcionProblema').value;
+    
+    if (!tipo || !descripcion) {
+        alert('Por favor complete todos los campos');
+        return;
+    }
+    
+    // Enviar reporte
+    fetch('/api/reportes', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            camara_id: {{ camara.id }},
+            tipo: tipo,
+            descripcion: descripcion
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Reporte enviado correctamente');
+            bootstrap.Modal.getInstance(document.getElementById('modalReportarProblema')).hide();
+        } else {
+            alert('Error al enviar el reporte: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error al enviar el reporte: ' + error.message);
+    });
+}
+</script>
+{% endblock %}

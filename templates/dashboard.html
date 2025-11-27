@@ -1,3 +1,156 @@
+<<<<<<< HEAD
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Dashboard</h1>
+        <span class="badge bg-success">Sistema Operativo</span>
+    </div>
+    
+    <!-- Estadísticas principales -->
+    <div class="row">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card content-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted text-uppercase small fw-bold">Total Cámaras</h6>
+                            <h3 class="text-primary">{{ total_camaras|default:0 }}</h3>
+                        </div>
+                        <div class="text-primary">
+                            <i class="bi bi-camera-video fs-1"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        Sistema de vigilancia
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card content-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted text-uppercase small fw-bold">Cámaras Activas</h6>
+                            <h3 class="text-success">{{ camaras_activas|default:0 }}</h3>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-check-circle fs-1"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        Funcionando correctamente
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card content-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted text-uppercase small fw-bold">Fallas Abiertas</h6>
+                            <h3 class="text-warning">{{ fallas_abiertas|default:0 }}</h3>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-exclamation-triangle fs-1"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        Requieren atención
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card content-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted text-uppercase small fw-bold">Mantenimientos</h6>
+                            <h3 class="text-info">{{ mantenimientos_pendientes|default:0 }}</h3>
+                        </div>
+                        <div class="text-info">
+                            <i class="bi bi-tools fs-1"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        Programados
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cámaras recientes -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Cámaras Recientes</h5>
+                </div>
+                <div class="card-body">
+                    {% if camaras_recientes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Estado</th>
+                                        <th>Fecha Instalación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for camara in camaras_recientes %}
+                                    <tr>
+                                        <td>{{ camara.codigo }}</td>
+                                        <td>{{ camara.nombre }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if camara.estado == 'activo' else 'warning' }}">
+                                                {{ camara.estado|title }}
+                                            </span>
+                                        </td>
+                                        <td>{{ camara.fecha_instalacion.strftime('%d/%m/%Y') if camara.fecha_instalacion else 'N/A' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No hay cámaras registradas.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Acciones Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/camaras" class="btn btn-primary">
+                            <i class="bi bi-camera-video"></i> Ver Cámaras
+                        </a>
+                        <a href="/fallas" class="btn btn-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Gestionar Fallas
+                        </a>
+                        <a href="/mantenimientos" class="btn btn-info">
+                            <i class="bi bi-tools"></i> Mantenimientos
+                        </a>
+                        <a href="/equipos/nvr" class="btn btn-success">
+                            <i class="bi bi-server"></i> Equipos NVR
+                        </a>
+=======
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -246,11 +399,16 @@
                                 </a>
                             </div>
                         </div>
+>>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270
                     </div>
                 </div>
             </div>
         </div>
     </div>
+<<<<<<< HEAD
+</div>
+{% endblock %}
+=======
 
     <!-- Footer -->
     <footer class="footer mt-5 py-3 bg-light">
@@ -269,3 +427,4 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+>>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270

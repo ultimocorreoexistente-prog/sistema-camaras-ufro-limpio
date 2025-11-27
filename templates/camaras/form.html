@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title or (editing and 'Editar Cámara' or 'Nueva Cámara') }} - Sistema de Gestión de Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('camaras_listar') }}">Cámaras</a></li>
+                {% if editing %}
+                <li class="breadcrumb-item"><a href="{{ url_for('camaras_detalle', id=camara.id) }}">{{ camara.ubicacion if camara.ubicacion else camara.nombre }}</a></li>
+                <li class="breadcrumb-item active">Editar</li>
+                {% else %}
+                <li class="breadcrumb-item active">Nueva Cámara</li>
+                {% endif %}
+            </ol>
+        </nav>
+        <h1>
+            <i class="bi bi-{{ editing and 'pencil' or 'plus-circle' }}"></i>
+            {{ title or (editing and 'Editar Cámara: ' + (camara.ubicacion if camara.ubicacion else camara.nombre) or 'Registrar Nueva Cámara') }}
+        </h1>
+    </div>
+    <div>
+        <a href="{{ url_for('camaras_listar') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a la Lista
+        </a>
+    </div>
+</div>
+
+<form action="{{ action }}" method="POST" class="needs-validation" novalidate id="formCamara">
+    {{ form.hidden_tag() if form and form.hidden_tag else "" }}
+
+    <!-- Información Básica -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="bi bi-info-circle"></i> Información Básica
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        <label for="ubicacion" class="form-label">Ubicación <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="ubicacion" 
+                                   name="ubicacion" 
+                                   value="{{ camara.ubicacion if camara and camara.ubicacion else '' }}"
+                                   placeholder="Ej: Edificio A - Pasillo Principal - Piso 1"
+                                   required
+                                   maxlength="255">
+                            <div class="invalid-feedback">
+                                La ubicación es obligatoria
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="estado" class="form-label">Estado <span class="text-danger">*</span></label>
+                        <select class="form-select" id="estado" name="estado" required>
+                            <option value="">Seleccionar estado</option>
+                            <option value="activa" {{ 'selected' if (camara and camara.estado == 'activa') or not editing else '' }}>Activa</option>
+                            <option value="inactiva" {{ 'selected' if camara and camara.estado == 'inactiva' else '' }}>Inactiva</option>
+                            <option value="mantenimiento" {{ 'selected' if camara and camara.estado == 'mantenimiento' else '' }}>Mantenimiento</option>
+                            <option value="fuera_servicio" {{ 'selected' if camara and camara.estado == 'fuera_servicio' else '' }}>Fuera de Servicio</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            El estado es obligatorio
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="marca" class="form-label">Marca <span class="text-danger">*</span></label>
+                        <select class="form-select" id="marca" name="marca" required>
+                            <option value="">Seleccionar marca</option>
+                            <option value="hikvision" {{ 'selected' if camara and camara.marca == 'hikvision' else '' }}>Hikvision</option>
+                            <option value="dahua" {{ 'selected' if camara and camara.marca == 'dahua' else '' }}>Dahua</option>
+                            <option value="axis" {{ 'selected' if camara and camara.marca == 'axis' else '' }}>Axis</option>
+                            <option value="bosch" {{ 'selected' if camara and camara.marca == 'bosch' else '' }}>Bosch</option>
+                            <option value="hanwha" {{ 'selected' if camara and camara.marca == 'hanwha' else '' }}>Hanwha</option>
+                            <option value="otros" {{ 'selected' if camara and camara.marca == 'otros' else '' }}>Otros</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            La marca es obligatoria
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="modelo" class="form-label">Modelo</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="modelo" 
+                               name="modelo" 
+                               value="{{ camara.modelo if camara and camara.modelo else '' }}"
+                               placeholder="Ej: DS-2CD2145FWD-I"
+                               maxlength="100">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="ip" class="form-label">Dirección IP <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-globe"></i></span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="ip" 
+                                   name="ip" 
+                                   value="{{ (camara.ip_address if camara and camara.ip_address else camara.ip) if camara else '' }}"
+                                   placeholder="192.168.1.100"
+                                   required
+                                   pattern="^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$">
+                            <div class="invalid-feedback">
+                                Ingrese una dirección IP válida
+                            </div>
+                        </div>
+                        <div class="form-text">Dirección IP de la cámara en la red local</div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="responsable" class="form-label">Responsable Técnico</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="responsable" 
+                               name="responsable" 
+                               value="{{ camara.responsable if camara and camara.responsable else '' }}"
+                               placeholder="Nombre del responsable técnico"
+                               maxlength="100">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ubicación Física -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="bi bi-geo-alt"></i> Ubicación Física
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="campus" class="form-label">Campus</label>
+                        <select class="form-select" id="campus" name="campus">
+                            <option value="">Seleccionar campus</option>
+                            <option value="campus_principal" {{ 'selected' if camara and camara.campus == 'campus_principal' else '' }}>Campus Principal</option>
+                            <option value="campus_norte" {{ 'selected' if camara and camara.campus == 'campus_norte' else '' }}>Campus Norte</option>
+                            <option value="campus_sur" {{ 'selected' if camara and camara.campus == 'campus_sur' else '' }}>Campus Sur</option>
+                            <option value="campus_centro" {{ 'selected' if camara and camara.campus == 'campus_centro' else '' }}>Campus Centro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="edificio" class="form-label">Edificio</label>
+                        <select class="form-select" id="edificio" name="edificio">
+                            <option value="">Seleccionar edificio</option>
+                            <option value="a" {{ 'selected' if camara and camara.edificio == 'a' else '' }}>Edificio A</option>
+                            <option value="b" {{ 'selected' if camara and camara.edificio == 'b' else '' }}>Edificio B</option>
+                            <option value="c" {{ 'selected' if camara and camara.edificio == 'c' else '' }}>Edificio C</option>
+                            <option value="d" {{ 'selected' if camara and camara.edificio == 'd' else '' }}>Edificio D</option>
+                            <option value="e" {{ 'selected' if camara and camara.edificio == 'e' else '' }}>Edificio E</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="fecha_instalacion" class="form-label">Fecha de Instalación</label>
+                        <input type="date" 
+                               class="form-control" 
+                               id="fecha_instalacion" 
+                               name="fecha_instalacion" 
+                               value="{{ camara.fecha_instalacion.strftime('%Y-%m-%d') if camara and camara.fecha_instalacion else '' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coordenadas GPS -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="latitud" class="form-label">Latitud</label>
+                        <div class="input-group">
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="latitud" 
+                                   name="latitud" 
+                                   value="{{ camara.latitud if camara and camara.latitud else '' }}"
+                                   placeholder="-38.9456"
+                                   step="any"
+                                   min="-90"
+                                   max="90">
+                            <button type="button" class="btn btn-outline-secondary" onclick="obtenerGPS()">
+                                <i class="bi bi-geo-alt"></i> GPS
+                            </button>
+                        </div>
+                        <div class="form-text">Coordenada latitude (opcional)</div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="longitud" class="form-label">Longitud</label>
+                        <input type="number" 
+                               class="form-control" 
+                               id="longitud" 
+                               name="longitud" 
+                               value="{{ camara.longitud if camara and camara.longitud else '' }}"
+                               placeholder="-72.3306"
+                               step="any"
+                               min="-180"
+                               max="180">
+                        <div class="form-text">Coordenada longitud (opcional)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información Técnica Adicional -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="bi bi-cpu"></i> Información Técnica
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="stream_url" class="form-label">URL del Stream</label>
+                        <input type="url" 
+                               class="form-control" 
+                               id="stream_url" 
+                               name="stream_url" 
+                               value="{{ camara.stream_url if camara and camara.stream_url else '' }}"
+                               placeholder="http://192.168.1.100:8080/stream">
+                        <div class="form-text">URL para acceder al stream de video</div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="resolucion" class="form-label">Resolución</label>
+                        <select class="form-select" id="resolucion" name="resolucion">
+                            <option value="">Seleccionar resolución</option>
+                            <option value="720p" {{ 'selected' if camara and camara.resolucion == '720p' else '' }}>720p (HD)</option>
+                            <option value="1080p" {{ 'selected' if camara and camara.resolucion == '1080p' else '' }}>1080p (Full HD)</option>
+                            <option value="1440p" {{ 'selected' if camara and camara.resolucion == '1440p' else '' }}>1440p (2K)</option>
+                            <option value="2160p" {{ 'selected' if camara and camara.resolucion == '2160p' else '' }}>2160p (4K)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Observaciones -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="bi bi-chat-square-text"></i> Observaciones
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="observaciones" class="form-label">Observaciones</label>
+                <textarea class="form-control" 
+                          id="observaciones" 
+                          name="observaciones" 
+                          rows="4"
+                          placeholder="Observaciones adicionales, características especiales, notas técnicas...">{{ camara.observaciones if camara and camara.observaciones else '' }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información de Auditoría (solo en edición) -->
+    {% if editing %}
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="bi bi-clock-history"></i> Información de Auditoría
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-4">Creada:</dt>
+                        <dd class="col-sm-8">
+                            {% if camara.fecha_creacion %}
+                            {{ camara.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+                            {% else %}
+                            <span class="text-muted">No disponible</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">Última modificación:</dt>
+                        <dd class="col-sm-8">
+                            {% if camara.fecha_actualizacion %}
+                            {{ camara.fecha_actualizacion.strftime('%d/%m/%Y %H:%M') }}
+                            {% else %}
+                            <span class="text-muted">No disponible</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-4">ID:</dt>
+                        <dd class="col-sm-8">{{ camara.id }}</dd>
+
+                        <dt class="col-sm-4">Creado por:</dt>
+                        <dd class="col-sm-8">{{ camara.creado_por if camara.creado_por else 'No registrado' }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="motivo_cambio" class="form-label">Motivo del Cambio</label>
+                <textarea class="form-control" 
+                          id="motivo_cambio" 
+                          name="motivo_cambio" 
+                          rows="2" 
+                          placeholder="Describe brevemente por qué realizas este cambio..."></textarea>
+                <div class="form-text">Esta información se guardará en el historial para auditoría</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Botones de Acción -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-{{ editing and 'check-circle' or 'plus-circle' }}"></i>
+                        {{ editing and 'Actualizar Cámara' or 'Registrar Cámara' }}
+                    </button>
+                    <button type="reset" class="btn btn-secondary">
+                        <i class="bi bi-arrow-clockwise"></i> Limpiar
+                    </button>
+                </div>
+                <div>
+                    <a href="{{ url_for('camaras_listar') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Panel de Validación -->
+<div id="validation-panel" class="mt-3" style="display: none;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación de formulario Bootstrap
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+
+    // Validación de IP en tiempo real
+    const ipInput = document.getElementById('ip');
+    if (ipInput) {
+        ipInput.addEventListener('blur', validarIP);
+    }
+
+    // Auto-guardar como borrador (opcional)
+    let autoSaveTimeout;
+    const form = document.getElementById('formCamara');
+    
+    form.addEventListener('input', function() {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(guardarBorrador, 5000); // Auto-guardar cada 5 segundos
+    });
+});
+
+function validarIP() {
+    const ip = document.getElementById('ip').value;
+    const ipRegex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
+    
+    const ipInput = document.getElementById('ip');
+    const feedback = ipInput.nextElementSibling;
+    
+    if (ip && !ipRegex.test(ip)) {
+        ipInput.classList.remove('is-valid');
+        ipInput.classList.add('is-invalid');
+        if (feedback && feedback.classList.contains('invalid-feedback')) {
+            feedback.textContent = 'Ingrese una dirección IP válida';
+        }
+        return false;
+    } else if (ip) {
+        ipInput.classList.remove('is-invalid');
+        ipInput.classList.add('is-valid');
+        return true;
+    }
+    return true;
+}
+
+function obtenerGPS() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                document.getElementById('latitud').value = position.coords.latitude.toFixed(6);
+                document.getElementById('longitud').value = position.coords.longitude.toFixed(6);
+                mostrarValidacion('success', 'Coordenadas GPS obtenidas correctamente');
+            },
+            function(error) {
+                mostrarValidacion('error', 'Error al obtener GPS: ' + error.message);
+            }
+        );
+    } else {
+        mostrarValidacion('error', 'Geolocalización no soportada por este navegador');
+    }
+}
+
+function mostrarValidacion(tipo, mensaje) {
+    const panel = document.getElementById('validation-panel');
+    panel.innerHTML = `
+        <div class="alert alert-${tipo === 'error' ? 'danger' : 'success'} alert-dismissible fade show">
+            <i class="bi bi-${tipo === 'error' ? 'exclamation-circle' : 'check-circle'}"></i>
+            ${mensaje}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    panel.style.display = 'block';
+    
+    setTimeout(() => {
+        panel.style.display = 'none';
+    }, 5000);
+}
+
+function guardarBorrador() {
+    // Implementar auto-guardado si es necesario
+    console.log('Guardando borrador...');
+}
+
+// Validación adicional antes del envío
+document.getElementById('formCamara').addEventListener('submit', function(e) {
+    if (!validarIP()) {
+        e.preventDefault();
+        mostrarValidacion('error', 'Corrija los errores antes de enviar el formulario');
+        return false;
+    }
+    
+    // Verificar campos obligatorios
+    const camposObligatorios = ['ubicacion', 'estado', 'marca', 'ip'];
+    for (let campo of camposObligatorios) {
+        const element = document.getElementById(campo);
+        if (element && !element.value.trim()) {
+            e.preventDefault();
+            mostrarValidacion('error', `El campo ${campo} es obligatorio`);
+            element.focus();
+            return false;
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,873 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Falla #{{ falla.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.falla-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.falla-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    opacity: 0.3;
+}
+
+.falla-header .container-fluid {
+    position: relative;
+    z-index: 2;
+}
+
+.enhanced-timeline {
+    position: relative;
+    padding-left: 40px;
+}
+
+.enhanced-timeline::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, #007bff, #28a745);
+    border-radius: 2px;
+}
+
+.timeline-item-enhanced {
+    position: relative;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border-left: 4px solid #007bff;
+    transition: all 0.3s ease;
+}
+
+.timeline-item-enhanced:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.timeline-item-enhanced.completed {
+    border-left-color: #28a745;
+    background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
+}
+
+.timeline-item-enhanced.in-progress {
+    border-left-color: #ffc107;
+    background: linear-gradient(135deg, #fffef8 0%, #fef9e7 100%);
+}
+
+.timeline-item-enhanced::before {
+    content: '';
+    position: absolute;
+    left: -29px;
+    top: 20px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #007bff;
+    border: 3px solid white;
+    box-shadow: 0 0 0 3px #007bff33;
+}
+
+.timeline-item-enhanced.completed::before {
+    background: #28a745;
+    box-shadow: 0 0 0 3px #28a74533;
+}
+
+.timeline-item-enhanced.in-progress::before {
+    background: #ffc107;
+    box-shadow: 0 0 0 3px #ffc10733;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.3); }
+    50% { box-shadow: 0 0 0 8px rgba(255, 193, 7, 0.1); }
+    100% { box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.3); }
+}
+
+.equipo-info {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #007bff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+
+.solucion-section {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 1px solid #c3e6cb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+}
+
+.solucion-section::before {
+    content: '✅';
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    background: #28a745;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.costo-badge {
+    background: linear-gradient(45deg, #fd7e14, #e55100);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3);
+}
+
+.gravedad-critical { 
+    color: #dc3545; 
+    font-weight: bold;
+    animation: criticalPulse 2s infinite;
+}
+.gravedad-alta { color: #fd7e14; font-weight: bold; }
+.gravedad-media { color: #ffc107; font-weight: bold; }
+.gravedad-baja { color: #28a745; font-weight: bold; }
+
+@keyframes criticalPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Comment System Styles */
+.comment-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+
+.comment-item {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 3px solid #007bff;
+    transition: all 0.3s ease;
+}
+
+.comment-item:hover {
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.comment-author {
+    font-weight: bold;
+    color: #007bff;
+}
+
+.comment-date {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.comment-content {
+    margin-top: 0.5rem;
+    line-height: 1.6;
+}
+
+.comment-form {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid #dee2e6;
+}
+
+.comment-form textarea {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: border-color 0.3s ease;
+}
+
+.comment-form textarea:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* File attachments */
+.attachment-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    transition: background-color 0.3s ease;
+}
+
+.attachment-item:hover {
+    background: #e9ecef;
+}
+
+.attachment-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.attachment-icon.image { background: #28a745; }
+.attachment-icon.document { background: #007bff; }
+.attachment-icon.video { background: #dc3545; }
+
+/* Status indicators */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.status-indicator.reportada {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    color: white;
+}
+
+.status-indicator.en_proceso {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    color: #212529;
+}
+
+.status-indicator.resuelta {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    color: white;
+}
+
+.status-indicator.cerrada {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+}
+
+/* Priority indicators */
+.priority-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.3px;
+}
+
+.priority-indicator.critica {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    animation: priorityPulse 2s infinite;
+}
+
+.priority-indicator.alta {
+    background: linear-gradient(135deg, #fd7e14 0%, #e55100 100%);
+    color: white;
+}
+
+.priority-indicator.media {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    color: #212529;
+}
+
+.priority-indicator.baja {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    color: white;
+}
+
+@keyframes priorityPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+    50% { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .enhanced-timeline {
+        padding-left: 20px;
+    }
+    
+    .enhanced-timeline::before {
+        left: 10px;
+    }
+    
+    .timeline-item-enhanced {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .timeline-item-enhanced::before {
+        left: -17px;
+        width: 12px;
+        height: 12px;
+    }
+    
+    .comment-section {
+        padding: 1rem;
+    }
+    
+    .comment-item {
+        padding: 0.75rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .falla-header {
+        background: #f8f9fa !important;
+        color: #212529 !important;
+        border: 1px solid #dee2e6;
+    }
+    
+    .timeline-item-enhanced {
+        break-inside: avoid;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header de la falla -->
+<div class="falla-header p-4 mb-4">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-2">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Falla #{{ falla.id }}
+                </h1>
+                <p class="mb-0 opacity-90 fs-5">{{ falla.descripcion }}</p>
+                <div class="mt-2">
+                    <small class="opacity-75">
+                        <i class="bi bi-calendar"></i> 
+                        Reportada: {{ falla.fecha_reporte.strftime('%d/%m/%Y %H:%M') if falla.fecha_reporte else 'N/A' }}
+                    </small>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="d-flex flex-column align-items-end gap-2">
+                    <span class="status-indicator {{ falla.estado }}">
+                        <i class="bi bi-{% if falla.estado == 'reportada' %}circle{% elif falla.estado == 'en_proceso' %}clock{% elif falla.estado == 'resuelta' %}check-circle{% else %}shield-check{% endif %}"></i>
+                        {{ falla.estado.replace('_', ' ').title() }}
+                    </span>
+                    <span class="priority-indicator {{ falla.gravedad }}">
+                        <i class="bi bi-{% if falla.gravedad == 'critica' %}exclamation-octagon{% elif falla.gravedad == 'alta' %}exclamation-triangle{% elif falla.gravedad == 'media' %}info-circle{% else %}check-circle{% endif %}"></i>
+                        {{ falla.gravedad.title() }}
+                    </span>
+                    {% if falla.costo %}
+                    <div class="costo-badge">
+                        <i class="bi bi-currency-dollar"></i> ${{ "{:,.0f}".format(falla.costo) }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Información Principal -->
+    <div class="col-lg-8">
+        <!-- Descripción de la falla -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-text"></i> Descripción Detallada
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Descripción:</strong>
+                    <p class="mt-2 fs-6">{{ falla.descripcion }}</p>
+                </div>
+
+                {% if falla.equipo %}
+                <div class="equipo-info">
+                    <h6 class="mb-3">
+                        <i class="bi bi-camera-video"></i> Equipo Afectado
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small><strong>Nombre:</strong> {{ falla.equipo.nombre or 'N/A' }}</small><br>
+                            <small><strong>Tipo:</strong> {{ falla.equipo.tipo or 'N/A' }}</small>
+                        </div>
+                        <div class="col-md-6">
+                            <small><strong>Ubicación:</strong> {{ falla.equipo.ubicacion or 'N/A' }}</small><br>
+                            <small><strong>IP:</strong> {{ falla.equipo.ip_address or 'N/A' }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Fechas importantes -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">
+                            <i class="bi bi-calendar-plus"></i> <strong>Fecha Reporte:</strong><br>
+                            {{ falla.fecha_reporte.strftime('%d/%m/%Y %H:%M') if falla.fecha_reporte else 'N/A' }}
+                        </small>
+                    </div>
+                    {% if falla.fecha_resolucion %}
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">
+                            <i class="bi bi-calendar-check"></i> <strong>Fecha Resolución:</strong><br>
+                            {{ falla.fecha_resolucion.strftime('%d/%m/%Y %H:%M') if falla.fecha_resolucion else 'N/A' }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Solución -->
+        {% if falla.solucion %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-check-circle"></i> Solución Aplicada
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="solucion-section">
+                    <p class="mb-0 fs-6">{{ falla.solucion }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Historial y Timeline Mejorado -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Historial de Cambios
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="enhanced-timeline">
+                    <!-- Timeline Item: Falla Reportada -->
+                    <div class="timeline-item-enhanced completed">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="mb-1 text-success">
+                                    <i class="bi bi-circle-fill"></i> Falla Reportada
+                                </h6>
+                                <p class="text-muted mb-2">{{ falla.descripcion[:200] }}{% if falla.descripcion|length > 200 %}...{% endif %}</p>
+                                <small class="text-muted">
+                                    <i class="bi bi-person"></i> Reportado por: {{ falla.usuario_reporta.nombre_completo if falla.usuario_reporta else 'Sistema' }}
+                                </small>
+                            </div>
+                            <small class="text-muted">
+                                {{ falla.fecha_reporte.strftime('%d/%m/%Y %H:%M') if falla.fecha_reporte else 'N/A' }}
+                            </small>
+                        </div>
+                    </div>
+
+                    {% if falla.tecnico_asignado %}
+                    <!-- Timeline Item: Técnico Asignado -->
+                    <div class="timeline-item-enhanced {% if falla.estado != 'reportada' %}completed{% else %}in-progress{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="mb-1 {% if falla.estado != 'reportada' %}text-success{% else %}text-warning{% endif %}">
+                                    <i class="bi bi-person-check-fill"></i> Técnico Asignado
+                                </h6>
+                                <p class="text-muted mb-2">Asignado a: <strong>{{ falla.tecnico_asignado.nombre_completo }}</strong></p>
+                                <small class="text-muted">
+                                    <i class="bi bi-envelope"></i> {{ falla.tecnico_asignado.email }}
+                                </small>
+                            </div>
+                            <small class="text-muted">
+                                {{ falla.fecha_asignacion.strftime('%d/%m/%Y %H:%M') if falla.fecha_asignacion else 'N/A' }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if falla.estado in ['en_proceso', 'resuelta', 'cerrada'] %}
+                    <!-- Timeline Item: Trabajo en Proceso -->
+                    <div class="timeline-item-enhanced {% if falla.estado in ['resuelta', 'cerrada'] %}completed{% else %}in-progress{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="mb-1 {% if falla.estado in ['resuelta', 'cerrada'] %}text-success{% elif falla.estado == 'en_proceso' %}text-warning{% else %}text-muted{% endif %}">
+                                    <i class="bi bi-tools"></i> Trabajo en Proceso
+                                </h6>
+                                <p class="text-muted mb-2">Técnico comenzó a trabajar en la resolución de la falla</p>
+                            </div>
+                            <small class="text-muted">
+                                {{ falla.fecha_inicio_trabajo.strftime('%d/%m/%Y %H:%M') if falla.fecha_inicio_trabajo else 'N/A' }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if falla.solucion and falla.estado in ['resuelta', 'cerrada'] %}
+                    <!-- Timeline Item: Problema Resuelto -->
+                    <div class="timeline-item-enhanced completed">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="mb-1 text-success">
+                                    <i class="bi bi-check-circle-fill"></i> Problema Resuelto
+                                </h6>
+                                <p class="text-muted mb-2">{{ falla.solucion[:200] }}{% if falla.solucion|length > 200 %}...{% endif %}</p>
+                                <small class="text-success">
+                                    <i class="bi bi-check-lg"></i> Solución aplicada exitosamente
+                                </small>
+                            </div>
+                            <small class="text-muted">
+                                {{ falla.fecha_resolucion.strftime('%d/%m/%Y %H:%M') if falla.fecha_resolucion else 'N/A' }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Comentarios Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-chat-left-text"></i> Comentarios y Notas
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if falla.comentarios %}
+                <div class="comment-section">
+                    <h6 class="mb-3">Comentario Principal</h6>
+                    <div class="comment-item">
+                        <div class="comment-author">
+                            {{ falla.usuario_reporta.nombre_completo if falla.usuario_reporta else 'Sistema' }}
+                        </div>
+                        <div class="comment-date">
+                            {{ falla.fecha_reporte.strftime('%d/%m/%Y %H:%M') if falla.fecha_reporte else 'N/A' }}
+                        </div>
+                        <div class="comment-content">
+                            {{ falla.comentarios }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if falla.comentarios_falla %}
+                <div class="comment-section">
+                    <h6 class="mb-3">Comentarios Adicionales</h6>
+                    {% for comentario in falla.comentarios_falla %}
+                    <div class="comment-item">
+                        <div class="comment-author">
+                            {{ comentario.usuario.nombre_completo }}
+                        </div>
+                        <div class="comment-date">
+                            {{ comentario.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                        <div class="comment-content">
+                            {{ comentario.texto }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Agregar nuevo comentario -->
+                {% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'TECNICO'] %}
+                <div class="comment-form mt-3">
+                    <h6>Agregar Comentario</h6>
+                    <form method="POST" action="{{ url_for('fallas_agregar_comentario', falla_id=falla.id) }}">
+                        <div class="mb-3">
+                            <textarea class="form-control" name="comentario" rows="3" placeholder="Escribe tu comentario aquí..." required></textarea>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-chat-left"></i> Agregar Comentario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Archivos Adjuntos -->
+        {% if falla.evidencias or falla.archivos %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-paperclip"></i> Archivos Adjuntos
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for archivo in falla.evidencias or falla.archivos %}
+                <div class="attachment-item">
+                    <div class="attachment-icon {% if archivo.tipo == 'imagen' %}image{% elif archivo.tipo == 'documento' %}document{% else %}video{% endif %}">
+                        <i class="bi bi-{% if archivo.tipo == 'imagen' %}image{% elif archivo.tipo == 'documento' %}file-text{% else %}play-circle{% endif %}"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-medium">{{ archivo.nombre }}</div>
+                        <small class="text-muted">{{ archivo.tamano }} • {{ archivo.fecha_subida.strftime('%d/%m/%Y %H:%M') }}</small>
+                    </div>
+                    <a href="{{ archivo.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-download"></i>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Información del Técnico -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-gear"></i> Asignación
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                {% if falla.tecnico_asignado %}
+                <div class="avatar-circle bg-primary text-white mx-auto mb-3" 
+                     style="width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold;">
+                    {{ falla.tecnico_asignado.nombre_completo[0] if falla.tecnico_asignado.nombre_completo else 'T' }}
+                </div>
+                <h6>{{ falla.tecnico_asignado.nombre_completo }}</h6>
+                <p class="text-muted mb-2">{{ falla.tecnico_asignado.email }}</p>
+                {% if falla.tecnico_asignado.telefono %}
+                <p class="text-muted mb-0">{{ falla.tecnico_asignado.telefono }}</p>
+                {% endif %}
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-person-x display-4"></i>
+                    <p class="mt-3">Sin técnico asignado</p>
+                    {% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR'] %}
+                    <button class="btn btn-primary btn-sm" onclick="asignarTecnico()">
+                        <i class="bi bi-person-plus"></i> Asignar Técnico
+                    </button>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Acciones Rápidas -->
+        <div class="card mb-4 no-print">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning"></i> Acciones Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'TECNICO'] %}
+                    <a href="{{ url_for('fallas_editar', falla_id=falla.id) }}" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Editar Falla
+                    </a>
+                    {% endif %}
+
+                    {% if falla.estado == 'resuelta' and current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR'] %}
+                    <button class="btn btn-success" onclick="confirmarCierre()">
+                        <i class="bi bi-check-lg"></i> Cerrar Falla
+                    </button>
+                    {% endif %}
+
+                    <button class="btn btn-outline-info" onclick="imprimirDetalle()">
+                        <i class="bi bi-printer"></i> Imprimir
+                    </button>
+
+                    <button class="btn btn-outline-secondary" onclick="exportarPDF()">
+                        <i class="bi bi-download"></i> Exportar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas de la falla -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart"></i> Estadísticas
+                </h5>
+            </div>
+            <div class="card-body">
+                {% set tiempo_transcurrido = (now() - falla.fecha_reporte).days if falla.fecha_reporte else 0 %}
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ tiempo_transcurrido }}</h4>
+                        <small class="text-muted">Días transcurridos</small>
+                    </div>
+                    <div class="col-6">
+                        {% if falla.fecha_resolucion and falla.fecha_reporte %}
+                        {% set tiempo_resolucion = (falla.fecha_resolucion - falla.fecha_reporte).days %}
+                        <h4 class="text-success">{{ tiempo_resolucion }}</h4>
+                        <small class="text-muted">Días para resolver</small>
+                        {% else %}
+                        <h4 class="text-warning">-</h4>
+                        <small class="text-muted">Pendiente</small>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if falla.costo %}
+                <hr>
+                <div class="text-center">
+                    <h5 class="text-success">${{ "{:,.0f}".format(falla.costo) }}</h5>
+                    <small class="text-muted">Costo Total</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Fallas relacionadas -->
+        {% if fallas_relacionadas %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-link"></i> Fallas Relacionadas
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for falla_rel in fallas_relacionadas[:5] %}
+                <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                    <h6 class="mb-1">
+                        <a href="{{ url_for('fallas_detalle', falla_id=falla_rel.id) }}" class="text-decoration-none">
+                            #{{ falla_rel.id }} - {{ falla_rel.descripcion[:50] }}{% if falla_rel.descripcion|length > 50 %}...{% endif %}
+                        </a>
+                    </h6>
+                    <small class="text-muted d-block">
+                        {{ falla_rel.fecha_reporte.strftime('%d/%m/%Y') if falla_rel.fecha_reporte else 'N/A' }}
+                    </small>
+                    <span class="badge badge-sm priority-indicator {{ falla_rel.gravedad }}">
+                        {{ falla_rel.gravedad.title() }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de confirmación para cerrar falla -->
+<div class="modal fade" id="modalCerrarFalla" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Cierre</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea cerrar esta falla?</p>
+                <p class="text-muted">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="cerrarFalla()">Sí, Cerrar Falla</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let fallaId = {{ falla.id }};
+
+function confirmarCierre() {
+    new bootstrap.Modal(document.getElementById('modalCerrarFalla')).show();
+}
+
+function cerrarFalla() {
+    fetch(`/fallas/${fallaId}/cerrar`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al cerrar la falla: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cerrar la falla');
+    });
+}
+
+function imprimirDetalle() {
+    window.print();
+}
+
+function exportarPDF() {
+    window.open(`/fallas/${fallaId}/exportar-pdf`, '_blank');
+}
+
+function asignarTecnico() {
+    // Implementar asignación de técnico
+    console.log('Asignar técnico para falla:', fallaId);
+}
+
+// Auto-refresh cada 60 segundos para verificar cambios de estado
+setInterval(function() {
+    fetch(`/api/fallas/${fallaId}/estado`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.estado_actualizado) {
+            location.reload();
+        }
+    })
+    .catch(error => console.log('Error verificando estado:', error));
+}, 60000);
+
+// Real-time comment updates
+{% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'TECNICO'] %}
+setInterval(function() {
+    fetch(`/api/fallas/${fallaId}/comentarios`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.nuevos_comentarios) {
+            location.reload(); // Refresh to show new comments
+        }
+    })
+    .catch(error => console.log('Error verificando comentarios:', error));
+}, 30000);
+{% endif %}
+</script>
+{% endblock %}

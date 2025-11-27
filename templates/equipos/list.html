@@ -1,0 +1,537 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Equipos - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">
+                <i class="fas fa-list me-2"></i>
+                Lista de Equipos
+            </h1>
+            <p class="text-muted">Gestión unificada del inventario de equipos</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="/equipos/dashboard" class="btn btn-outline-primary me-2">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </a>
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-plus"></i> Nuevo Equipo
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/nvr/create"><i class="fas fa-server me-2"></i>NVR</a></li>
+                    <li><a class="dropdown-item" href="/switches/create"><i class="fas fa-network-wired me-2"></i>Switch</a></li>
+                    <li><a class="dropdown-item" href="/ups/create"><i class="fas fa-battery-full me-2"></i>UPS</a></li>
+                    <li><a class="dropdown-item" href="/fuentes/create"><i class="fas fa-plug me-2"></i>Fuente de Poder</a></li>
+                    <li><a class="dropdown-item" href="/gabinetes/create"><i class="fas fa-archive me-2"></i>Gabinete</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" placeholder="Buscar equipos..." id="searchInput">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="statusFilter">
+                        <option value="">Todos los estados</option>
+                        <option value="activo">Activo</option>
+                        <option value="mantenimiento">En Mantenimiento</option>
+                        <option value="inactivo">Inactivo</option>
+                        <option value="fallando">Con Fallas</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="locationFilter">
+                        <option value="">Todas las ubicaciones</option>
+                        <option value="edificio-a">Edificio A</option>
+                        <option value="edificio-b">Edificio B</option>
+                        <option value="laboratorio">Laboratorio Central</option>
+                        <option value="estacionamiento">Estacionamiento</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                        <i class="fas fa-eraser"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Equipment Tabs -->
+    <div class="card shadow">
+        <div class="card-header p-0">
+            <ul class="nav nav-tabs card-header-tabs" id="equipmentTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button">
+                        <i class="fas fa-list me-1"></i>
+                        Todos los Equipos
+                        <span class="badge bg-primary ms-2">247</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="nvr-tab" data-bs-toggle="tab" data-bs-target="#nvr" type="button">
+                        <i class="fas fa-server me-1"></i>
+                        NVR/DVR
+                        <span class="badge bg-secondary ms-2">18</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="switches-tab" data-bs-toggle="tab" data-bs-target="#switches" type="button">
+                        <i class="fas fa-network-wired me-1"></i>
+                        Switches
+                        <span class="badge bg-secondary ms-2">45</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="ups-tab" data-bs-toggle="tab" data-bs-target="#ups" type="button">
+                        <i class="fas fa-battery-full me-1"></i>
+                        UPS
+                        <span class="badge bg-secondary ms-2">32</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="fuentes-tab" data-bs-toggle="tab" data-bs-target="#fuentes" type="button">
+                        <i class="fas fa-plug me-1"></i>
+                        Fuentes de Poder
+                        <span class="badge bg-secondary ms-2">87</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="gabinetes-tab" data-bs-toggle="tab" data-bs-target="#gabinetes" type="button">
+                        <i class="fas fa-archive me-1"></i>
+                        Gabinetes
+                        <span class="badge bg-secondary ms-2">65</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body">
+            <div class="tab-content" id="equipmentTabsContent">
+                <!-- All Equipment Tab -->
+                <div class="tab-pane fade show active" id="all" role="tabpanel">
+                    <div class="row" id="equipmentGrid">
+                        <!-- Sample equipment cards - These would be dynamically generated -->
+                        <!-- NVR Card -->
+                        <div class="col-lg-4 col-md-6 mb-4 equipment-card" data-type="nvr" data-status="activo">
+                            <div class="card h-100 shadow-sm border-success">
+                                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="fas fa-server me-2"></i>NVR Principal</h6>
+                                    <span class="badge bg-light text-success">Activo</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center mb-3">
+                                        <div class="col-6">
+                                            <div class="text-muted small">ID</div>
+                                            <div class="fw-bold">NVR-001</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-muted small">Ubicación</div>
+                                            <div class="fw-bold">Edificio A</div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="text-muted small">Canales</div>
+                                            <div class="fw-bold">16/32</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-muted small">Estado</div>
+                                            <div class="text-success"><i class="fas fa-check-circle"></i></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="/nvr/detail/NVR-001" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                        <a href="/nvr/edit/NVR-001" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <button class="btn btn-outline-info btn-sm" onclick="showMaintenanceHistory('NVR-001')">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Switch Card -->
+                        <div class="col-lg-4 col-md-6 mb-4 equipment-card" data-type="switch" data-status="activo">
+                            <div class="card h-100 shadow-sm border-success">
+                                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="fas fa-network-wired me-2"></i>Switch Principal</h6>
+                                    <span class="badge bg-light text-success">Activo</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center mb-3">
+                                        <div class="col-6">
+                                            <div class="text-muted small">ID</div>
+                                            <div class="fw-bold">SW-001</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-muted small">Ubicación</div>
+                                            <div class="fw-bold">Edificio A</div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="text-muted small">Puertos</div>
+                                            <div class="fw-bold">24/48</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-muted small">Estado</div>
+                                            <div class="text-success"><i class="fas fa-check-circle"></i></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="/switches/detail/SW-001" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                        <a href="/switches/edit/SW-001" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <button class="btn btn-outline-info btn-sm" onclick="showMaintenanceHistory('SW-001')">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- UPS Card -->
+                        <div class="col-lg-4 col-md-6 mb-4 equipment-card" data-type="ups" data-status="mantenimiento">
+                            <div class="card h-100 shadow-sm border-warning">
+                                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="fas fa-battery-full me-2"></i>UPS Laboratorio</h6>
+                                    <span class="badge bg-light text-warning">Mantenimiento</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center mb-3">
+                                        <div class="col-6">
+                                            <div class="text-muted small">ID</div>
+                                            <div class="fw-bold">UPS-001</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-muted small">Ubicación</div>
+                                            <div class="fw-bold">Laboratorio</div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="text-muted small">Capacidad</div>
+                                            <div class="fw-bold">3KVA</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-muted small">Estado</div>
+                                            <div class="text-warning"><i class="fas fa-tools"></i></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="/ups/detail/UPS-001" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                        <a href="/ups/edit/UPS-001" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <button class="btn btn-outline-info btn-sm" onclick="showMaintenanceHistory('UPS-001')">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Power Source Card -->
+                        <div class="col-lg-4 col-md-6 mb-4 equipment-card" data-type="fuente_poder" data-status="activo">
+                            <div class="card h-100 shadow-sm border-success">
+                                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="fas fa-plug me-2"></i>Fuente Camara 15</h6>
+                                    <span class="badge bg-light text-success">Activo</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center mb-3">
+                                        <div class="col-6">
+                                            <div class="text-muted small">ID</div>
+                                            <div class="fw-bold">FP-015</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-muted small">Ubicación</div>
+                                            <div class="fw-bold">Estacionamiento</div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="text-muted small">Potencia</div>
+                                            <div class="fw-bold">12V/2A</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-muted small">Estado</div>
+                                            <div class="text-success"><i class="fas fa-check-circle"></i></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="/fuentes/detail/FP-015" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                        <a href="/fuentes/edit/FP-015" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <button class="btn btn-outline-info btn-sm" onclick="showMaintenanceHistory('FP-015')">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cabinet Card -->
+                        <div class="col-lg-4 col-md-6 mb-4 equipment-card" data-type="gabinete" data-status="fallando">
+                            <div class="card h-100 shadow-sm border-danger">
+                                <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="fas fa-archive me-2"></i>Gabinete Edificio B</h6>
+                                    <span class="badge bg-light text-danger">Con Fallas</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center mb-3">
+                                        <div class="col-6">
+                                            <div class="text-muted small">ID</div>
+                                            <div class="fw-bold">GAB-002</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-muted small">Ubicación</div>
+                                            <div class="fw-bold">Edificio B</div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="text-muted small">Equipos</div>
+                                            <div class="fw-bold">8/12</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-muted small">Estado</div>
+                                            <div class="text-danger"><i class="fas fa-exclamation-triangle"></i></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="/gabinetes/detail/GAB-002" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                        <a href="/gabinetes/edit/GAB-002" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <button class="btn btn-outline-info btn-sm" onclick="showMaintenanceHistory('GAB-002')">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Individual equipment tabs would have similar content but filtered -->
+                <div class="tab-pane fade" id="nvr" role="tabpanel">
+                    <div class="text-center py-4">
+                        <h5><i class="fas fa-server me-2"></i>NVR/DVR</h5>
+                        <p class="text-muted">Contenido filtrado para NVR/DVR equipos</p>
+                        <!-- NVR filtered content would go here -->
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="switches" role="tabpanel">
+                    <div class="text-center py-4">
+                        <h5><i class="fas fa-network-wired me-2"></i>Switches</h5>
+                        <p class="text-muted">Contenido filtrado para Switch equipos</p>
+                        <!-- Switch filtered content would go here -->
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="ups" role="tabpanel">
+                    <div class="text-center py-4">
+                        <h5><i class="fas fa-battery-full me-2"></i>UPS</h5>
+                        <p class="text-muted">Contenido filtrado para UPS equipos</p>
+                        <!-- UPS filtered content would go here -->
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="fuentes" role="tabpanel">
+                    <div class="text-center py-4">
+                        <h5><i class="fas fa-plug me-2"></i>Fuentes de Poder</h5>
+                        <p class="text-muted">Contenido filtrado para Fuentes de Poder equipos</p>
+                        <!-- Fuentes filtered content would go here -->
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="gabinetes" role="tabpanel">
+                    <div class="text-center py-4">
+                        <h5><i class="fas fa-archive me-2"></i>Gabinetes</h5>
+                        <p class="text-muted">Contenido filtrado para Gabinetes equipos</p>
+                        <!-- Gabinetes filtered content would go here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Maintenance History Modal -->
+<div class="modal fade" id="maintenanceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Historial de Mantenimiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="maintenanceHistory">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        filterEquipment();
+    });
+
+    // Filter functionality
+    document.getElementById('statusFilter').addEventListener('change', function() {
+        filterEquipment();
+    });
+
+    document.getElementById('locationFilter').addEventListener('change', function() {
+        filterEquipment();
+    });
+
+    // Clear filters
+    function clearFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('locationFilter').value = '';
+        filterEquipment();
+    }
+
+    // Filter equipment cards
+    function filterEquipment() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const status = document.getElementById('statusFilter').value;
+        const location = document.getElementById('locationFilter').value;
+        
+        const cards = document.querySelectorAll('.equipment-card');
+        
+        cards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            const cardStatus = card.dataset.status;
+            const cardLocation = card.querySelector('.fw-bold:nth-child(2)').textContent.toLowerCase().replace(' ', '-');
+            
+            let show = true;
+            
+            // Search filter
+            if (search && !text.includes(search)) {
+                show = false;
+            }
+            
+            // Status filter
+            if (status && cardStatus !== status) {
+                show = false;
+            }
+            
+            // Location filter
+            if (location && !cardLocation.includes(location)) {
+                show = false;
+            }
+            
+            card.style.display = show ? 'block' : 'none';
+        });
+    }
+
+    // Show maintenance history
+    function showMaintenanceHistory(equipmentId) {
+        // This would typically load data via AJAX
+        const modal = new bootstrap.Modal(document.getElementById('maintenanceModal'));
+        
+        document.getElementById('maintenanceHistory').innerHTML = `
+            <h6>Historial para ${equipmentId}</h6>
+            <div class="timeline">
+                <div class="d-flex mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="bg-success rounded-circle p-2 text-white">
+                            <i class="fas fa-check"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-1">Mantenimiento preventivo</h6>
+                        <p class="text-muted mb-0">Mantenimiento rutinario completado - <small>Hace 1 semana</small></p>
+                    </div>
+                </div>
+                <div class="d-flex mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="bg-warning rounded-circle p-2 text-white">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-1">Limpieza interna</h6>
+                        <p class="text-muted mb-0">Limpieza y revisión de componentes - <small>Hace 2 semanas</small></p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        modal.show();
+    }
+
+    // Tab filtering
+    document.querySelectorAll('[data-bs-target^="#"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function (e) {
+            const target = e.target.getAttribute('data-bs-target');
+            const tabType = target.replace('#', '');
+            
+            // Reset filters when changing tabs
+            clearFilters();
+            
+            // Filter by type if not "all"
+            if (tabType !== 'all') {
+                filterByType(tabType);
+            }
+        });
+    });
+
+    function filterByType(type) {
+        const cards = document.querySelectorAll('.equipment-card');
+        cards.forEach(card => {
+            const cardType = card.dataset.type;
+            card.style.display = cardType === type ? 'block' : 'none';
+        });
+    }
+</script>
+{% endblock %}

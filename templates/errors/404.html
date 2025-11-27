@@ -1,3 +1,225 @@
+<<<<<<< HEAD
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Página No Encontrada | Sistema de Gestión de Cámaras UFRO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-md-6 text-center">
+                <!-- Icono de error -->
+                <div class="mb-4">
+                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 8rem;"></i>
+                </div>
+
+                <!-- Título del error -->
+                <h1 class="display-1 fw-bold text-muted mb-3">404</h1>
+
+                <!-- Mensaje principal -->
+                <h2 class="h3 mb-3">¡Ups! Página no encontrada</h2>
+
+                <!-- Descripción del error -->
+                <p class="lead text-muted mb-4">
+                    Lo sentimos, la página que buscas no existe o ha sido movida.
+                    Es posible que la URL esté incorrecta o que el recurso haya sido eliminado.
+                </p>
+
+                <!-- Acciones recomendadas -->
+                <div class="mb-5">
+                    <h5 class="mb-3">¿Qué puedes hacer?</h5>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="card content-card h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-house fs-1 text-primary mb-3"></i>
+                                    <h6 class="card-title">Ir al Dashboard</h6>
+                                    <p class="card-text small">Vuelve al dashboard principal</p>
+                                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-house me-1"></i>Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card content-card h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-arrow-left fs-1 text-secondary mb-3"></i>
+                                    <h6 class="card-title">Página Anterior</h6>
+                                    <p class="card-text small">Regresa a donde estabas</p>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="goBack()">
+                                        <i class="bi bi-arrow-left me-1"></i>Volver
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card content-card h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-life-preserver fs-1 text-info mb-3"></i>
+                                    <h6 class="card-title">Centro de Ayuda</h6>
+                                    <p class="card-text small">Obtén más información</p>
+                                    <button class="btn btn-info btn-sm" onclick="showHelp()">
+                                        <i class="bi bi-question-circle me-1"></i>Ayuda
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enlaces útiles -->
+                <div class="row g-3 mt-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Enlaces Útiles</h6>
+                        <ul class="list-unstyled small">
+                            {% if current_user.is_authenticated %}
+                            <li><a href="{{ url_for('dashboard') }}" class="text-decoration-none">
+                                <i class="bi bi-speedometer me-2"></i>Dashboard
+                            </a></li>
+                            <li><a href="{{ url_for('login') }}" class="text-decoration-none">
+                                <i class="bi bi-person me-2"></i>Mi Perfil
+                            </a></li>
+                            {% else %}
+                            <li><a href="{{ url_for('login') }}" class="text-decoration-none">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
+                            </a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Soporte Técnico</h6>
+                        <ul class="list-unstyled small">
+                            <li>
+                                <i class="bi bi-envelope me-2"></i>
+                                <a href="mailto:soporte.camaras@ufrontera.cl" class="text-decoration-none">
+                                    soporte.camaras@ufrontera.cl
+                                </a>
+                            </li>
+                            <li>
+                                <i class="bi bi-telephone me-2"></i>
+                                <span>+56 45 2 3456</span>
+                            </li>
+                            <li>
+                                <i class="bi bi-clock me-2"></i>
+                                <span>Lun - Vie: 8:00 - 18:00</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Información adicional -->
+                <div class="mt-5 p-3 bg-light rounded">
+                    <h6 class="text-muted mb-2">Código de Error: 404</h6>
+                    <p class="small text-muted mb-0">
+                        Este error indica que el recurso solicitado no existe en el servidor.
+                        Si crees que es un error del sistema, por favor contacta al soporte técnico.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Ayuda -->
+    <div class="modal fade" id="helpModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-life-preserver me-2"></i>Centro de Ayuda
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>¿Necesitas ayuda?</h6>
+                    <p>Si continúas teniendo problemas, puedes:</p>
+                    <ul>
+                        <li>Verificar que la URL sea correcta</li>
+                        <li>Usar el menú de navegación para encontrar lo que buscas</li>
+                        <li>Contactar al soporte técnico</li>
+                        <li>Regresar al dashboard principal</li>
+                    </ul>
+                    <hr>
+                    <h6>Enlaces Rápidos</h6>
+                    <div class="d-grid gap-2">
+                        {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-house me-2"></i>Ir al Dashboard
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
+                        </a>
+                        {% endif %}
+                        <button type="button" class="btn btn-outline-secondary" onclick="reportError()">
+                            <i class="bi bi-bug me-2"></i>Reportar Error
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = "{{ url_for('dashboard') }}";
+            }
+        }
+
+        function showHelp() {
+            new bootstrap.Modal(document.getElementById('helpModal')).show();
+        }
+
+        function reportError() {
+            const errorDetails = {
+                url: window.location.href,
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                errorType: '404'
+            };
+
+            console.log('Reporte de error:', errorDetails);
+            alert('Error reportado. Gracias por tu feedback.');
+            bootstrap.Modal.getInstance(document.getElementById('helpModal')).hide();
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('helpModal'));
+                if (modal) modal.hide();
+            }
+        });
+    </script>
+
+    <style>
+        .min-vh-100 {
+            min-height: 100vh;
+        }
+        .card {
+            transition: transform 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+    </style>
+</body>
+</html>
+=======
 {% extends 'base.html' %}
 
 {% block title %}Página No Encontrada (404) - Sistema de Gestión Académica UFRO{% endblock %}
@@ -290,3 +512,4 @@ toggleSearch();
 </script>
 
 {% endblock %}
+>>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270
