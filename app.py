@@ -161,7 +161,7 @@ class Equipos(db.Model):
     """💻 Equipos generales del sistema."""
     __tablename__ = 'equipos'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    equipment_name = db.Column(db.String(100), nullable=False)
     tipo = db.Column(db.String(50), nullable=False)
     marca = db.Column(db.String(100))
     modelo = db.Column(db.String(100))
@@ -261,7 +261,7 @@ class Fotografias(db.Model):
     original_camera = db.Column(db.String(100))
     notes = db.Column(db.Text)
     mime_type = db.Column(db.String(100))
-    metadata = db.Column(db.Text)
+    metadata_info = db.Column(db.Text)
     last_accessed = db.Column(db.DateTime)
     iso = db.Column(db.Integer)
     is_featured = db.Column(db.Boolean, default=False)
