@@ -223,6 +223,9 @@ try:
     from .equipo_tecnico import EquipoTecnico
     logger.debug("✅ EquipoTecnico importado directamente")
     
+    from .usuario_logs import UsuarioLog
+    logger.debug("✅ UsuarioLog importado directamente")
+    
     logger.info("🎉 models/__init__.py inicializado correctamente")
     
 except ImportError as e:
@@ -236,7 +239,9 @@ __all__ = [
     'db',
     'Usuario', 'Camara', 'Ubicacion', 'Falla', 'FallaComentario', 'Switch', 
     'NvrDvr', 'Ups', 'Gabinete', 'FuentePoder', 'Mantenimiento', 
-    'Fotografia', 'HistorialEstadoEquipo', 'CatalogoTipoFalla', 'EquipoTecnico'
+    'Fotografia', 'HistorialEstadoEquipo', 'CatalogoTipoFalla', 'EquipoTecnico',
+    'UsuarioLog'  # ✅ Agregado para logs de auditoría
+]
 ]
 
 # Fin del archivo models/__init__.py
