@@ -28,6 +28,9 @@ class Usuario(UserMixin, BaseModel):
     fallas_creadas = relationship("Falla", foreign_keys="Falla.creado_por_id", back_populates="creado_por")
     fallas_asignadas = relationship("Falla", foreign_keys="Falla.asignado_a_id", back_populates="asignado_a")
     falla_comentarios = relationship("FallaComentario", back_populates="usuario")
+    
+    # ✅ NUEVA: Relación con logs de usuario
+    logs = relationship("UsuarioLog", back_populates="usuario", cascade="all, delete-orphan")
 
     def set_password(self, password):
         """Establecer contraseña con bcrypt (seguro)"""
