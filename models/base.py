@@ -17,6 +17,7 @@ from typing import Optional, List, Dict, Any
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 import logging
+from models.enums.estado_camara import EstadoCamara
 
 db = SQLAlchemy()
 
@@ -30,14 +31,6 @@ class RolEnum(Enum):
     SUPERVISOR = "SUPERVISOR"
     OPERADOR = "OPERADOR"
     LECTURA = "LECTURA"
-
-class EstadoCamara(Enum):
-    """Estados posibles de una cámara"""
-    ACTIVA = "ACTIVA"
-    INACTIVA = "INACTIVA"
-    MANTENIMIENTO = "MANTENIMIENTO"
-    FUERA_SERVICIO = "FUERA_SERVICIO"
-    INSTALACION = "INSTALACION"
 
 class TipoUbicacion(Enum):
     """Tipos de ubicación de las cámaras"""
@@ -120,6 +113,8 @@ class TimestampedModel(ModelMixin):
 class BaseModelMixin(TimestampedModel):
     """Mixin simplificado para modelos básicos que heredan de db.Model"""
     
+    id = db.Column(db.Integer, primary_key=True)
+    
     @classmethod
     def get_by_id(cls, id_value):
         """Obtiene un registro por ID"""
@@ -137,11 +132,6 @@ class BaseModelMixin(TimestampedModel):
     def count(cls):
         """Cuenta el total de registros"""
         return cls.query.count()
-    
-    @property
-    def id(self):
-        """Obtiene el ID del modelo"""
-        return getattr(self, 'id', None)
 
 class BaseModel(db.Model, TimestampedModel):
     """Clase base para todos los modelos del sistema"""
@@ -222,39 +212,10 @@ class Rol(db.Model, TimestampedModel):
     permisos = db.Column(db.Text, nullable=True)  # JSON con permisos específicos
     activo = db.Column(db.Boolean, default=True, nullable=False)
     
-    # Relación con usuarios
-    usuarios = db.relationship('Usuario', backref='rol_obj', lazy='dynamic')
+    # Relación con usuarios (ahora definida en models/usuario.py)
+    # Nota: La relación se manejará desde la clase Usuario
 
-class Usuario(db.Model, UserMixin, TimestampedModel):
-    """Modelo de usuarios del sistema"""
-    __tablename__ = 'usuarios'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=True)
-    nombre_completo = db.Column(db.String(120), nullable=True)  # ✅ CAMBIO APLICADO
-    telefono = db.Column(db.String(20), nullable=True)
-    
-    # Relaciones normalizadas
-    rol_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
-    
-    # Campos de autenticación y estado
-    password_hash = db.Column(db.String(256), nullable=False)
-    activo = db.Column(db.Boolean, default=True, nullable=False)
-    ultimo_acceso = db.Column(db.DateTime, nullable=True)
-    
-    # Campos adicionales
-    ultima_ip = db.Column(db.String(45), nullable=True)  # IPv4/IPv6
-    intentos_login = db.Column(db.Integer, default=0, nullable=False)
-    bloqueado_hasta = db.Column(db.DateTime, nullable=True)
-    
-    def __repr__(self):
-        return f'<Usuario {self.username}>'
-    
-    @property
-    def rol(self) -> Optional[Rol]:
-        """Obtiene el rol del usuario"""
-        return self.rol_obj
+
 
 class Ubicacion(db.Model, TimestampedModel):
     """Modelo de ubicaciones del campus UFRO"""
@@ -475,30 +436,33 @@ def create_roles():
 
 def create_default_admin():
     """Crea el usuario administrador por defecto"""
-    # Verificar si ya existe
-    admin = Usuario.query.filter_by(username='admin').first()
-    if admin:
+    # Obtener la clase Usuario dinámicamente para evitar import circular
+    try:
+        Usuario = db.Model._decl_class_registry.get('Usuario')
+        if Usuario is None:
+            logging.warning("⚠️ Usuario no disponible para crear admin por defecto")
+            return None
+        
+        # Verificar si ya existe
+        admin = Usuario.query.filter_by(username='admin').first()
+        if admin:
+            return admin
+        
+        # Crear administrador básico
+        admin = Usuario(
+            username='admin',
+            email='charles.jelvez@ufrontera.cl',
+            full_name='Charles Jelvez - Administrador UFRO',
+            password_hash='pbkdf2:sha256:600000$Z8Z8Z8Z8Z8Z8Z8Z8$Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8',  # Vivita0468 hasheada
+            is_active=True,
+            role='admin'
+        )
+        admin.save()
+        
         return admin
-    
-    # Obtener rol ADMIN
-    rol_admin = Rol.query.filter_by(nombre=RolEnum.ADMIN).first()
-    if not rol_admin:
-        raise ValueError("Rol ADMIN no existe. Ejecutar create_roles() primero.")
-    
-    # Crear administrador
-    admin_data = {
-        'username': 'admin',
-        'email': 'charles.jelvez@ufrontera.cl',
-        'nombre_completo': 'Charles Jelvez - Administrador UFRO',
-        'rol_id': rol_admin.id,
-        'password_hash': 'pbkdf2:sha256:600000$Z8Z8Z8Z8Z8Z8Z8Z8$Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8',  # Vivita0468 hasheada
-        'activo': True
-    }
-    
-    admin = Usuario(**admin_data)
-    admin.save()
-    
-    return admin
+    except Exception as e:
+        logging.error(f"❌ Error creando admin por defecto: {e}")
+        return None
 
 def init_database():
     """Inicializa la base de datos con datos por defecto"""
@@ -525,21 +489,32 @@ def init_database():
 
 def get_user_stats() -> Dict[str, Any]:
     """Obtiene estadísticas generales del sistema"""
-    stats = {
-        'total_usuarios': Usuario.query.count(),
-        'usuarios_activos': Usuario.query.filter_by(activo=True).count(),
-        'usuarios_por_rol': {},
-        'total_camaras': None,
-        'camaras_por_estado': {}
-    }
-    
-    # Estadísticas por rol
-    roles = Rol.query.all()
-    for rol in roles:
-        count = Usuario.query.filter_by(rol_id=rol.id).count()
-        stats['usuarios_por_rol'][rol.nombre.value] = count
-    
-    return stats
+    try:
+        # Obtener la clase Usuario dinámicamente para evitar import circular
+        Usuario = db.Model._decl_class_registry.get('Usuario')
+        if Usuario is None:
+            logging.warning("⚠️ Usuario no disponible para estadísticas")
+            return {'error': 'Usuario model not available'}
+        
+        stats = {
+            'total_usuarios': Usuario.query.count(),
+            'usuarios_activos': Usuario.query.filter_by(is_active=True).count(),
+            'usuarios_por_rol': {},
+            'total_camaras': None,
+            'camaras_por_estado': {}
+        }
+        
+        # Estadísticas por rol
+        roles = Rol.query.all()
+        for rol in roles:
+            # Contar usuarios por rol usando el campo 'role'
+            count = Usuario.query.filter_by(role=rol.nombre.value).count()
+            stats['usuarios_por_rol'][rol.nombre.value] = count
+        
+        return stats
+    except Exception as e:
+        logging.error(f"❌ Error obteniendo estadísticas de usuarios: {e}")
+        return {'error': str(e)}
 
 def get_camera_stats() -> Dict[str, Any]:
     """Obtiene estadísticas de cámaras"""

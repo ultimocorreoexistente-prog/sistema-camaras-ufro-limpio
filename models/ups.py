@@ -9,7 +9,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, 
 from sqlalchemy.orm import relationship
 from models.base import db, TimestampedModel
 from models.equipo import EquipmentBase
-from models import EquipmentStatus
+from models.enums.equipment_status import EquipmentStatus
 import enum
 
 

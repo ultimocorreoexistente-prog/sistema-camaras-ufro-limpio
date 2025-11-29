@@ -7,7 +7,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, 
 from sqlalchemy.orm import relationship
 from models.base import db, TimestampedModel
 from models.equipo import EquipmentBase
-from models import EquipmentStatus
+from models.enums.equipment_status import EquipmentStatus
 import enum
 
 
@@ -101,6 +101,9 @@ class Gabinete(db.Model, TimestampedModel):
 
     __tablename__ = 'gabinetes'
 
+    # Identificador
+    id = Column(Integer, primary_key=True, autoincrement=True, comment="ID único del gabinete")
+    
     # Tipo y dimensiones físicas
     cabinet_type = Column(Enum(CabinetType), nullable=True, comment="Tipo de gabinete")
     material = Column(Enum(CabinetMaterial), nullable=True, comment="Material de construcción")
@@ -199,14 +202,14 @@ class Gabinete(db.Model, TimestampedModel):
     responsible = relationship("Usuario", foreign_keys=[responsible_person])
 
     # Relaciones con otros modelos
-    mantenimientos = relationship("Mantenimiento", back_populate="gabinete", cascade="all, delete-orphan")
+    mantenimientos = relationship("Mantenimiento", back_populates="gabinete", cascade="all, delete-orphan")
     fotografias = relationship("Fotografia", back_populate="gabinete", cascade="all, delete-orphan")
 
     # Relaciones con equipos instalados
     installed_equipment = relationship("GabineteEquipment", back_populates="gabinete", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<Gabinete(name='{self.name}', type='{self.cabinet_type.value if self.cabinet_type else 'N/A'}', units={self.rack_units}U)>"
+        return f"<Gabinete(id={self.id}, type='{self.cabinet_type.value if self.cabinet_type else 'N/A'}', units={self.rack_units}U)>"
 
     def get_available_units(self):
         """

@@ -9,7 +9,8 @@ import json
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from models.base import BaseModelMixin, BaseModel
-from models.equipo import EquipmentBase, ConnectionType
+from models.equipo import EquipmentBase
+from models.network_connections import ConnectionType
 from models import db, EquipmentStatus
 import enum
 
@@ -42,10 +43,11 @@ class NVR(EquipmentBase, db.Model):
     comunes (name, ip_address, status, etc.) de EquipmentBase.
     """
 
-
+    # Agregar id explícito ya que EquipmentBase no lo define
+    id = Column(Integer, primary_key=True)
 
     __tablename__ = 'nvrs'
-    # id, created_at, updated_at, deleted, y campos técnicos heredados de EquipmentBase
+    # created_at, updated_at, deleted heredados de EquipmentBase
 
     # Configuración del sistema
     system_type = Column(Enum(NVRSystemType), nullable=False, default=NVRSystemType.NVR,
@@ -328,8 +330,11 @@ class NVRCameraChannel(BaseModelMixin, db.Model):
     """
     Configuración de canales de cámaras en NVRs.
     """
+    # Agregar id explícito ya que BaseModelMixin no lo define
+    id = Column(Integer, primary_key=True)
+    
     __tablename__ = 'nvr_camera_channels'
-    # id, created_at, updated_at, deleted heredados de BaseModelMixin
+    # created_at, updated_at, deleted heredados de BaseModelMixin
 
     nvr_id = Column(Integer, ForeignKey('nvrs.id'), nullable=False,
                      comment="ID del NVR")

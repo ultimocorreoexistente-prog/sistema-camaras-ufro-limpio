@@ -50,6 +50,8 @@ class VLANType(enum.Enum):
 
 
 class Switch(db.Model, TimestampedModel):
+    
+    id = db.Column(db.Integer, primary_key=True)
     """
     Modelo de switches de red.
 
@@ -457,6 +459,8 @@ class Switch(db.Model, TimestampedModel):
 
 
 class SwitchPort(db.Model, TimestampedModel):
+    
+    id = db.Column(db.Integer, primary_key=True)
     """
     Modelo de puertos de switch.
 
@@ -647,6 +651,8 @@ class SwitchPort(db.Model, TimestampedModel):
 
 
 class SwitchVLAN(db.Model, TimestampedModel):
+    
+    id = db.Column(db.Integer, primary_key=True)
     """
     Modelo de VLANs de switch.
 

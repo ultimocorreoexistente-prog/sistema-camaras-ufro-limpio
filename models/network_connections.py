@@ -15,7 +15,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.exc import IntegrityError
 
 from models.base import db, TimestampedModel
-from models import db
 
 
 class ConnectionType(Enum):

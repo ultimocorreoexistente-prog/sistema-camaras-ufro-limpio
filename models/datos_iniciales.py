@@ -16,12 +16,12 @@ from flask import Flask
 from models import init_db
 from models.usuario import Usuario
 from models.ubicacion import Ubicacion
-from models.camara import Camara, CameraType
+from models.base import Camara
 from models.nvr import NVR, NVRSystemType
 from models.switch import Switch, SwitchType
 from models.ups import UPS, UPSType
 from models.gabinete import Gabinete, CabinetType
-from models.equipo import NetworkConnection, ConnectionType
+from models.network_connections import NetworkConnection, ConnectionType
 
 def create_app():
     """Crear aplicación Flask."""

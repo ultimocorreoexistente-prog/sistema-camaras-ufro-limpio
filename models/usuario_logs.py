@@ -45,6 +45,9 @@ class UsuarioLog(db.Model, TimestampedModel):
 
     __tablename__ = 'usuario_logs'
 
+    # Identificador
+    id = Column(Integer, primary_key=True, autoincrement=True, comment="ID único del log")
+    
     # Campos específicos del log
     usuario_id = Column(Integer, ForeignKey('usuarios.id'), nullable=False,
                         comment="ID del usuario que realizó la acción")

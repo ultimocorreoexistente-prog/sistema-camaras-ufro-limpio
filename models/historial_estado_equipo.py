@@ -24,6 +24,9 @@ class HistorialEstadoEquipo(db.Model, TimestampedModel):
     """
     __tablename__ = 'historial_estado_equipo'
     
+    # Identificador
+    id = Column(Integer, primary_key=True, autoincrement=True, comment="ID único del registro")
+    
     # === CAMPOS PRINCIPALES ===
     equipo_tipo = Column(
         String(50), 

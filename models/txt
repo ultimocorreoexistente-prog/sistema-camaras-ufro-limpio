@@ -3,6 +3,56 @@
 
  Directorio de C:\Users\Usuario\sistema-camaras-ufro-limpio\models
 
+<<<<<<< HEAD
+24-11-2025  12:04    <DIR>          .
+24-11-2025  12:04    <DIR>          ..
+24-11-2025  11:26             8.504 base.py
+21-11-2025  09:22             1.706 camara.py
+14-11-2025  08:59             1.635 camaras.py
+22-11-2025  16:32             7.593 catalogo_tipo_falla.py
+15-11-2025  17:04            24.980 datos_iniciales.py
+15-11-2025  17:04             7.817 ejemplo_equipo_tecnico.py
+15-11-2025  17:04             7.066 ejemplo_network_connections.py
+15-11-2025  17:04             7.083 ejemplo_puertos_switch.py
+15-11-2025  17:04            19.909 ejemplo_uso.py
+17-11-2025  13:20    <DIR>          enums
+22-11-2025  16:25             9.913 equipo.py
+22-11-2025  17:39            17.113 equipo_tecnico.py
+21-11-2025  10:15             1.481 falla.py
+23-11-2025  00:10             5.869 fia_logic.py
+21-11-2025  09:58             1.844 fotografia.py
+21-11-2025  08:55            15.561 fuente_poder.py
+22-11-2025  14:38            10.112 gabinete.py
+15-11-2025  17:04            10.352 historial_estado_equipo.py
+15-11-2025  17:04            16.989 install.py
+21-11-2025  10:25             3.411 mantenimiento.py
+17-11-2025  13:20             2.681 models.txt
+22-11-2025  21:24            12.437 network_connections.py
+22-11-2025  16:10            12.296 nvr.py
+21-11-2025  09:49             8.391 puertos_switch.py
+14-11-2025  08:59             8.270 README.md
+15-11-2025  17:04             7.265 README_catalogo_tipo_falla.md
+15-11-2025  17:04             7.781 README_EQUIPO_TECNICO.md
+15-11-2025  17:04             7.790 README_network_connections.md
+15-11-2025  17:04             6.991 README_PUERTOS_SWITCH.md
+14-11-2025  08:59             6.652 RESUMEN_COMPLETADO.md
+15-11-2025  17:04             5.781 RESUMEN_PUERTO_SWITCH_COMPLETADO.md
+21-11-2025  09:22            25.787 switch.py
+15-11-2025  17:04             4.049 test_catalogo_tipo_falla.py
+15-11-2025  17:04             7.008 test_puertos_switch.py
+24-11-2025  12:04                 0 txt
+21-11-2025  09:22             2.047 ubicacion.py
+22-11-2025  21:15            19.770 ups.py
+23-11-2025  00:05             2.638 usuario.py
+14-11-2025  08:59               723 usuario_log.py
+15-11-2025  17:04             9.552 usuario_logs.py
+14-11-2025  08:59               165 usuario_roles.py
+14-11-2025  08:59            10.044 _datos_iniciales.py
+24-11-2025  11:29               247 __init__.py
+23-11-2025  01:19    <DIR>          __pycache__
+              42 archivos        347.303 bytes
+               4 dirs  102.083.842.048 bytes libres
+=======
 26-11-2025  12:24    <DIR>          .
 26-11-2025  12:24    <DIR>          ..
 26-11-2025  11:21            10.176 base.py
@@ -54,3 +104,4 @@
 26-11-2025  12:24    <DIR>          __pycache__
               45 archivos        478.682 bytes
                4 dirs  67.879.784.448 bytes libres
+>>>>>>> cdbdbe569d8335333b42b0aa946977f011b91270

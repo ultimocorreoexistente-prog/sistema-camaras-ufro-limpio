@@ -9,6 +9,7 @@ from models.base import db, TimestampedModel
 class FallaComentario(db.Model, TimestampedModel):
     __tablename__ = 'falla_comentarios'
 
+    id = Column(Integer, primary_key=True, autoincrement=True, comment="ID único del comentario")
     falla_id = Column(Integer, ForeignKey('fallas.id'), nullable=False)
     comentario = Column(Text, nullable=False)
     usuario_id = Column(Integer, ForeignKey('usuarios.id'), nullable=False)

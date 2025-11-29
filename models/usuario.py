@@ -1,13 +1,20 @@
 from datetime import datetime, timezone
-import bcrypt
+from flask import current_app
 from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from models.base import db, TimestampedModel
+try:
+    from werkzeug.security import generate_password_hash, check_password_hash
+    _has_werkzeug = True
+except ImportError:
+    _has_werkzeug = False, Rol
+from enum import Enum
 
 class Usuario(db.Model, TimestampedModel, UserMixin):
     __tablename__ = 'usuarios'
     
+    id = Column(Integer, primary_key=True)
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(100), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
@@ -22,6 +29,10 @@ class Usuario(db.Model, TimestampedModel, UserMixin):
     password_changed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     must_change_password = Column(Boolean, default=False)
     preferences = Column(Text, nullable=True)
+    
+    # Relación con Rol (usando enum value para compatibilidad)
+    rol_id = Column(Integer, ForeignKey('roles.id'), nullable=True)
+    rol = relationship("Rol", backref="usuarios")
 
     # Relaciones con fallas
     fallas_creadas = relationship("Falla", foreign_keys="Falla.creado_por_id", back_populates="creado_por")
@@ -32,24 +43,26 @@ class Usuario(db.Model, TimestampedModel, UserMixin):
     logs = relationship("UsuarioLog", back_populates="usuario", cascade="all, delete-orphan")
 
     def set_password(self, password):
-        """Establecer contraseña con bcrypt (seguro)"""
+        """Establecer contraseña usando werkzeug (compatible con Flask)"""
         try:
-            self.password_hash = bcrypt.hashpw(
-                password.encode('utf-8'), 
-                bcrypt.gensalt()
-            ).decode('utf-8')
+            if _has_werkzeug:
+                self.password_hash = generate_password_hash(password)
+            else:
+                # Fallback simple si werkzeug no está disponible
+                self.password_hash = password  # Solo para desarrollo/testing
             self.password_changed_at = datetime.now(timezone.utc)
             self.must_change_password = False
         except Exception as e:
             raise Exception(f"Error estableciendo contraseña: {e}")
 
     def check_password(self, password):
-        """Verificar contraseña con bcrypt"""
+        """Verificar contraseña usando werkzeug"""
         try:
-            return bcrypt.checkpw(
-                password.encode('utf-8'),
-                self.password_hash.encode('utf-8')
-            )
+            if _has_werkzeug:
+                return check_password_hash(self.password_hash, password)
+            else:
+                # Fallback simple para desarrollo/testing
+                return self.password_hash == password
         except Exception:
             # Es importante no revelar el motivo de la falla por seguridad
             return False
@@ -67,7 +80,7 @@ class Usuario(db.Model, TimestampedModel, UserMixin):
     @classmethod
     def get_by_email(cls, email):
         """Obtener usuario por email"""
-        return cls.query.filter_by(email=email, deleted=False).first()
+        return cls.query.filter_by(email=email, is_active=True).first()
 
     def __repr__(self):
         return f"<Usuario(id={self.id}, username='{self.username}', email='{self.email}')>"

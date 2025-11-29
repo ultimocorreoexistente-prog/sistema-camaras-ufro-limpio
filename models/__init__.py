@@ -27,10 +27,10 @@ def init_models():
         from .usuario import Usuario
         logger.info("✅ Usuario importado")
         
-        from .camara import Camara
-        logger.info("✅ Camara importada")
+        from .base import Camara
+        logger.info("✅ Camara importada desde base.py")
         
-        from .ubicacion import Ubicacion
+        from .base import Ubicacion
         logger.info("✅ Ubicacion importada")
         
         from .falla import Falla
@@ -45,7 +45,7 @@ def init_models():
         from .nvr import NvrDvr  # Posible que NVR y DVR estén en el mismo archivo
         logger.info("✅ NvrDvr importado")
         
-        from .ups import Ups
+        from .ups import UPS  # Fixed: UPS class name
         logger.info("✅ UPS importado")
         
         from .gabinete import Gabinete
@@ -84,7 +84,7 @@ def init_models():
         # Retornar todas las clases importadas
         return (
             Usuario, Camara, Ubicacion, NVR if not has_dvr else NvrDvr, 
-            DVR if has_dvr else NvrDvr, Switch, Ups, Gabinete, 
+            DVR if has_dvr else NvrDvr, Switch, UPS, Gabinete, 
             FuentePoder, Falla, Mantenimiento, Fotografia, 
             HistorialEstadoEquipo, CatalogoTipoFalla, EquipoTecnico
         )
@@ -147,27 +147,6 @@ def init_db(app):
 # ========================================
 
 # Importar SQLAlchemy instance
-__all__ = [
-    'db',
-    'init_db', 
-    'init_models',
-    # Clases principales para importación directa
-    'Usuario', 
-    'Camara', 
-    'Ubicacion', 
-    'NVR', 
-    'DVR',
-    'Switch', 
-    'UPS', 
-    'Gabinete', 
-    'FuentePoder', 
-    'Falla', 
-    'Mantenimiento', 
-    'Fotografia', 
-    'HistorialEstadoEquipo', 
-    'CatalogoTipoFalla', 
-    'EquipoTecnico'
-]
 
 # ========================================
 # 🏷️ IMPORTACIONES DIRECTAS (Para compatibilidad)
@@ -180,10 +159,10 @@ try:
     from .usuario import Usuario
     logger.debug("✅ Usuario importado directamente")
     
-    from .camara import Camara
-    logger.debug("✅ Camara importado directamente")
+    from .base import Camara
+    logger.debug("✅ Camara importado directamente desde base.py")
     
-    from .ubicacion import Ubicacion
+    from .base import Ubicacion
     logger.debug("✅ Ubicacion importado directamente")
     
     from .switch import Switch  # ✅ CORREGIDO: importa desde switch.py, no base.py
@@ -196,7 +175,7 @@ try:
     DVR = NVR
     logger.debug("✅ DVR definido como alias de NVR")
     
-    from .ups import Ups
+    from .ups import UPS  # Fixed: UPS class name
     logger.debug("✅ UPS importado directamente")
     
     from .gabinete import Gabinete
@@ -230,6 +209,18 @@ try:
     from .enums.equipment_status import EquipmentStatus
     logger.debug("✅ EquipmentStatus importado directamente")
     
+    # Importar desde base.py - Enums
+    from .base import RolEnum, EstadoCamara, TipoUbicacion, EstadoTicket, PrioridadEnum
+    logger.debug("✅ Enums importados directamente desde base.py")
+    
+    # Importar desde base.py - Mixins y clases base
+    from .base import ModelMixin, TimestampedModel, BaseModelMixin, BaseModel
+    logger.debug("✅ Mixins y clases base importados directamente desde base.py")
+    
+    # Importar desde base.py - Modelos adicionales
+    from .base import Rol, EventoCamara, Ticket, TrazabilidadMantenimiento, Inventario
+    logger.debug("✅ Modelos adicionales importados directamente desde base.py")
+    
     logger.info("🎉 models/__init__.py inicializado correctamente")
     
 except ImportError as e:
@@ -241,11 +232,19 @@ except Exception as e:
 # ✅ CRITICAL: Exportar todas las clases para que sean importables
 __all__ = [
     'db',
+    'init_db', 'init_models',
+    # Enums del sistema
+    'RolEnum', 'EstadoCamara', 'TipoUbicacion', 'EstadoTicket', 'PrioridadEnum',
+    'EquipmentStatus',
+    # Mixins y clases base
+    'ModelMixin', 'TimestampedModel', 'BaseModelMixin', 'BaseModel',
+    # Modelos principales
     'Usuario', 'Camara', 'Ubicacion', 'Falla', 'FallaComentario', 'Switch', 
-    'NvrDvr', 'Ups', 'Gabinete', 'FuentePoder', 'Mantenimiento', 
+    'NvrDvr', 'UPS', 'Gabinete', 'FuentePoder', 'Mantenimiento', 
     'Fotografia', 'HistorialEstadoEquipo', 'CatalogoTipoFalla', 'EquipoTecnico',
-    'UsuarioLog',  # ✅ Agregado para logs de auditoría
-    'EquipmentStatus'  # ✅ Agregado para enum EquipmentStatus
+    'UsuarioLog',  # Logs de auditoría
+    # Clases adicionales de base.py
+    'Rol', 'EventoCamara', 'Ticket', 'TrazabilidadMantenimiento', 'Inventario'
 ]
 
 # Fin del archivo models/__init__.py
