@@ -157,7 +157,7 @@ git remote add origin https://github.com/ultimocorreoexistente-prog/sistema-cama
 ### Error: "Permission denied"
 ```bash
 # Usar token personal en lugar de contraseña
-git remote set-url origin https://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@github.com/ultimocorreoexistente-prog/sistema-camaras-ufro-limpio.git
+#git remote set-url origin https://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@github.com/ultimocorreoexistente-prog/sistema-camaras-ufro-limpio.git
 ```
 
 ### Error: "Updates were rejected"
