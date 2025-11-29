@@ -1,30 +1,4 @@
-<<<<<<< HEAD
 # models/equipo.py
-from datetime import datetime
-
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Float
-from sqlalchemy.orm import relationship
-from models.base import BaseModel
-from models import db
-
-class NetworkConnection(BaseModel, db.Model):
-__tablename__ = 'network_connections'
-source_equipment_id = Column(Integer, nullable=False)
-source_equipment_type = Column(String(30), nullable=False)
-target_equipment_id = Column(Integer, nullable=False)
-target_equipment_type = Column(String(30), nullable=False)
-connection_type = Column(String(0), nullable=False)
-cable_type = Column(String(50), nullable=True)
-cable_length = Column(Float, nullable=True)
-port_source = Column(String(0), nullable=True)
-port_target = Column(String(0), nullable=True)
-is_active = Column(Boolean, default=True, nullable=False)
-vlan_id = Column(Integer, nullable=True)
-bandwidth_limit = Column(Integer, nullable=True)
-latency_ms = Column(Float, nullable=True)
-packet_loss = Column(Float, default=0.0, nullable=False)
-notes = Column(Text, nullable=True)
-=======
 """
 Modelo base para equipos de red y hardware.
 Proporciona funcionalidades comunes para todos los tipos de equipos.
@@ -138,66 +112,8 @@ class NetworkConnection(BaseModelMixin, db.Model):
                 (cls.target_equipment_id == equipment_id) & (cls.target_equipment_type == equipment_type)
             )
         ).all()
->>>>>>> 490f0beca4eaa0ced06723ea308d2616d581f5a4
 
-class Switch(BaseModel, db.Model):
-__tablename__ = 'switches'
-name = Column(String(100), nullable=False)
-ip_address = Column(String(45), nullable=True)
-created_by = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
-created_by_user = relationship("Usuario", foreign_keys=[created_by])
 
-<<<<<<< HEAD
-# CORREGIDO: relación con Ubicacion
-ubicacion_id = Column(Integer, ForeignKey('ubicaciones.id'), nullable=True)
-ubicacion = relationship("Ubicacion", back_populates="switches")
-
-fotografias = relationship("Fotografia", back_populates="switch")
-
-def __repr__(self):
-return f"<Switch(name='{self.name}')>"
-
-class UPS(BaseModel, db.Model):
-__tablename__ = 'ups'
-name = Column(String(100), nullable=False)
-created_by = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
-created_by_user = relationship("Usuario", foreign_keys=[created_by])
-fotografias = relationship("Fotografia", back_populates="ups")
-
-def __repr__(self):
-return f"<UPS(name='{self.name}')>"
-
-class NVR(BaseModel, db.Model):
-__tablename__ = 'nvr_dvr' # nombre real
-name = Column(String(100), nullable=False)
-created_by = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
-created_by_user = relationship("Usuario", foreign_keys=[created_by])
-camaras = relationship("Camara", back_populates="nvr")
-fotografias = relationship("Fotografia", back_populates="nvr")
-
-def __repr__(self):
-return f"<NVR(name='{self.name}')>"
-
-class Gabinete(BaseModel, db.Model):
-__tablename__ = 'gabinetes'
-name = Column(String(100), nullable=False)
-created_by = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
-created_by_user = relationship("Usuario", foreign_keys=[created_by])
-fotografias = relationship("Fotografia", back_populates="gabinete")
-
-def __repr__(self):
-return f"<Gabinete(name='{self.name}')>"
-
-class FuentePoder(BaseModel, db.Model):
-__tablename__ = 'fuente_poder' # singular, como en tu DB
-name = Column(String(100), nullable=False)
-created_by = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
-created_by_user = relationship("Usuario", foreign_keys=[created_by])
-fotografias = relationship("Fotografia", back_populates="fuente_poder")
-
-def __repr__(self):
-return f"<FuentePoder(name='{self.name}')>"
-=======
 class EquipmentBase(BaseModelMixin, db.Model):
     """
     Clase base abstracta para todos los equipos.
@@ -305,4 +221,76 @@ class EquipmentBase(BaseModelMixin, db.Model):
             return None
         age = datetime.now(timezone.utc) - self.installation_date
         return round(age.days / 365.25, 2)
->>>>>>> 490f0beca4eaa0ced06723ea308d2616d581f5a4
+
+
+class Switch(EquipmentBase):
+    """
+    Modelo de switches de red.
+    Hereda de EquipmentBase para funcionalidad común.
+    """
+    __tablename__ = 'switches'
+
+    # Fotografías asociadas al switch
+    fotografias = relationship("Fotografia", back_populates="switch")
+
+    def __repr__(self):
+        return f"<Switch(name='{self.name}')>"
+
+
+class UPS(EquipmentBase):
+    """
+    Modelo de sistemas de alimentación ininterrumpida.
+    Hereda de EquipmentBase para funcionalidad común.
+    """
+    __tablename__ = 'ups'
+
+    # Fotografías asociadas al UPS
+    fotografias = relationship("Fotografia", back_populates="ups")
+
+    def __repr__(self):
+        return f"<UPS(name='{self.name}')>"
+
+
+class NVR(EquipmentBase):
+    """
+    Modelo de grabadores de video en red.
+    Hereda de EquipmentBase para funcionalidad común.
+    """
+    __tablename__ = 'nvr_dvr' # nombre real
+
+    # Relación con cámaras
+    camaras = relationship("Camara", back_populates="nvr")
+    
+    # Fotografías asociadas al NVR
+    fotografias = relationship("Fotografia", back_populates="nvr")
+
+    def __repr__(self):
+        return f"<NVR(name='{self.name}')>"
+
+
+class Gabinete(EquipmentBase):
+    """
+    Modelo de gabinetes/racks para equipos.
+    Hereda de EquipmentBase para funcionalidad común.
+    """
+    __tablename__ = 'gabinetes'
+
+    # Fotografías asociadas al gabinete
+    fotografias = relationship("Fotografia", back_populates="gabinete")
+
+    def __repr__(self):
+        return f"<Gabinete(name='{self.name}')>"
+
+
+class FuentePoder(EquipmentBase):
+    """
+    Modelo de fuentes de alimentación.
+    Hereda de EquipmentBase para funcionalidad común.
+    """
+    __tablename__ = 'fuente_poder' # singular, como en tu DB
+
+    # Fotografías asociadas a la fuente de poder
+    fotografias = relationship("Fotografia", back_populates="fuente_poder")
+
+    def __repr__(self):
+        return f"<FuentePoder(name='{self.name}')>"

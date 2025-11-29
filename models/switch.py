@@ -8,7 +8,6 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from models.base import db, EquipmentStatus, BaseModel, EquipmentBase
-from models import db
 import enum
 
 
