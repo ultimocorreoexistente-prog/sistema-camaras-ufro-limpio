@@ -38,8 +38,8 @@ RUN mkdir -p uploads logs instance
 ENV FLASK_ENV=production
 ENV PYTHONPATH=/app
 
-# Puerto dinámico - Railway define $PORT
-EXPOSE ${PORT:-8000}
+# Puerto dinámico - Railway define $PORT pero si no existe usamos 8000
+EXPOSE 8000
 
-# Comando con puerto dinámico $PORT
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:$PORT", "--workers", "2", "--timeout", "30"]
+# Comando con puerto dinámico que SIEMPRE funcione
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:${PORT:-8000}", "--workers", "2", "--timeout", "30"]
