@@ -2,7 +2,9 @@
 Enumeraciones para niveles de gravedad de fallas del sistema.
 """
 
-class GravedadFalla:
+from enum import Enum
+
+class GravedadFalla(Enum):
     """Niveles de gravedad estándar para tipos de fallas."""
 
     CRITICA = "critica"

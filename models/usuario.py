@@ -3,8 +3,8 @@ from flask import current_app
 from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from models import db
-from models.base import TimestampedModel
+from .database import db
+from .base import TimestampedModel
 try:
     from werkzeug.security import generate_password_hash, check_password_hash
     _has_werkzeug = True
@@ -12,8 +12,10 @@ except ImportError:
     _has_werkzeug = False
 from enum import Enum
 
-class Usuario(db.Model, TimestampedModel, UserMixin):
+class Usuario(db.Model, UserMixin, TimestampedModel):
     __tablename__ = 'usuarios'
+    
+    # ID y timestamps heredados de TimestampedModel
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(100), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
@@ -29,16 +31,16 @@ class Usuario(db.Model, TimestampedModel, UserMixin):
     must_change_password = Column(Boolean, default=False)
     preferences = Column(Text, nullable=True)
     
-    # Relación con Rol (usando enum value para compatibilidad)
+    # Relación con Rol
     rol_id = Column(Integer, ForeignKey('roles.id'), nullable=True)
-    rol = relationship("Rol", backref="usuarios")
+    rol = relationship("Rol", back_populates="usuarios")
 
     # Relaciones con fallas
     fallas_creadas = relationship("Falla", foreign_keys="Falla.creado_por_id", back_populates="creado_por")
     fallas_asignadas = relationship("Falla", foreign_keys="Falla.asignado_a_id", back_populates="asignado_a")
     falla_comentarios = relationship("FallaComentario", back_populates="usuario")
     
-    # ✅ NUEVA: Relación con logs de usuario
+    # Relación con logs de usuario
     logs = relationship("UsuarioLog", back_populates="usuario", cascade="all, delete-orphan")
 
     def set_password(self, password):

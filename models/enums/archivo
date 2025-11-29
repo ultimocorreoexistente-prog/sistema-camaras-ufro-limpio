@@ -1,0 +1,17 @@
+ El volumen de la unidad C no tiene etiqueta.
+ El n£mero de serie del volumen es: 424E-DF92
+
+ Directorio de C:\Users\Usuario\sistema-camaras-ufro-limpio\models\enums
+
+29-11-2025  15:28    <DIR>          .
+29-11-2025  15:28    <DIR>          ..
+29-11-2025  15:28                 0 archivo
+29-11-2025  11:22             1.384 categoria_falla.py
+29-11-2025  11:22               160 equipment_status.py
+29-11-2025  11:22             5.193 estado_camara.py
+29-11-2025  11:22             1.496 gravedad_falla.py
+29-11-2025  11:22               232 mantenimiento_status.py
+29-11-2025  11:22                45 __init__.py
+29-11-2025  12:37    <DIR>          __pycache__
+               7 archivos          8.510 bytes
+               3 dirs  66.274.824.192 bytes libres
