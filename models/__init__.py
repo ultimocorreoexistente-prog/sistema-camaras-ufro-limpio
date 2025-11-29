@@ -242,6 +242,5 @@ __all__ = [
     'Fotografia', 'HistorialEstadoEquipo', 'CatalogoTipoFalla', 'EquipoTecnico',
     'UsuarioLog'  # ✅ Agregado para logs de auditoría
 ]
-]
 
 # Fin del archivo models/__init__.py
