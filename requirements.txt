@@ -1,43 +1,41 @@
-# ==============================================
-# SISTEMA DE GESTIÓN DE CÁMARAS UFRO
-# REQUIREMENTS.TXT DEFINITIVO PARA RAILWAY
-# ✅ VERSIÓN LIMPIA SIN CONFLICTOS
-# ==============================================
+# Dependencias Flask - Sistema de Cámaras UFRO
+# Generado: 29 nov 2025 23:41
 
-# FLASK FRAMEWORK CORE
-Flask==3.1.2
-Flask-Login==0.6.3
-Flask-WTF==1.2.1
+# Flask Core
+Flask==2.3.3
 Flask-SQLAlchemy==3.1.1
-Flask-CORS==6.0.1
-Flask-Migrate==4.0.5
+Flask-Login==0.6.3
+Flask-WTF==1.1.1
+Flask-CORS==4.0.0
 
-# DATABASE & SQL
-SQLAlchemy==2.0.44
-psycopg2-binary==2.9.11
+# Seguridad
+Werkzeug==2.3.7
+WTForms==3.1.0
 
-# SEGURIDAD
-bcrypt==4.1.3
-PyJWT==2.8.0
-itsdangerous==2.2.0
+# Base de datos
+SQLAlchemy==2.0.23
+psycopg2-binary==2.9.9  # PostgreSQL adapter
 
-# DEPLOYMENT
-gunicorn==23.0.0
-
-# UTILIDADES
-python-dotenv==1.2.1
+# Utilidades
+python-dotenv==1.0.0
+Pillow==10.1.0  # Para procesamiento de imágenes
 requests==2.31.0
+
+# Logging y monitoreo
+gunicorn==21.2.0  # WSGI server para producción
+
+# Desarrollo y testing
+pytest==7.4.3
+pytest-flask==1.3.0
+
+# Date/time handling
 python-dateutil==2.8.2
-pytz==2023.3
 
-# PROCESAMIENTO DE DATOS (OPCIONAL)
-pandas==2.1.4
-openpyxl==3.1.2
-Pillow==10.1.0
+# Jinja2 (template engine)
+Jinja2==3.1.2
 
-# VISUALIZACIÓN (OPCIONAL)
-matplotlib==3.8.2
-numpy==1.25.2
+# Marshmallow (serialization)
+marshmallow==3.20.1
 
-# WERKZEUG (MANEJADOR HTTP PARA FLASK)
-Werkzeug==3.1.0
+# Validación de datos
+cerberus==1.3.5
