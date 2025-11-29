@@ -210,7 +210,11 @@ nombre="Juan",
 apellido="Pérez",
 especialidad="Cámaras de Seguridad",
 telefono="+5691345678",
+<<<<<<< HEAD
+email="juan.perez@ufro.cl",
+=======
 email="juan.perez@ufrontera.cl",
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 estado=TecnicoStatus.ACTIVO.value,
 fecha_ingreso=date(03, 1, 15)
 )

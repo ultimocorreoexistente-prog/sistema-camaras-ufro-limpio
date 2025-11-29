@@ -1,5 +1,14 @@
 # Esquema de Datos - Sistema de Cámaras UFRO
 
+<<<<<<< HEAD
+**Fecha de análisis:** 05-11-04
+
+**Archivos analizados:** 8 archivos Excel
+
+## Resumen Ejecutivo
+
+Este análisis examina la estructura de datos del Sistema de Cámaras de la Universidad de La Frontera (UFRO), identificando **1 entidades principales** que conforman el ecosistema de video vigilancia.
+=======
 **Fecha de análisis:** 2025-11-04
 
 **Archivos analizados:** 28 archivos Excel
@@ -7,6 +16,7 @@
 ## Resumen Ejecutivo
 
 Este análisis examina la estructura de datos del Sistema de Cámaras de la Universidad de La Frontera (UFRO), identificando **12 entidades principales** que conforman el ecosistema de video vigilancia.
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 
 ### Entidades Identificadas:
 
@@ -47,7 +57,11 @@ Este análisis examina la estructura de datos del Sistema de Cámaras de la Univ
 **Descripción:** Registro de incidentes y problemas en el sistema de cámaras
 
 **Archivos que contienen esta entidad:**
+<<<<<<< HEAD
+- Ejemplos_Fallas_Reales_corregido_051019_00501.xlsx
+=======
 - Ejemplos_Fallas_Reales_corregido_20251019_005201.xlsx
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - Ejemplos_Fallas_Reales.xlsx
 - Fallas_Actualizada.xlsx
 
@@ -226,6 +240,25 @@ Este análisis examina la estructura de datos del Sistema de Cámaras de la Univ
 Las entidades se relacionan de la siguiente manera:
 
 ```
+<<<<<<< HEAD
+UBICACION (1) (N) CÁMARA
+UBICACION (1) (N) NVR_DVR
+UBICACION (1) (N) SWITCH
+UBICACION (1) (N) UPS
+UBICACION (1) (N) FUENTE_PODER
+UBICACION (1) (N) GABINETE
+
+NVR_DVR (1) (N) CÁMARA
+SWITCH (1) (N) CÁMARA
+SWITCH (1) (N) PUERTO_SWITCH
+UPS (1) (N) EQUIPO (NVR/Switch/Cámara)
+GABINETE (1) (N) EQUIPO (NVR/Switch/Fuente)
+
+CÁMARA (1) (N) FALLA
+MANTENIMIENTO (N) (1) EQUIPO
+EQUIPO_TECNICO (1) (N) MANTENIMIENTO
+CATALOGO_FALLAS (1) (N) FALLA
+=======
 UBICACION (1) ──── (N) CÁMARA
 UBICACION (1) ──── (N) NVR_DVR
 UBICACION (1) ──── (N) SWITCH
@@ -243,17 +276,26 @@ CÁMARA (1) ──── (N) FALLA
 MANTENIMIENTO (N) ──── (1) EQUIPO
 EQUIPO_TECNICO (1) ──── (N) MANTENIMIENTO
 CATALOGO_FALLAS (1) ──── (N) FALLA
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 ```
 
 ## Arquitectura de Datos
 
 ### Jerarquía Geográfica:
 1. **Campus** → Edificios → Pisos/Niveles → Zonas/Ubicaciones específicas
+<<<<<<< HEAD
+. Cada ubicación puede contener múltiples equipos
+
+### Jerarquía de Equipos:
+1. **Equipos de Conectividad**: Switches → Puertos → Cámaras
+. **Equipos de Gestión**: NVR/DVR → Cámaras
+=======
 2. Cada ubicación puede contener múltiples equipos
 
 ### Jerarquía de Equipos:
 1. **Equipos de Conectividad**: Switches → Puertos → Cámaras
 2. **Equipos de Gestión**: NVR/DVR → Cámaras
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 3. **Equipos de Soporte**: UPS → Gabinetes → Equipos alimentados
 
 ## Estadísticas del Sistema
@@ -263,7 +305,11 @@ Basado en el análisis de los archivos:
 - **Total de cámaras registradas**: ~467 cámaras
 - **Edificios monitoreados**: Múltiples edificios en campus principal
 - **Tipos de cámara**: Principalmente IP con conectividad PoE
+<<<<<<< HEAD
+- **NVR/DVR**: Sistemas Hikvision con capacidades de 3-18 canales
+=======
 - **NVR/DVR**: Sistemas Hikvision con capacidades de 32-128 canales
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Tipos de fallas**: Problemas de conectividad, daños físicos, limpieza
 
 ## Problemas Identificados en los Datos
@@ -287,7 +333,11 @@ Basado en el análisis de los archivos:
 - Establecer archivo maestro para cada entidad
 - Implementar control de versiones
 
+<<<<<<< HEAD
+### . Esquema de Base de Datos
+=======
 ### 2. Esquema de Base de Datos
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Tabla Ubicaciones**: id_ubicacion, campus, edificio, piso, zona
 - **Tabla Cámaras**: id_camara, nombre, ip, id_ubicacion, id_nvr, estado
 - **Tabla NVR**: id_nvr, nombre, ip, id_ubicacion, estado
@@ -304,11 +354,19 @@ Basado en el análisis de los archivos:
 - **Backend**: Node.js/Express o Python/FastAPI
 - **Base de datos**: PostgreSQL con relaciones normalizadas
 - **Funcionalidades**:
+<<<<<<< HEAD
+- Dashboard ejecutivo con métricas
+- Gestión de cámaras en tiempo real
+- Sistema de reportes de fallas
+- Calendario de mantenimientos
+- Mapas interactivos de ubicaciones
+=======
   - Dashboard ejecutivo con métricas
   - Gestión de cámaras en tiempo real
   - Sistema de reportes de fallas
   - Calendario de mantenimientos
   - Mapas interactivos de ubicaciones
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 
 ## Conclusiones
 
@@ -323,6 +381,10 @@ La migración a una base de datos relacional proporcionaría:
 
 **Próximos pasos recomendados:**
 1. Diseñar esquema de base de datos normalizado
+<<<<<<< HEAD
+. Desarrollar herramientas de migración de datos
+=======
 2. Desarrollar herramientas de migración de datos
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 3. Crear aplicación web para gestión
 4. Implementar sistema de alertas y monitoreo

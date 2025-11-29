@@ -13,5 +13,9 @@ cp /workspace/app.py ./
 cp /workspace/models.py ./
 cp /workspace/Procfile ./
 
+<<<<<<< HEAD
+# Opción : Descargar archivos individuales
+=======
 # Opción 2: Descargar archivos individuales
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 # (Necesitarías descargar cada archivo desde el workspace)

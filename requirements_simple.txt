@@ -1,6 +1,15 @@
+<<<<<<< HEAD
+Flask==.3.3
+gunicorn==1..0
+psycopg-binary==.9.7
+python-dotenv==1.0.0
+SQLAlchemy==.0.3
+requests==.31.0
+=======
 Flask==2.3.3
 gunicorn==21.2.0
 psycopg2-binary==2.9.7
 python-dotenv==1.0.0
 SQLAlchemy==2.0.23
 requests==2.31.0
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856

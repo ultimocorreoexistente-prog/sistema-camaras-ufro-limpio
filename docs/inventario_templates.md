@@ -4,15 +4,24 @@
 
 Este documento presenta un análisis exhaustivo de todos los templates HTML existentes en el Sistema de Gestión de Cámaras UFRO, identificando funcionalidades, estructura común, patrones de diseño y templates faltantes por crear.
 
+<<<<<<< HEAD
+**Fecha de Análisis:** 04 de noviembre de 05
+**Total de Templates Analizados:** archivos
+=======
 **Fecha de Análisis:** 04 de noviembre de 2025  
 **Total de Templates Analizados:** 22 archivos  
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 
 ---
 
 ## Estructura General del Sistema
 
 ### Arquitectura de Templates
+<<<<<<< HEAD
+El sistema utiliza **Jinja** como motor de plantillas con una arquitectura modular basada en herencia de templates. El template `base.html` funciona como estructura común que define la navegación, estilos CSS, JavaScript y estructura HTML base.
+=======
 El sistema utiliza **Jinja2** como motor de plantillas con una arquitectura modular basada en herencia de templates. El template `base.html` funciona como estructura común que define la navegación, estilos CSS, JavaScript y estructura HTML base.
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 
 ### Librerías y Tecnologías
 - **Bootstrap 5.3.0**: Framework CSS responsivo
@@ -29,6 +38,31 @@ El sistema utiliza **Jinja2** como motor de plantillas con una arquitectura modu
 **Archivo:** `/templates/dashboard.html` (943 líneas)
 - **Propósito**: Panel principal con estadísticas en tiempo real
 - **Funcionalidades**:
+<<<<<<< HEAD
+- Métricas de equipos (cámaras, switches, UPS, NVR/DVR)
+- Gestión de fallas y mantenimientos
+- Gráficos interactivos con Chart.js
+- Auto-actualización cada 30 segundos
+- **Características**: Diseño responsivo, cards estadísticos, navegación fluida entre módulos
+
+### . Sistema de Informes Avanzados
+**Archivo:** `/templates/informes_avanzados.html` (478 líneas)
+- **Propósito**: Generación de reportes y análisis de datos
+- **Funcionalidades**:
+- Múltiples categorías de informes
+- Exportación a PDF/Excel
+- Visualización de mapas integrados
+- Cards interactivos para acceso rápido
+- **Características**: Modales para vista previa, filtrado avanzado
+
+### 3. Autenticación
+**Archivo:** `/templates/login.html` (54 líneas)
+- **Propósito**: Página de acceso al sistema
+- **Funcionalidades**:
+- Login con credenciales seguras
+- Lista de usuarios demo auto-completables
+- Validación de formularios
+=======
   - Métricas de equipos (cámaras, switches, UPS, NVR/DVR)
   - Gestión de fallas y mantenimientos
   - Gráficos interactivos con Chart.js
@@ -52,15 +86,22 @@ El sistema utiliza **Jinja2** como motor de plantillas con una arquitectura modu
   - Login con credenciales seguras
   - Lista de usuarios demo auto-completables
   - Validación de formularios
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Características**: Diseño gradient, iconos Font Awesome, mensajes de error claros
 
 ### 4. Gestión Operacional
 **Archivo:** `/templates/operaciones.html` (737 líneas)
 - **Propósito**: Control de fallas y mantenimientos
 - **Funcionalidades**:
+<<<<<<< HEAD
+- Registro y seguimiento de fallas
+- Programación de mantenimientos preventivos
+- Estados de equipos en tiempo real
+=======
   - Registro y seguimiento de fallas
   - Programación de mantenimientos preventivos
   - Estados de equipos en tiempo real
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Características**: Formularios multi-paso, tabs organizativas, validación en tiempo real
 
 ---
@@ -68,6 +109,20 @@ El sistema utiliza **Jinja2** como motor de plantillas con una arquitectura modu
 ## Template Base del Sistema
 
 ### 5. Estructura Base Común
+<<<<<<< HEAD
+**Archivo:** `/templates/base.html` (83 líneas)
+- **Propósito**: Template fundamental que define la estructura común
+- **Componentes Incluidos**:
+- **Navbar superior**: Branding, menú de usuario, control de sesión
+- **Sidebar navegacional**: Menús jerárquicos basados en roles de usuario
+- **Sistema de flash messages**: Notificaciones del sistema
+- **JavaScript común**: Inicialización de librerías, funciones utilitarias
+- **Características de Acceso (RBAC)**:
+- **SUPERADMIN**: Acceso completo al sistema
+- **ADMIN/SUPERVISOR**: Geolocalización, topología, fotografías, reportes
+- **VISUALIZADOR**: Solo lectura de datos
+- **TECNICO**: Acceso a fotografías y operaciones básicas
+=======
 **Archivo:** `/templates/base.html` (283 líneas)
 - **Propósito**: Template fundamental que define la estructura común
 - **Componentes Incluidos**:
@@ -80,12 +135,32 @@ El sistema utiliza **Jinja2** como motor de plantillas con una arquitectura modu
   - **ADMIN/SUPERVISOR**: Geolocalización, topología, fotografías, reportes
   - **VISUALIZADOR**: Solo lectura de datos
   - **TECNICO**: Acceso a fotografías y operaciones básicas
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 
 ---
 
 ## Templates de Gestión de Usuarios
 
 ### 6. Listado de Usuarios
+<<<<<<< HEAD
+**Archivo:** `/templates/usuarios/listar.html` (03 líneas)
+- **Propósito**: Interfaz CRUD para gestión de usuarios
+- **Funcionalidades**:
+- Tabla responsiva con usuarios del sistema
+- Búsqueda y filtrado avanzado
+- Acciones: Editar, eliminar, activar/desactivar
+- Paginación de resultados
+- **Características**: Selección múltiple, alertas de confirmación, estados visuales
+
+### 7. Creación de Usuarios
+**Archivo:** `/templates/usuarios/crear.html` (4 líneas)
+- **Propósito**: Formulario para registro de nuevos usuarios
+- **Funcionalidades**:
+- Validación de campos obligatorios
+- Selección de roles y departamentos
+- Generación automática de credenciales
+- Breadcrumb navigation
+=======
 **Archivo:** `/templates/usuarios/listar.html` (203 líneas)
 - **Propósito**: Interfaz CRUD para gestión de usuarios
 - **Funcionalidades**:
@@ -103,16 +178,24 @@ El sistema utiliza **Jinja2** como motor de plantillas con una arquitectura modu
   - Selección de roles y departamentos
   - Generación automática de credenciales
   - Breadcrumb navigation
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Características**: Validación en tiempo real, indicadores de progreso, autocompletado
 
 ### 8. Edición de Usuarios
 **Archivo:** `/templates/usuarios/editar.html` (473 líneas)
 - **Propósito**: Modificación de datos de usuarios existentes
 - **Funcionalidades**:
+<<<<<<< HEAD
+- Pre-carga de datos actuales
+- Cambio de contraseña opcional
+- Actualización de roles y permisos
+- Historial de cambios
+=======
   - Pre-carga de datos actuales
   - Cambio de contraseña opcional
   - Actualización de roles y permisos
   - Historial de cambios
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Características**: Formulario dinámico, validación condicional, logs de auditoría
 
 ---
@@ -123,11 +206,19 @@ El sistema utiliza **Jinja2** como motor de plantillas con una arquitectura modu
 **Archivo:** `/templates/geolocalizacion/mapa.html` (706 líneas)
 - **Propósito**: Visualización de ubicaciones en campus UFRO
 - **Funcionalidades**:
+<<<<<<< HEAD
+- Mapa interactivo con marcadores de equipos
+- Filtrado por campus, edificio, tipo de equipo
+- Clustering automático de marcadores
+- Estadísticas de cobertura geográfica
+- Exportación de datos a CSV
+=======
   - Mapa interactivo con marcadores de equipos
   - Filtrado por campus, edificio, tipo de equipo
   - Clustering automático de marcadores
   - Estadísticas de cobertura geográfica
   - Exportación de datos a CSV
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Características**: Integración completa con Leaflet.js, zoom inteligente, búsqueda por proximidad
 
 ---
@@ -138,11 +229,19 @@ El sistema utiliza **Jinja2** como motor de plantillas con una arquitectura modu
 **Archivo:** `/templates/topologia/red.html` (868 líneas)
 - **Propósito**: Visualización jerárquica de la red de cámaras
 - **Funcionalidades**:
+<<<<<<< HEAD
+- Diagramas interactivos con Mermaid.js
+- Jerarquía: Campus → Edificios → Switches → Cámaras
+- Filtrado por tipo de equipo y ubicación
+- Exportación a SVG/PNG
+- Zoom y pan para navegación
+=======
   - Diagramas interactivos con Mermaid.js
   - Jerarquía: Campus → Edificios → Switches → Cámaras
   - Filtrado por tipo de equipo y ubicación
   - Exportación a SVG/PNG
   - Zoom y pan para navegación
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Características**: Diagramas en tiempo real, estados de conectividad, métricas de rendimiento
 
 ---
@@ -153,6 +252,24 @@ El sistema utiliza **Jinja2** como motor de plantillas con una arquitectura modu
 **Archivo:** `/templates/fotografias/listar.html` (601 líneas)
 - **Propósito**: Gestión y visualización de fotografías del sistema
 - **Funcionalidades**:
+<<<<<<< HEAD
+- Grid responsivo de imágenes
+- Filtrado por categoría, fecha, ubicación
+- Búsqueda por metadatos
+- Vista previa modal
+- Lazy loading para optimización
+- **Características**: Cards interactivos, carga diferida, vista de detalles
+
+### 1. Subida de Fotografías
+**Archivo:** `/templates/fotografias/subir.html` (630 líneas)
+- **Propósito**: Interface para agregar nuevas fotografías
+- **Funcionalidades**:
+- Drag & drop de archivos
+- Preview de imágenes antes de subir
+- Metadatos: categoría, descripción, ubicación
+- Validación de tipo y tamaño de archivo
+- Upload en lotes
+=======
   - Grid responsivo de imágenes
   - Filtrado por categoría, fecha, ubicación
   - Búsqueda por metadatos
@@ -169,17 +286,26 @@ El sistema utiliza **Jinja2** como motor de plantillas con una arquitectura modu
   - Metadatos: categoría, descripción, ubicación
   - Validación de tipo y tamaño de archivo
   - Upload en lotes
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Características**: Zona de arrastre visual, barra de progreso, validación inmediata
 
 ### 13. Visualización de Fotografías
 **Archivo:** `/templates/fotografias/ver.html` (591 líneas)
 - **Propósito**: Vista detallada de fotografías individuales
 - **Funcionalidades**:
+<<<<<<< HEAD
+- Imagen ampliada con zoom
+- Metadatos completos
+- Acciones: Editar, eliminar, descargar, compartir
+- Navegación entre fotografías
+- Historial de cambios
+=======
   - Imagen ampliada con zoom
   - Metadatos completos
   - Acciones: Editar, eliminar, descargar, compartir
   - Navegación entre fotografías
   - Historial de cambios
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Características**: Zoom nativo, navegación por teclado, modo presentación
 
 ---
@@ -189,6 +315,16 @@ El sistema utiliza **Jinja2** como motor de plantillas con una arquitectura modu
 ### Duplicados Identificados
 Los siguientes 8 archivos en `/workspace/` son **duplicados exactos** de sus contrapartes en `/workspace/templates/`:
 
+<<<<<<< HEAD
+1. `01_usuarios_listar.html` ↔ `/templates/usuarios/listar.html` **IDÉNTICOS**
+. `0_usuarios_crear.html` ↔ `/templates/usuarios/crear.html` **IDÉNTICOS**
+3. `03_usuarios_editar.html` ↔ `/templates/usuarios/editar.html` **IDÉNTICOS**
+4. `04_geolocalizacion_mapa.html` ↔ `/templates/geolocalizacion/mapa.html` **IDÉNTICOS**
+5. `05_topologia_red.html` ↔ `/templates/topologia/red.html` **IDÉNTICOS**
+6. `06_fotografias_listar.html` ↔ `/templates/fotografias/listar.html` **IDÉNTICOS**
+7. `07_fotografias_subir.html` ↔ `/templates/fotografias/subir.html` **IDÉNTICOS**
+8. `08_fotografias_ver.html` ↔ `/templates/fotografias/ver.html` **IDÉNTICOS**
+=======
 1. `01_usuarios_listar.html` ↔ `/templates/usuarios/listar.html` ✅ **IDÉNTICOS**
 2. `02_usuarios_crear.html` ↔ `/templates/usuarios/crear.html` ✅ **IDÉNTICOS**
 3. `03_usuarios_editar.html` ↔ `/templates/usuarios/editar.html` ✅ **IDÉNTICOS**
@@ -197,6 +333,7 @@ Los siguientes 8 archivos en `/workspace/` son **duplicados exactos** de sus con
 6. `06_fotografias_listar.html` ↔ `/templates/fotografias/listar.html` ✅ **IDÉNTICOS**
 7. `07_fotografias_subir.html` ↔ `/templates/fotografias/subir.html` ✅ **IDÉNTICOS**
 8. `08_fotografias_ver.html` ↔ `/templates/fotografias/ver.html` ✅ **IDÉNTICOS**
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 
 **Conclusión**: Los archivos numerados pueden eliminarse ya que no aportan valor adicional.
 
@@ -207,6 +344,56 @@ Los siguientes 8 archivos en `/workspace/` son **duplicados exactos** de sus con
 Basándose en la navegación definida en `base.html` y el análisis funcional, se identifican los siguientes templates que aún no han sido creados:
 
 ### Módulos de Equipos
+<<<<<<< HEAD
+1. **Gestión de Cámaras**
+- `camaras/listar.html` - Listado de cámaras con estados
+- `camaras/crear.html` - Registro de nuevas cámaras
+- `camaras/editar.html` - Modificación de datos de cámaras
+- `camaras/ver.html` - Detalle individual de cámara
+
+. **Gestión de Switches**
+- `switches/listar.html` - Listado de switches de red
+- `switches/crear.html` - Registro de switches
+- `switches/editar.html` - Configuración de switches
+- `switches/ver.html` - Estado detallado de switch
+
+3. **Gestión de UPS**
+- `ups/listar.html` - Monitoreo de sistemas UPS
+- `ups/crear.html` - Registro de nuevos UPS
+- `ups/editar.html` - Configuración de UPS
+- `ups/ver.html` - Estado y métricas de UPS
+
+4. **Gestión de NVR/DVR**
+- `nvr/listar.html` - Listado de grabadores
+- `nvr/crear.html` - Registro de NVR/DVR
+- `nvr/editar.html` - Configuración de grabadores
+- `nvr/ver.html` - Estado detallado de grabación
+
+### Módulos de Gestión Operacional
+5. **Gestión de Fallas**
+- `fallas/listar.html` - Listado de fallas reportadas
+- `fallas/crear.html` - Reporte de nueva falla
+- `fallas/editar.html` - Actualización de fallas
+- `fallas/ver.html` - Detalle y seguimiento de falla
+
+6. **Sistema de Reportes**
+- `reportes/listar.html` - Biblioteca de reportes
+- `reportes/crear.html` - Generación de reportes personalizados
+- `reportes/ver.html` - Visualización de reportes específicos
+
+### Templates de Manejo de Errores
+7. **Sistema de Errores HTTP**
+- `errors/404.html` - Página no encontrada
+- `errors/403.html` - Acceso denegado
+- `errors/500.html` - Error interno del servidor
+- `errors/maintenance.html` - Página de mantenimiento
+
+### Templates de Configuración
+8. **Configuración del Sistema**
+- `configuracion/general.html` - Configuraciones generales
+- `configuracion/campus.html` - Gestión de campus
+- `configuracion/departamentos.html` - Gestión de departamentos
+=======
 1. **Gestión de Cámaras** 
    - `camaras/listar.html` - Listado de cámaras con estados
    - `camaras/crear.html` - Registro de nuevas cámaras
@@ -255,6 +442,7 @@ Basándose en la navegación definida en `base.html` y el análisis funcional, s
    - `configuracion/general.html` - Configuraciones generales
    - `configuracion/campus.html` - Gestión de campus
    - `configuracion/departamentos.html` - Gestión de departamentos
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 
 ---
 
@@ -264,7 +452,11 @@ Basándose en la navegación definida en `base.html` y el análisis funcional, s
 Todos los templates siguen un patrón consistente:
 
 1. **Extensión**: `{% extends "base.html" %}`
+<<<<<<< HEAD
+. **Título**: `{% block title %}Título Específico{% endblock %}`
+=======
 2. **Título**: `{% block title %}Título Específico{% endblock %}`
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 3. **Contenido**: `{% block content %}...{% endblock %}`
 4. **CSS/JS Adicional**: `{% block extra_css/extra_js %}`
 
@@ -287,7 +479,11 @@ Todos los templates siguen un patrón consistente:
 
 ### Prioridad Alta
 1. **Completar módulos de equipos** (cámaras, switches, UPS, NVR/DVR)
+<<<<<<< HEAD
+. **Implementar sistema de manejo de errores**
+=======
 2. **Implementar sistema de manejo de errores**
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 3. **Desarrollar templates de gestión de fallas**
 
 ### Prioridad Media
@@ -307,6 +503,18 @@ Todos los templates siguen un patrón consistente:
 
 ### Por Categoría
 - **Gestión de Usuarios**: 3 templates, ~1100 líneas
+<<<<<<< HEAD
+- **Sistema Fotografías**: 3 templates, ~1800 líneas
+- **Módulos Específicos**: templates, ~1600 líneas
+- **Sistema Principal**: 4 templates, ~400 líneas
+- **Template Base**: 1 template, 83 líneas
+
+### Distribución de Funcionalidades
+- **CRUD Completo**: 30% de los templates
+- **Visualización**: 5% de los templates
+- **Configuración**: 0% de los templates
+- **Operacional**: 5% de los templates
+=======
 - **Sistema Fotografías**: 3 templates, ~1800 líneas  
 - **Módulos Específicos**: 2 templates, ~1600 líneas
 - **Sistema Principal**: 4 templates, ~2400 líneas
@@ -317,6 +525,7 @@ Todos los templates siguen un patrón consistente:
 - **Visualización**: 25% de los templates
 - **Configuración**: 20% de los templates
 - **Operacional**: 25% de los templates
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 
 ---
 
@@ -325,6 +534,31 @@ Todos los templates siguen un patrón consistente:
 El Sistema de Cámaras UFRO cuenta con una **arquitectura de templates sólida y bien estructurada** que implementa las mejores prácticas de desarrollo web:
 
 ### Fortalezas Identificadas
+<<<<<<< HEAD
+**Arquitectura modular** con herencia de templates
+**Control de acceso basado en roles** implementado
+**Diseño responsivo** con Bootstrap 5
+**Integración de librerías modernas** (Chart.js, Leaflet, Mermaid)
+**Patrones UI consistentes** en todos los módulos
+**Código mantenible** y bien documentado
+
+### Áreas de Oportunidad
+**Completar módulos de equipos** faltantes
+**Implementar sistema de errores** robusto
+**Optimizar rendimiento** con lazy loading
+**Mejorar accesibilidad** y navegación por teclado
+**Eliminar archivos duplicados** identificados
+
+### Estado del Proyecto
+**Cobertura actual**: ~65% de los templates necesarios completados
+**Calidad del código**: Alta - Arquitectura profesional
+**Lista para producción**: 70% - Requiere completar módulos críticos
+
+---
+
+*Documento generado automáticamente el 04 de noviembre de 05*
+*Análisis realizado sobre templates HTML del Sistema de Cámaras UFRO*
+=======
 ✅ **Arquitectura modular** con herencia de templates  
 ✅ **Control de acceso basado en roles** implementado  
 ✅ **Diseño responsivo** con Bootstrap 5  
@@ -348,3 +582,4 @@ El Sistema de Cámaras UFRO cuenta con una **arquitectura de templates sólida y
 
 *Documento generado automáticamente el 04 de noviembre de 2025*  
 *Análisis realizado sobre 22 templates HTML del Sistema de Cámaras UFRO*
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856

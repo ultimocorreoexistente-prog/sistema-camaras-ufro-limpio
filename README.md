@@ -216,7 +216,11 @@ Este proyecto está bajo la licencia MIT. Ver archivo `LICENSE` para más detall
 ## Soporte
 
 Para soporte técnico o consultas:
+<<<<<<< HEAD
+- Email: soporte-tecnico@ufro.cl
+=======
 - Email: soporte-tecnico@ufrontera.cl
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - Documentación: `/docs/`
 - Issues: GitHub Issues
 

@@ -17,7 +17,11 @@ El archivo `app.py` contiene una aplicación web Flask completa para la gestión
 - fecha_creacion: Fecha de creación (TIMESTAMP/DATETIME)
 ```
 
+<<<<<<< HEAD
+### 1. Entidad: Cámaras
+=======
 ### 1.2 Entidad: Cámaras
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 ```sql
 - id: Identificador único (SERIAL/AUTOINCREMENT)
 - ubicacion: Descripción de ubicación (VARCHAR/TEXT)
@@ -49,6 +53,33 @@ El archivo `app.py` contiene una aplicación web Flask completa para la gestión
 - tiempo_resolucion: Tiempo en minutos para resolver
 ```
 
+<<<<<<< HEAD
+## . Rutas/Funcionalidades Implementadas
+
+### .1 Ruta: `/` (GET)
+- **Funcionalidad**: Redirección al login
+- **Propósito**: Ruta raíz que redirige a la página de inicio de sesión
+
+### . Ruta: `/login` (GET, POST)
+- **GET**: Muestra formulario de login con credenciales precargadas
+- **POST**: Procesa autenticación de usuarios
+- **Características**:
+- Interfaz responsive con diseño moderno
+- Muestra credenciales de prueba
+- Manejo de errores de autenticación
+- Redirección al dashboard tras login exitoso
+
+### .3 Ruta: `/dashboard` (GET)
+- **Funcionalidad**: Panel principal del sistema
+- **Acceso**: Solo para usuarios autenticados
+- **Características**:
+- Muestra estadísticas generales
+- Botones de acceso a diferentes módulos
+- Información del usuario logueado
+- Opción de cerrar sesión
+
+### .4 Ruta: `/logout` (GET)
+=======
 ## 2. Rutas/Funcionalidades Implementadas
 
 ### 2.1 Ruta: `/` (GET)
@@ -74,6 +105,7 @@ El archivo `app.py` contiene una aplicación web Flask completa para la gestión
   - Opción de cerrar sesión
 
 ### 2.4 Ruta: `/logout` (GET)
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Funcionalidad**: Cerrar sesión del usuario
 - **Comportamiento**: Limpia la sesión y redirige al login
 
@@ -84,7 +116,11 @@ La aplicación soporta dos tipos de base de datos:
 
 #### PostgreSQL (Producción)
 - Usado cuando `DATABASE_URL` está configurado
+<<<<<<< HEAD
+- Conexión mediante `psycopg`
+=======
 - Conexión mediante `psycopg2`
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - Utiliza sintaxis SQL estándar
 - Soporte para tipos de datos específicos
 
@@ -94,7 +130,11 @@ La aplicación soporta dos tipos de base de datos:
 - Configuración automática como fallback
 - Ideal para desarrollo y pruebas
 
+<<<<<<< HEAD
+### 3. Características de la Base de Datos
+=======
 ### 3.2 Características de la Base de Datos
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Inicialización Automática**: Se ejecuta `init_db()` al importar
 - **Datos de Prueba**: Inserta usuarios y cámaras de ejemplo
 - **Seguridad**: Uso de prepared statements
@@ -107,7 +147,11 @@ La aplicación soporta dos tipos de base de datos:
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, flash, session, make_response
 import os
 import sqlite3
+<<<<<<< HEAD
+import psycopg
+=======
 import psycopg2
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 from urllib.parse import urlparse
 import json
 from datetime import datetime, timedelta
@@ -120,9 +164,15 @@ from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 from openpyxl.utils import get_column_letter
 ```
 
+<<<<<<< HEAD
+### 4. Dependencias del Sistema
+- **Flask**: Framework web principal
+- **psycopg**: Driver para PostgreSQL
+=======
 ### 4.2 Dependencias del Sistema
 - **Flask**: Framework web principal
 - **psycopg2**: Driver para PostgreSQL
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **sqlite3**: Driver para SQLite (incluido en Python)
 - **openpyxl**: Manipulación de archivos Excel
 - **werkzeug**: Utilidades web (incluido en Flask)
@@ -130,7 +180,11 @@ from openpyxl.utils import get_column_letter
 ### 4.3 Configuración de la Aplicación
 ```python
 app = Flask(__name__)
+<<<<<<< HEAD
+app.secret_key = 'clave_secreta_para_sesiones_04'
+=======
 app.secret_key = 'clave_secreta_para_sesiones_2024'
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 DATABASE_URL = os.environ.get('DATABASE_URL')
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'docx', 'doc', 'pdf', 'txt'}
@@ -145,6 +199,26 @@ ALLOWED_EXTENSIONS = {'docx', 'doc', 'pdf', 'txt'}
 ### 5.1 Sistema de Login
 ```python
 def verificar_login(username, password):
+<<<<<<< HEAD
+# Hash MD5 de la contraseña
+password_hash = hashlib.md5(password.encode()).hexdigest()
+
+# Consulta segura con prepared statements
+# Verificación de usuario activo
+```
+
+### 5. Manejo de Sesiones
+- **Flask Session**: Almacenamiento de estado del usuario
+- **Datos de Sesión**:
+- `user_id`: ID del usuario
+- `username`: Nombre de usuario
+- `nombre`: Nombre completo
+- `rol`: Rol del usuario
+
+### 5.3 Roles de Usuario
+1. **Administrador**: Acceso completo al sistema
+. **Supervisor**: Supervisión y reportes
+=======
     # Hash MD5 de la contraseña
     password_hash = hashlib.md5(password.encode()).hexdigest()
     
@@ -163,15 +237,23 @@ def verificar_login(username, password):
 ### 5.3 Roles de Usuario
 1. **Administrador**: Acceso completo al sistema
 2. **Supervisor**: Supervisión y reportes
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 3. **Técnico**: Gestión de cámaras y fallas
 
 ### 5.4 Credenciales de Prueba
 ```python
 usuarios_prueba = [
+<<<<<<< HEAD
+('admin', 'admin13', 'Administrador Sistema', 'administrador'),
+('tecnico1', 'tecnico13', 'Juan Pérez', 'tecnico'),
+('tecnico', 'tecnico13', 'María González', 'tecnico'),
+('supervisor', 'super13', 'Carlos Rodríguez', 'supervisor')
+=======
     ('admin', 'admin123', 'Administrador Sistema', 'administrador'),
     ('tecnico1', 'tecnico123', 'Juan Pérez', 'tecnico'),
     ('tecnico2', 'tecnico123', 'María González', 'tecnico'),
     ('supervisor', 'super123', 'Carlos Rodríguez', 'supervisor')
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 ]
 ```
 
@@ -188,7 +270,11 @@ usuarios_prueba = [
 - **Media Queries**: Responsive design para móviles
 - **Gradientes Modernos**: Diseño visual atractivo
 
+<<<<<<< HEAD
+### 6. Componentes de Interfaz
+=======
 ### 6.2 Componentes de Interfaz
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Login Container**: Diseño centrado y moderno
 - **Dashboard Cards**: Organización por módulos
 - **Buttons Interactivos**: Hover effects y transiciones
@@ -207,11 +293,19 @@ print("Iniciando aplicación Flask...")
 init_db()
 
 if __name__ == '__main__':
+<<<<<<< HEAD
+port = int(os.environ.get('PORT', 5000))
+app.run(host='0.0.0.0', port=port, debug=False)
+```
+
+### 7. Gestión de Errores
+=======
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
 ```
 
 ### 7.2 Gestión de Errores
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - **Fallbacks**: SQLite si falla PostgreSQL
 - **Manejo de Excepciones**: Try-catch en operaciones críticas
 - **Logging**: Prints para debugging (en desarrollo)
@@ -224,6 +318,20 @@ if __name__ == '__main__':
 ## 8. Análisis de Seguridad
 
 ### 8.1 Aspectos Positivos
+<<<<<<< HEAD
+Uso de prepared statements
+Validación de sesiones
+Hash de contraseñas (aunque MD5)
+Separación de roles
+Control de acceso por rutas
+
+### 8. Aspectos a Mejorar
+**Hash MD5**: Recomendable bcrypt o scrypt
+**Secret Key**: Debe ser más segura y aleatoria
+**CSRF Protection**: Falta validación CSRF
+**Rate Limiting**: No hay protección contra brute force
+**Input Validation**: Validación limitada de datos de entrada
+=======
 ✅ Uso de prepared statements
 ✅ Validación de sesiones
 ✅ Hash de contraseñas (aunque MD5)
@@ -236,6 +344,7 @@ if __name__ == '__main__':
 ⚠️ **CSRF Protection**: Falta validación CSRF
 ⚠️ **Rate Limiting**: No hay protección contra brute force
 ⚠️ **Input Validation**: Validación limitada de datos de entrada
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 
 ## 9. Casos de Uso Identificados
 
@@ -244,7 +353,11 @@ if __name__ == '__main__':
 - Control de acceso basado en roles
 - Gestión de sesiones activas
 
+<<<<<<< HEAD
+### 9. Gestión de Cámaras
+=======
 ### 9.2 Gestión de Cámaras
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 - Registro de nuevas cámaras
 - Seguimiento de estado operativo
 - Asignación de responsables técnicos
@@ -263,21 +376,35 @@ if __name__ == '__main__':
 
 ### 10.1 Seguridad
 1. Implementar bcrypt para hash de contraseñas
+<<<<<<< HEAD
+. Agregar protección CSRF
+=======
 2. Agregar protección CSRF
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 3. Implementar rate limiting
 4. Validación robusta de entrada
 5. Logs de auditoría de accesos
 
+<<<<<<< HEAD
+### 10. Funcionalidad
+1. Agregar rutas para CRUD completo de entidades
+. Implementar API REST
+=======
 ### 10.2 Funcionalidad
 1. Agregar rutas para CRUD completo de entidades
 2. Implementar API REST
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 3. Notificaciones en tiempo real
 4. Sistema de tickets mejorado
 5. Dashboard con métricas reales
 
 ### 10.3 Arquitectura
 1. Separar lógica en módulos
+<<<<<<< HEAD
+. Implementar patrones de diseño
+=======
 2. Implementar patrones de diseño
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 3. Testing automatizado
 4. Configuración por entornos
 5. Logging estructurado
