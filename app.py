@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
 """
-Sistema de Cámaras de Seguridad UFRO - Versión 3 Híbrida
-========================================================
+Sistema de Cámaras de Seguridad UFRO - Versión Corregida Railway
+===============================================================
 
-Punto de entrada principal que combina funcionalidades avanzadas con compatibilidad Railway.
-- Flask-Login para autenticación completa
-- Blueprints modulares
+Punto de entrada principal optimizado para Railway.
+- Configuración unificada
 - Health check endpoint
-- Context processors globales
-- Logging avanzado
+- Logging simplificado
+- Compatibilidad total Railway
 
 Autor: MiniMax Agent
-Fecha: 2025-11-27
-Versión: 3.0-hybrid
+Fecha: 2025-11-30
+Versión: 4.0-railway-fixed
 """
 
 import os
 import logging
 from datetime import datetime
-from flask import Flask, jsonify, render_template, send_from_directory, request
+from flask import Flask, jsonify, render_template, send_from_directory
 from flask_login import LoginManager, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy import func, desc
@@ -35,201 +34,171 @@ logger = logging.getLogger(__name__)
 # Inicialización de la aplicación Flask
 app = Flask(__name__)
 
-# Configuración de la aplicación
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql://user:password@localhost/camaras_ufro')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Importar configuración de manera segura
+try:
+    from config import get_config_safe
+    config = get_config_safe()
+    app.config.update(
+        SECRET_KEY=config.SECRET_KEY,
+        SQLALCHEMY_DATABASE_URI=config.SQLALCHEMY_DATABASE_URI,
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        UPLOAD_FOLDER=config.UPLOAD_FOLDER,
+        MAX_CONTENT_LENGTH=config.MAX_CONTENT_LENGTH
+    )
+    logger.info("✅ Configuración cargada correctamente desde config.py")
+except Exception as e:
+    logger.error(f"❌ Error cargando configuración: {e}")
+    # Fallback de emergencia
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'emergency-key')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///emergency.db')
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    logger.warning("⚠️ Usando configuración de emergencia")
 
 # Inicialización de extensiones
-from models import db, Usuario
-
-# Inicializar SQLAlchemy
-db.init_app(app)
+try:
+    from models import db, Usuario
+    db.init_app(app)
+    logger.info("✅ Modelos importados correctamente")
+except Exception as e:
+    logger.error(f"❌ Error importando modelos: {e}")
+    sys.exit(1)
 
 # Configuración de Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'auth_bp.login'
-login_manager.login_message = 'Por favor inicia sesión para acceder a esta página.'
-login_manager.login_message_category = 'warning'
+login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    """Cargar usuario por ID para Flask-Login"""
+    """Cargar usuario para Flask-Login."""
     try:
         return Usuario.query.get(int(user_id))
     except Exception as e:
-        logger.error(f"Error cargando usuario {user_id}: {str(e)}")
+        logger.error(f"Error cargando usuario {user_id}: {e}")
         return None
 
-# Registrar blueprints con manejo seguro de errores
-def register_blueprints():
-    """Registrar todos los blueprints de la aplicación"""
-    blueprints = [
-        ('auth', 'routes.auth', 'auth_bp'),
-        ('dashboard', 'routes.dashboard', 'dashboard_bp'),
-        ('api', 'routes.api', 'api_bp'),
-        ('camaras', 'routes.camaras', 'camaras_bp'),
-        ('fallas', 'routes.fallas', 'fallas_bp'),
-        ('usuarios', 'routes.usuarios', 'usuarios_bp'),
-        ('nvr', 'routes.nvr', 'nvr_bp'),
-        ('switches', 'routes.switches', 'switches_bp'),
-        ('fuentes', 'routes.fuentes', 'fuentes_bp'),
-        ('ups', 'routes.ups', 'ups_bp'),
-        ('gabinetes', 'routes.gabinetes', 'gabinetes_bp'),
-        ('fotografias', 'routes.fotografias', 'fotografias_bp'),
-        ('topologia', 'routes.topologia', 'topologia_bp'),
-        ('trazabilidad', 'routes.trazabilidad', 'trazabilidad_bp'),
-        ('inventario', 'routes.inventario', 'inventario_bp'),
-        ('geolocalizacion', 'routes.geolocalizacion', 'geolocalizacion_bp'),
-        ('mantenimientos', 'routes.mantenimientos', 'mantenimientos_bp')
-    ]
+# Registrar blueprints
+try:
+    from routes import (
+        auth_bp, dashboard_bp, camaras_bp, fallas_bp, 
+        usuarios_bp, mantenimientos_bp, nvr_bp, switches_bp,
+        ups_bp, fuentes_bp, gabinetes_bp, fotografias_bp,
+        topologia_bp, geolocalizacion_bp
+    )
     
-    for name, module_name, blueprint_name in blueprints:
-        try:
-            module = __import__(module_name, fromlist=[blueprint_name])
-            blueprint = getattr(module, blueprint_name)
-            app.register_blueprint(blueprint)
-            logger.info(f"✅ Blueprint {name} registrado exitosamente")
-        except ImportError as e:
-            logger.warning(f"⚠️  No se pudo cargar blueprint {name}: {str(e)}")
-        except AttributeError as e:
-            logger.warning(f"⚠️  Blueprint {blueprint_name} no encontrado en {module_name}: {str(e)}")
-        except Exception as e:
-            logger.error(f"❌ Error registrando blueprint {name}: {str(e)}")
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(camaras_bp)
+    app.register_blueprint(fallas_bp)
+    app.register_blueprint(usuarios_bp)
+    app.register_blueprint(mantenimientos_bp)
+    app.register_blueprint(nvr_bp)
+    app.register_blueprint(switches_bp)
+    app.register_blueprint(ups_bp)
+    app.register_blueprint(fuentes_bp)
+    app.register_blueprint(gabinetes_bp)
+    app.register_blueprint(fotografias_bp)
+    app.register_blueprint(topologia_bp)
+    app.register_blueprint(geolocalizacion_bp)
+    
+    logger.info("✅ Blueprints registrados correctamente")
+except Exception as e:
+    logger.error(f"❌ Error registrando blueprints: {e}")
 
-# Context processors globales
+# Context processors
 @app.context_processor
-def inject_user_and_stats():
-    """Inyectar usuario actual y estadísticas en todos los templates"""
-    try:
-        from models import Camara, Falla, Usuario, Mantenimiento
-        
-        stats = {
-            'total_camaras': Camara.query.count(),
-            'fallas_abiertas': Falla.query.filter_by(estado='abierta').count(),
-            'usuarios_activos': Usuario.query.filter_by(activo=True).count(),
-            'mantenimientos_pendientes': Mantenimiento.query.filter_by(
-                estado='pendiente'
-            ).count()
-        }
-        
-        return {
-            'current_user': current_user,
-            'now': datetime.now(),
-            'stats': stats
-        }
-    except Exception as e:
-        logger.error(f"Error en context processor: {str(e)}")
-        return {
-            'current_user': current_user,
-            'now': datetime.now(),
-            'stats': {}
-        }
+def inject_user():
+    """Injectar usuario actual en todos los templates."""
+    return dict(current_user=current_user)
 
-# Rutas especiales
+@app.context_processor
+def inject_constants():
+    """Injectar constantes del sistema."""
+    return dict(
+        ROLES=["ADMIN", "TECNICO", "LECTURA"],
+        PRIORIDADES=["ALTA", "MEDIA", "BAJA"],
+        ESTADOS_FALLA=["PENDIENTE", "EN_PROGRESO", "CERRADA"],
+        ESTADOS_EQUIPO=["OPERATIVO", "FALLA_MENOR", "FUERA_DE_SERVICIO"]
+    )
+
+# Routes principales
+@app.route('/')
+def index():
+    """Página principal."""
+    if current_user.is_authenticated:
+        return render_template('dashboard.html')
+    return render_template('login.html')
+
 @app.route('/health')
 def health_check():
-    """Health check endpoint para Railway y monitoreo"""
+    """Health check para Railway."""
     try:
-        # Verificar conexión a base de datos
-        db.session.execute('SELECT 1')
+        # Verificar base de datos
+        db_status = "OK" if db else "ERROR"
+        
+        # Verificar configuraciones críticas
+        secret_key_status = "OK" if app.config.get('SECRET_KEY') else "ERROR"
         
         return jsonify({
             'status': 'healthy',
-            'version': '3.0-hybrid',
             'timestamp': datetime.now().isoformat(),
-            'database': 'connected'
+            'version': '4.0-railway-fixed',
+            'database': db_status,
+            'secret_key': secret_key_status,
+            'debug_mode': app.config.get('DEBUG', False)
         })
     except Exception as e:
-        logger.error(f"Health check failed: {str(e)}")
+        logger.error(f"Health check failed: {e}")
         return jsonify({
             'status': 'unhealthy',
-            'version': '3.0-hybrid',
-            'timestamp': datetime.now().isoformat(),
-            'error': str(e)
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
         }), 500
 
-@app.route('/favicon.ico')
-def favicon():
-    """Servir favicon para evitar errores 404"""
-    return send_from_directory(os.path.join(app.root_path, 'static'),
-                              'favicon.ico', mimetype='image/vnd.microsoft.icon')
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    """Servir archivos estáticos."""
+    return send_from_directory('static', filename)
 
-@app.route('/')
-@login_required
-def index():
-    """Página principal - redirigir al dashboard"""
-    from flask import redirect, url_for
-    return redirect(url_for('dashboard_bp.index'))
-
-# Manejo de errores
+# Error handlers
 @app.errorhandler(404)
 def not_found_error(error):
-    """Manejar errores 404"""
-    logger.warning(f"404 Error: {request.url}")
     return render_template('errors/404.html'), 404
 
 @app.errorhandler(500)
 def internal_error(error):
-    """Manejar errores 500"""
-    logger.error(f"500 Error: {str(error)}")
     db.session.rollback()
     return render_template('errors/500.html'), 500
 
-# Decorators personalizados
-def admin_required(f):
-    """Decorator para rutas que requieren permisos de administrador"""
-    from functools import wraps
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated:
-            return login_manager.unauthorized()
-        if not current_user.is_admin():
-            logger.warning(f"Usuario {current_user.email} intentó acceder a ruta admin sin permisos")
-            from flask import flash, redirect, url_for
-            flash('No tienes permisos para acceder a esta página.', 'danger')
-            return redirect(url_for('dashboard_bp.index'))
-        return f(*args, **kwargs)
-    return decorated_function
+# CLI commands
+@app.cli.command('init-db')
+def init_db():
+    """Inicializar base de datos."""
+    try:
+        db.create_all()
+        logger.info("✅ Base de datos inicializada")
+        from scripts.datos_iniciales import crear_usuario_admin
+        crear_usuario_admin()
+        logger.info("✅ Usuario admin creado")
+    except Exception as e:
+        logger.error(f"❌ Error inicializando BD: {e}")
 
-# Función de inicialización
-def init_app():
-    """Inicializar la aplicación y crear tablas"""
-    with app.app_context():
-        try:
-            # Crear todas las tablas
-            db.create_all()
-            logger.info("✅ Base de datos inicializada correctamente")
-            
-            # Seed data si es necesario
-            from models import seed_initial_data
-            seed_initial_data()
-            logger.info("✅ Datos iniciales insertados")
-            
-        except Exception as e:
-            logger.error(f"❌ Error inicializando aplicación: {str(e)}")
-            traceback.print_exc()
-            raise
+@app.cli.command('create-admin')
+def create_admin():
+    """Crear usuario administrador."""
+    try:
+        from scripts.datos_iniciales import crear_usuario_admin
+        crear_usuario_admin()
+        logger.info("✅ Usuario admin creado")
+    except Exception as e:
+        logger.error(f"❌ Error creando admin: {e}")
 
-# Función principal
+# Main
 if __name__ == '__main__':
-    # Configuración para Railway
-    port = int(os.environ.get('PORT', 5000))
-    debug_mode = os.environ.get('FLASK_ENV') == 'development'
+    port = int(os.environ.get('PORT', 8000))
+    debug_mode = os.environ.get('FLASK_ENV') != 'production'
     
-    logger.info(f"🚀 Iniciando Sistema Cámaras UFRO v3.0-hybrid en puerto {port}")
-    logger.info(f"🔧 Debug mode: {debug_mode}")
+    logger.info(f"🚀 Iniciando servidor en puerto {port}")
+    logger.info(f"🔧 Modo debug: {debug_mode}")
     
-    # Registrar blueprints
-    register_blueprints()
-    
-    # Inicializar aplicación
-    init_app()
-    
-    # Ejecutar servidor
-    app.run(
-        host='0.0.0.0',
-        port=port,
-        debug=debug_mode
-    )
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)

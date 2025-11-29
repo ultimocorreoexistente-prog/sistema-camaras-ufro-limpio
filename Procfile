@@ -1,1 +1,7 @@
-web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --log-level info --max-requests 1000 --max-requests-jitter 100
+# ==============================================
+# PROCFILE SIMPLIFICADO PARA RAILWAY
+# ✅ VERSIÓN DIRECTA SIN CONFLICTOS
+# ==============================================
+
+# El Dockerfile maneja el deploy, este Procfile es backup
+web: python -m gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
