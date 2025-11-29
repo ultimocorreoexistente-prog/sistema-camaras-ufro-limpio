@@ -1,7 +1,7 @@
 # ==============================================
-# PROCFILE SIMPLIFICADO PARA RAILWAY
-# ✅ VERSIÓN DIRECTA SIN CONFLICTOS
+# PROCFILE CORREGIDO PARA RAILWAY
+# ✅ SIN CONFLICTOS DE PUERTO
 # ==============================================
 
-# El Dockerfile maneja el deploy, este Procfile es backup
-web: python -m gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+# Usar directamente gunicorn sin prefijo python -m
+web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120

@@ -34,13 +34,12 @@ COPY . .
 # Crear directorios necesarios
 RUN mkdir -p uploads logs instance
 
-# Configuración de entorno
-ENV PORT=8000
+# Configuración de entorno (NO preconfigurar PORT - Railway lo define)
 ENV FLASK_ENV=production
 ENV PYTHONPATH=/app
 
-# Exponer puerto
-EXPOSE 8000
+# Exponer puerto dinámico
+EXPOSE ${PORT:-8000}
 
 # Comando simple y directo
 CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:$PORT", "--workers", "2", "--timeout", "30"]
