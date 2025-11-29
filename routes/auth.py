@@ -1,244 +1,165 @@
-#!/usr/bin/env python3
 """
-Blueprint de Autenticación - Sistema Cámaras UFRO
-================================================
-
-Manejo completo de autenticación de usuarios con Flask-Login.
-- Login/Logout
-- Registro de usuarios
-- Gestión de sesiones
-- Validación de permisos
-
-Autor: MiniMax Agent
-Fecha: 2025-11-27
-Versión: 3.0-hybrid
+Blueprint de Autenticación para Sistema de Cámaras UFRO
+Maneja login, logout y autenticación con Flask-Login
 """
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
-from sqlalchemy.exc import IntegrityError
-import logging
 from datetime import datetime
+import logging
 
-# Configurar logging
+auth_bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
-
-# Crear blueprint
-auth_bp = Blueprint('auth_bp', __name__, url_prefix='/auth')
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    """
-    Ruta de login de usuarios
-    GET: Mostrar formulario de login
-    POST: Procesar autenticación
-    """
-    if request.method == 'POST':
-        try:
-            # Obtener datos del formulario
-            email = request.form.get('email', '').strip().lower()
-            password = request.form.get('password', '')
-            
-            # Validaciones básicas
-            if not email or not password:
-                flash('Por favor ingresa email y contraseña.', 'warning')
-                return render_template('auth/login.html')
-            
-            # Buscar usuario en base de datos
-            from models import Usuario
-            user = Usuario.query.filter_by(email=email).first()
-            
-            # Verificar credenciales
-            if user and check_password_hash(user.password_hash, password):
-                if not user.activo:
-                    flash('Tu cuenta está desactivada. Contacta al administrador.', 'danger')
-                    return render_template('auth/login.html')
-                
-                # Login exitoso
-                login_user(user, remember=True)
-                logger.info(f"Login exitoso para usuario: {email}")
-                
-                # Redireccionar a la página que solicitó o al dashboard
-                next_url = request.args.get('next')
-                return redirect(next_url or url_for('dashboard_bp.index'))
-            else:
-                flash('Email o contraseña incorrectos.', 'danger')
-                logger.warning(f"Intento de login fallido para: {email}")
-                
-        except Exception as e:
-            logger.error(f"Error en login: {str(e)}")
-            flash('Error interno. Intenta nuevamente.', 'danger')
-    
-    # Si ya está autenticado, redirigir al dashboard
+    """Ruta de login con autenticación mejorada"""
     if current_user.is_authenticated:
         return redirect(url_for('dashboard_bp.index'))
     
-    return render_template('auth/login.html')
+    if request.method == 'POST':
+        try:
+            email = request.form.get('email', '').strip().lower()
+            password = request.form.get('password', '')
+            
+            # Validación de entrada
+            if not email or not password:
+                logger.warning(f"Intento de login fallido - campos vacíos: {request.remote_addr}")
+                return render_template('login.html', error='Email y contraseña son requeridos')
+            
+            # Importar usuario aquí para evitar dependencias circulares
+            from models import Usuario
+            from models import db
+            
+            # Búsqueda de usuario
+            user = Usuario.query.filter(
+                (Usuario.email == email) | (Usuario.username == email)
+            ).first()
+            
+            # Verificación de credenciales
+            if user and hasattr(user, 'activo') and user.activo and check_password_hash(user.password_hash, password):
+                # Login exitoso
+                login_user(user)
+                user.ultimo_acceso = datetime.utcnow()
+                user.ultima_ip = request.remote_addr
+                if hasattr(user, 'intentos_login'):
+                    user.intentos_login = 0
+                db.session.commit()
+                
+                logger.info(f"✅ Login exitoso: {user.username} ({user.email})")
+                
+                # Redirección por rol
+                next_url = request.args.get('next')
+                return redirect(next_url or url_for('dashboard_bp.index'))
+            
+            # Login fallido
+            if user and hasattr(user, 'intentos_login'):
+                user.intentos_login += 1
+                db.session.commit()
+                logger.warning(f"❌ Login fallido para usuario: {user.username} - IP: {request.remote_addr}")
+            
+            return render_template('login.html', error='Credenciales inválidas')
+            
+        except Exception as e:
+            logger.error(f"Error en login: {e}")
+            return render_template('login.html', error='Error interno del servidor')
+    
+    return render_template('login.html')
 
 @auth_bp.route('/logout')
 @login_required
 def logout():
-    """
-    Logout de usuario
-    """
-    try:
-        email = current_user.email
-        logout_user()
-        logger.info(f"Logout exitoso para usuario: {email}")
-        flash('Sesión cerrada correctamente.', 'info')
-    except Exception as e:
-        logger.error(f"Error en logout: {str(e)}")
-        flash('Error al cerrar sesión.', 'danger')
-    
-    return redirect(url_for('auth_bp.login'))
+    """Logout seguro"""
+    username = current_user.username
+    logout_user()
+    logger.info(f"✅ Logout exitoso: {username}")
+    flash('Sesión cerrada correctamente', 'info')
+    return redirect(url_for('auth.login'))
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    """
-    Registro de nuevos usuarios
-    GET: Mostrar formulario de registro
-    POST: Procesar registro
-    """
-    if request.method == 'POST':
-        try:
-            # Obtener datos del formulario
-            email = request.form.get('email', '').strip().lower()
-            password = request.form.get('password', '')
-            confirm_password = request.form.get('confirm_password', '')
-            nombre = request.form.get('nombre', '').strip()
-            apellido = request.form.get('apellido', '').strip()
-            
-            # Validaciones
-            if not all([email, password, confirm_password, nombre, apellido]):
-                flash('Todos los campos son obligatorios.', 'warning')
-                return render_template('auth/register.html')
-            
-            if password != confirm_password:
-                flash('Las contraseñas no coinciden.', 'warning')
-                return render_template('auth/register.html')
-            
-            if len(password) < 6:
-                flash('La contraseña debe tener al menos 6 caracteres.', 'warning')
-                return render_template('auth/register.html')
-            
-            # Verificar si el email ya existe
-            from models import Usuario
-            existing_user = Usuario.query.filter_by(email=email).first()
-            if existing_user:
-                flash('Este email ya está registrado.', 'warning')
-                return render_template('auth/register.html')
-            
-            # Crear nuevo usuario
-            new_user = Usuario(
-                email=email,
-                password_hash=generate_password_hash(password),
-                nombre=nombre,
-                apellido=apellido,
-                activo=True
-            )
-            
-            db.session.add(new_user)
-            db.session.commit()
-            
-            logger.info(f"Nuevo usuario registrado: {email}")
-            flash('Cuenta creada exitosamente. Ya puedes iniciar sesión.', 'success')
-            return redirect(url_for('auth_bp.login'))
-            
-        except IntegrityError:
-            db.session.rollback()
-            flash('Error: Este email ya está registrado.', 'danger')
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error en registro: {str(e)}")
-            flash('Error interno. Intenta nuevamente.', 'danger')
+    """Registro de nuevos usuarios (solo para desarrollo)"""
+    # Solo en desarrollo - cerrar en producción
+    if current_app.config.get('DEBUG', False):
+        if request.method == 'POST':
+            try:
+                from models import Usuario, db
+                data = request.form
+                
+                # Validar campos requeridos
+                if not all([data.get('username'), data.get('email'), data.get('password')]):
+                    return render_template('register.html', error='Todos los campos son requeridos')
+                
+                # Verificar que el usuario no exista
+                if Usuario.query.filter(
+                    (Usuario.email == data['email']) | (Usuario.username == data['username'])
+                ).first():
+                    return render_template('register.html', error='Usuario o email ya existe')
+                
+                # Crear nuevo usuario
+                nuevo_usuario = Usuario(
+                    username=data['username'],
+                    email=data['email'],
+                    password_hash=generate_password_hash(data['password']),
+                    nombre=data.get('nombre', ''),
+                    apellido=data.get('apellido', ''),
+                    activo=True,
+                    fecha_creacion=datetime.utcnow()
+                )
+                
+                db.session.add(nuevo_usuario)
+                db.session.commit()
+                
+                flash('Usuario creado exitosamente', 'success')
+                return redirect(url_for('auth.login'))
+                
+            except Exception as e:
+                logger.error(f"Error en registro: {e}")
+                return render_template('register.html', error='Error al crear usuario')
+        
+        return render_template('register.html')
     
-    return render_template('auth/register.html')
-
-@auth_bp.route('/profile')
-@login_required
-def profile():
-    """
-    Perfil de usuario
-    """
-    try:
-        return render_template('auth/profile.html', user=current_user)
-    except Exception as e:
-        logger.error(f"Error en perfil: {str(e)}")
-        flash('Error cargando perfil.', 'danger')
-        return redirect(url_for('dashboard_bp.index'))
+    return redirect(url_for('auth.login'))
 
 @auth_bp.route('/change-password', methods=['GET', 'POST'])
 @login_required
 def change_password():
-    """
-    Cambio de contraseña
-    """
+    """Cambio de contraseña"""
     if request.method == 'POST':
         try:
-            current_password = request.form.get('current_password', '')
-            new_password = request.form.get('new_password', '')
-            confirm_password = request.form.get('confirm_password', '')
+            from models import Usuario, db
             
-            # Validaciones
-            if not all([current_password, new_password, confirm_password]):
-                flash('Todos los campos son obligatorios.', 'warning')
-                return render_template('auth/change_password.html')
+            current_password = request.form.get('current_password')
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
             
-            # Verificar contraseña actual
-            if not check_password_hash(current_user.password_hash, current_password):
-                flash('Contraseña actual incorrecta.', 'danger')
-                return render_template('auth/change_password.html')
+            # Validar contraseñas
+            if not current_password or not new_password:
+                return render_template('change_password.html', error='Contraseñas requeridas')
             
             if new_password != confirm_password:
-                flash('Las nuevas contraseñas no coinciden.', 'warning')
-                return render_template('auth/change_password.html')
+                return render_template('change_password.html', error='Las contraseñas no coinciden')
             
             if len(new_password) < 6:
-                flash('La nueva contraseña debe tener al menos 6 caracteres.', 'warning')
-                return render_template('auth/change_password.html')
+                return render_template('change_password.html', error='La contraseña debe tener al menos 6 caracteres')
+            
+            # Verificar contraseña actual
+            user = current_user
+            if not check_password_hash(user.password_hash, current_password):
+                return render_template('change_password.html', error='Contraseña actual incorrecta')
             
             # Actualizar contraseña
-            current_user.password_hash = generate_password_hash(new_password)
+            user.password_hash = generate_password_hash(new_password)
+            user.fecha_actualizacion = datetime.utcnow()
             db.session.commit()
             
-            logger.info(f"Contraseña actualizada para usuario: {current_user.email}")
-            flash('Contraseña actualizada exitosamente.', 'success')
-            return redirect(url_for('auth_bp.profile'))
+            logger.info(f"✅ Contraseña cambiada para usuario: {user.username}")
+            flash('Contraseña cambiada exitosamente', 'success')
+            return redirect(url_for('auth.login'))
             
         except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error cambiando contraseña: {str(e)}")
-            flash('Error interno. Intenta nuevamente.', 'danger')
+            logger.error(f"Error cambiando contraseña: {e}")
+            return render_template('change_password.html', error='Error interno del servidor')
     
-    return render_template('auth/change_password.html')
-
-@auth_bp.route('/check-session')
-@login_required
-def check_session():
-    """
-    API endpoint para verificar estado de sesión
-    """
-    try:
-        return jsonify({
-            'authenticated': True,
-            'user': {
-                'id': current_user.id,
-                'email': current_user.email,
-                'nombre': current_user.nombre,
-                'apellido': current_user.apellido
-            }
-        })
-    except Exception as e:
-        logger.error(f"Error verificando sesión: {str(e)}")
-        return jsonify({'authenticated': False, 'error': str(e)}), 500
-
-@auth_bp.route('/unauthorized')
-def unauthorized():
-    """
-    Página mostrada cuando usuario no autorizado intenta acceder
-    """
-    return render_template('auth/unauthorized.html')
-
-# Importar db para evitar circular import
-from models import db
+    return render_template('change_password.html')

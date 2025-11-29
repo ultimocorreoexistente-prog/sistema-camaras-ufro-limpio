@@ -1,41 +1,36 @@
-"""
-Inicialización del módulo models - Sistema de Gestión de Cámaras UFRO
-
-Este archivo reexporta todos los modelos y configuraciones de la base de datos
-de forma segura, evitando dependencias circulares mediante imports diferidos.
-
-PROBLEMA SOLUCIONADO:
-- Eliminación de dependencia circular donde models/__init__.py importaba Usuario
-  y usuario.py importaba db desde models/__init__.py
-- Creación de database.py como punto central de inicialización de SQLAlchemy
-- Lazy imports para evitar cargar todos los modelos al inicializar
-"""
-
+import os
 import logging
-from .database import db
+from flask_sqlalchemy import SQLAlchemy
 
-# Configurar logging
+# Configurar logging para todo el módulo
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
+
+# Inicializar SQLAlchemy
+db = SQLAlchemy()
 
 def init_models():
     """
     📦 Importar y registrar todos los modelos SQLAlchemy.
     
     Este método importa explícitamente cada clase de modelo para que
-    SQLAlchemy las registre correctamente. Usa imports diferidos para
-    evitar dependencias circulares.
+    SQLAlchemy las registre correctamente y estén disponibles para import.
     """
+    
     logger.info("🔄 Importando modelos desde archivos individuales...")
     
     try:
-        # Modelos principales del sistema - imports diferidos
+        # Modelos principales del sistema
         from .usuario import Usuario
         logger.info("✅ Usuario importado")
         
         from .camara import Camara
         logger.info("✅ Camara importada")
         
-        from .base import Ubicacion
+        from .ubicacion import Ubicacion
         logger.info("✅ Ubicacion importada")
         
         from .falla import Falla
@@ -47,15 +42,10 @@ def init_models():
         from .switch import Switch
         logger.info("✅ Switch importado")
         
-        from .nvr import NVR
-        logger.info("✅ NVR importado")
+        from .nvr import NvrDvr  # Posible que NVR y DVR estén en el mismo archivo
+        logger.info("✅ NvrDvr importado")
         
-        # Alias para compatibilidad
-        NvrDvr = NVR
-        DVR = NVR
-        logger.info("✅ NvrDvr y DVR definidos como alias de NVR")
-        
-        from .ups import UPS
+        from .ups import Ups
         logger.info("✅ UPS importado")
         
         from .gabinete import Gabinete
@@ -79,17 +69,24 @@ def init_models():
         from .equipo_tecnico import EquipoTecnico
         logger.info("✅ EquipoTecnico importado")
         
-        from .usuario_logs import UsuarioLog
-        logger.info("✅ UsuarioLog importado")
+        # Verificar si DVR existe como clase separada en nvr.py
+        try:
+            from .nvr import DVR
+            logger.info("✅ DVR importado")
+            has_dvr = True
+        except ImportError:
+            logger.warning("⚠️ DVR no encontrada como clase separada, usando NvrDvr como DVR")
+            DVR = NvrDvr  # Alias
+            has_dvr = False
         
         logger.info("🎉 Todos los modelos importados exitosamente")
         
         # Retornar todas las clases importadas
         return (
-            Usuario, Camara, Ubicacion, NVR, DVR, Switch, UPS, Gabinete, 
+            Usuario, Camara, Ubicacion, NVR if not has_dvr else NvrDvr, 
+            DVR if has_dvr else NvrDvr, Switch, Ups, Gabinete, 
             FuentePoder, Falla, Mantenimiento, Fotografia, 
-            HistorialEstadoEquipo, CatalogoTipoFalla, EquipoTecnico,
-            FallaComentario, UsuarioLog
+            HistorialEstadoEquipo, CatalogoTipoFalla, EquipoTecnico
         )
         
     except ImportError as e:
@@ -146,83 +143,104 @@ def init_db(app):
             raise
 
 # ========================================
-# 🔧 FUNCIONES DE IMPORT SEGURAS (LAZY IMPORTS)
-# ========================================
-
-def get_usuario():
-    """Importa Usuario de forma segura (lazy import)."""
-    from .usuario import Usuario
-    return Usuario
-
-def get_camara():
-    """Importa Camara de forma segura (lazy import)."""
-    from .camara import Camara
-    return Camara
-
-def get_falla():
-    """Importa Falla de forma segura (lazy import)."""
-    from .falla import Falla
-    return Falla
-
-def get_usuario_log():
-    """Importa UsuarioLog de forma segura (lazy import)."""
-    from .usuario_logs import UsuarioLog
-    return UsuarioLog
-
-# ========================================
-# 🏷️ EXPORTACIONES PRINCIPALES
+# 🔧 EXPORTACIONES PRINCIPALES
 # ========================================
 
 # Importar SQLAlchemy instance
 __all__ = [
-    # Base de datos
     'db',
-    'init_db', 'init_models',
-    
-    # Modelos principales
-    'Usuario', 'Camara', 'Falla', 'FallaComentario', 'Switch', 'NVR', 'UPS',
-    'FuenteAlimentacion', 'Gabinete', 'Ubicacion', 'UsuarioLog', 'Mantenimiento',
-    
-    # Funciones de importación segura
-    'get_usuario', 'get_camara', 'get_falla', 'get_usuario_log',
-    
-    # Enums disponibles
-    'EquipmentStatus', 'EstadoCamara',
-    
-    # Mixins y clases base
-    'ModelMixin', 'TimestampedModel', 'BaseModelMixin', 'BaseModel',
+    'init_db', 
+    'init_models',
+    # Clases principales para importación directa
+    'Usuario', 
+    'Camara', 
+    'Ubicacion', 
+    'NVR', 
+    'DVR',
+    'Switch', 
+    'UPS', 
+    'Gabinete', 
+    'FuentePoder', 
+    'Falla', 
+    'Mantenimiento', 
+    'Fotografia', 
+    'HistorialEstadoEquipo', 
+    'CatalogoTipoFalla', 
+    'EquipoTecnico'
 ]
 
-logger.info("🎉 models/__init__.py inicializado correctamente - dependencia circular eliminada")
+# ========================================
+# 🏷️ IMPORTACIONES DIRECTAS (Para compatibilidad)
+# ========================================
 
-# Importar modelos principales al nivel del módulo
+logger.info("🔄 Inicializando imports directos en models/__init__.py...")
+
 try:
+    # Importaciones principales
     from .usuario import Usuario
+    logger.debug("✅ Usuario importado directamente")
+    
     from .camara import Camara
-    from .falla import Falla
-    from .falla_comentario import FallaComentario
-    from .switch import Switch
-    from .nvr import NVR
-    from .ups import UPS
-    from .fuente_alimentacion import FuenteAlimentacion
-    from .gabinete import Gabinete
+    logger.debug("✅ Camara importado directamente")
+    
     from .ubicacion import Ubicacion
-    from .usuario_log import UsuarioLog
+    logger.debug("✅ Ubicacion importado directamente")
+    
+    from .switch import Switch  # ✅ CORREGIDO: importa desde switch.py, no base.py
+    logger.debug("✅ Switch importado directamente")
+    
+    from .nvr import NvrDvr as NVR
+    logger.debug("✅ NVR (NvrDvr) importado directamente")
+    
+    # Alias para DVR (puede ser la misma clase que NVR)
+    DVR = NVR
+    logger.debug("✅ DVR definido como alias de NVR")
+    
+    from .ups import Ups
+    logger.debug("✅ UPS importado directamente")
+    
+    from .gabinete import Gabinete
+    logger.debug("✅ Gabinete importado directamente")
+    
+    from .fuente_poder import FuentePoder
+    logger.debug("✅ FuentePoder importada directamente")
+    
+    from .falla import Falla
+    logger.debug("✅ Falla importado directamente")
+    
     from .mantenimiento import Mantenimiento
-    logger.debug("✅ Modelos principales importados al nivel del módulo")
+    logger.debug("✅ Mantenimiento importado directamente")
+    
+    from .fotografia import Fotografia
+    logger.debug("✅ Fotografia importado directamente")
+    
+    from .historial_estado_equipo import HistorialEstadoEquipo
+    logger.debug("✅ HistorialEstadoEquipo importado directamente")
+    
+    from .catalogo_tipo_falla import CatalogoTipoFalla
+    logger.debug("✅ CatalogoTipoFalla importado directamente")
+    
+    from .equipo_tecnico import EquipoTecnico
+    logger.debug("✅ EquipoTecnico importado directamente")
+    
+    from .usuario_logs import UsuarioLog
+    logger.debug("✅ UsuarioLog importado directamente")
+    
+    logger.info("🎉 models/__init__.py inicializado correctamente")
+    
 except ImportError as e:
-    logger.debug(f"⚠️ Algunos modelos no están disponibles: {e}")
+    logger.error(f"❌ Error al importar clases directamente: {e}")
+    logger.error("❌ Verifica que todos los archivos de modelo existan y tengan las clases correctas")
+except Exception as e:
+    logger.error(f"❌ Error inesperado en imports directos: {e}")
 
-# Importar enums disponibles al nivel del módulo (solo los seguros)
-try:
-    from .enums.equipment_status import EquipmentStatus
-    from .enums.estado_camara import EstadoCamara
-    logger.debug("✅ Enums principales importados")
-except ImportError as e:
-    logger.debug(f"⚠️ Algunos enums no están disponibles: {e}")
+# ✅ CRITICAL: Exportar todas las clases para que sean importables
+__all__ = [
+    'db',
+    'Usuario', 'Camara', 'Ubicacion', 'Falla', 'FallaComentario', 'Switch', 
+    'NvrDvr', 'Ups', 'Gabinete', 'FuentePoder', 'Mantenimiento', 
+    'Fotografia', 'HistorialEstadoEquipo', 'CatalogoTipoFalla', 'EquipoTecnico',
+    'UsuarioLog'  # ✅ Agregado para logs de auditoría
+]
 
-try:
-    from .base import ModelMixin, TimestampedModel, BaseModelMixin, BaseModel
-    logger.debug("✅ Mixins y clases base importados")
-except ImportError as e:
-    logger.debug(f"⚠️ Mixins no están disponibles: {e}")
+# Fin del archivo models/__init__.py

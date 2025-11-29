@@ -25,7 +25,11 @@ nombre="Juan",
 apellido="Pérez",
 especialidad="Cámaras de Seguridad",
 telefono="+5691345678",
+<<<<<<< HEAD
+email="juan.perez@ufro.cl",
+=======
 email="juan.perez@ufrontera.cl",
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 estado=TecnicoStatus.ACTIVO.value,
 fecha_ingreso=date(03, 1, 15),
 cargo="Técnico Senior",
@@ -43,7 +47,11 @@ nombre="María",
 apellido="González",
 especialidad="Sistemas de Red",
 telefono="+5698765431",
+<<<<<<< HEAD
+email="maria.gonzalez@ufro.cl",
+=======
 email="maria.gonzalez@ufrontera.cl",
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 estado=TecnicoStatus.DISPONIBLE.value,
 fecha_ingreso=date(03, 3, 0),
 cargo="Técnico Especialista",
@@ -56,7 +64,11 @@ nombre="Carlos",
 apellido="Rodríguez",
 especialidad="UPS y Energía",
 telefono="+569113344",
+<<<<<<< HEAD
+email="carlos.rodriguez@ufro.cl",
+=======
 email="carlos.rodriguez@ufrontera.cl",
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 estado=TecnicoStatus.OCUPADO.value,
 fecha_ingreso=date(0, 8, 10),
 cargo="Técnico Senior",

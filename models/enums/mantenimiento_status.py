@@ -1,7 +1,4 @@
-from enum import Enum
-
-
-class MantenimientoStatus(Enum):
+class MantenimientoStatus:
     PROGRAMADO = 'programado'
     PENDIENTE = 'pendiente'
     ASIGNADO = 'asignado'

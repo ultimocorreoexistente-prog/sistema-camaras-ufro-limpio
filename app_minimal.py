@@ -1,4 +1,8 @@
+<<<<<<< HEAD
+#/usr/bin/env python3
+=======
 #!/usr/bin/env python3
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 """
 Versión mínima ultra-básica para diagnóstico
 Solo Flask, sin dependencias externas
@@ -13,6 +17,38 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
+<<<<<<< HEAD
+"""Página principal ultra-básica"""
+return jsonify({
+'status': 'SUCCESS',
+'timestamp': datetime.now().isoformat(),
+'message': 'Sistema Cámaras UFRO - Versión Mínima',
+'environment_check': {
+'port': os.environ.get('PORT', 'NOT_SET'),
+'secret_key': os.environ.get('SECRET_KEY', 'NOT_SET'),
+'database_url': os.environ.get('DATABASE_URL', 'NOT_SET')[:0] + '...' if os.environ.get('DATABASE_URL') else 'NOT_SET'
+},
+'debug_info': {
+'python_version': 'Available',
+'flask_version': 'Available',
+'timestamp_now': datetime.now().isoformat()
+}
+})
+
+@app.route('/health')
+def health():
+"""Health check"""
+return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
+
+if __name__ == '__main__':
+print(" Iniciando app mínima...")
+print(f"Port: {os.environ.get('PORT', '8000')}")
+print(f"Secret Key: {os.environ.get('SECRET_KEY', 'NOT_SET')[:0] + '...' if os.environ.get('SECRET_KEY') else 'NOT_SET'}")
+print(f"Database URL: {'SET' if os.environ.get('DATABASE_URL') else 'NOT_SET'}")
+
+port = int(os.environ.get('PORT', 8000))
+app.run(host='0.0.0.0', port=port, debug=False)
+=======
     """Página principal ultra-básica"""
     return jsonify({
         'status': 'SUCCESS',
@@ -43,3 +79,4 @@ if __name__ == '__main__':
     
     port = int(os.environ.get('PORT', 8000))
     app.run(host='0.0.0.0', port=port, debug=False)
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856

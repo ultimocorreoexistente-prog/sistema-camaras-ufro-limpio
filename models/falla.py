@@ -1,17 +1,20 @@
+<<<<<<< HEAD
 """
 Modelo para gestión de fallas del sistema
 """
+=======
+>>>>>>> 490f0beca4eaa0ced06723ea308d2616d581f5a4
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import TimestampedModel
+from models.base import BaseModel
 from models import db
 
-class Falla(db.Model, TimestampedModel):
+class Falla(BaseModel, db.Model):
+<<<<<<< HEAD
     __tablename__ = 'fallas'
 
     # Campos principales
-    id = Column(Integer, primary_key=True)
     titulo = Column(String(255), nullable=False)
     descripcion = Column(Text, nullable=False)
     prioridad = Column(String(20), nullable=False, default='media')  # baja, media, alta, critica
@@ -33,26 +36,6 @@ class Falla(db.Model, TimestampedModel):
     
     # Campos adicionales
     activo = Column(Boolean, default=True, nullable=False)
-    
-    # Campos adicionales de la segunda versión
-    parent_falla_id = Column(Integer, ForeignKey('fallas.id'), nullable=True)
-    related_falla = relationship(
-        "Falla",
-        foreign_keys=[parent_falla_id],
-        remote_side=lambda: [Falla.id],
-        backref="related_fallas"
-    )
-    
-    created_by_user_id = Column(Integer, ForeignKey('usuarios.id'), nullable=False)
-    created_by_user = relationship("Usuario", foreign_keys=[created_by_user_id], back_populates="created_fallas")
-    
-    camara_id = Column(Integer, ForeignKey('camaras.id'), nullable=True)
-    camara = relationship("Camara", back_populates="fallas")
-    
-    fecha_reporte = Column(DateTime, default=datetime.utcnow, nullable=False)
-    resolucion = Column(Text, nullable=True)
-    solucion_aplicada = Column(Text, nullable=True)
-    requiere_mantenimiento = Column(Boolean, default=False)
     
     # Relaciones
     creado_por = relationship("Usuario", foreign_keys=[creado_por_id], back_populates="fallas_creadas")
@@ -77,3 +60,34 @@ class Falla(db.Model, TimestampedModel):
             'fecha_resolucion': self.fecha_resolucion.isoformat() if self.fecha_resolucion else None,
             'activo': self.activo
         }
+=======
+    
+    __tablename__ = 'fallas'
+    id = Column(Integer, primary_key=True)
+    
+    equipo_id = Column(Integer, nullable=False)
+    equipo_type = Column(String(50), nullable=False)
+    descripcion = Column(Text, nullable=False)
+    severidad = Column(String(20), nullable=False, default='media')
+    estado = Column(String(20), nullable=False, default='reportada')
+
+    parent_falla_id = Column(Integer, ForeignKey('fallas.id'), nullable=True)
+    related_falla = relationship(
+    "Falla",
+    foreign_keys=[parent_falla_id],
+    remote_side=lambda: [Falla.id], # CORREGIDO
+    backref="related_fallas"
+    )
+
+    created_by_user_id = Column(Integer, ForeignKey('usuarios.id'), nullable=False)
+    created_by_user = relationship("Usuario", back_populates="created_fallas")
+
+    camara_id = Column(Integer, ForeignKey('camaras.id'), nullable=True)
+    camara = relationship("Camara", back_populates="fallas")
+
+    fecha_reporte = Column(DateTime, default=datetime.utcnow, nullable=False)
+    fecha_resolucion = Column(DateTime, nullable=True)
+    resolucion = Column(Text, nullable=True)
+    solucion_aplicada = Column(Text, nullable=True)
+    requiere_mantenimiento = Column(Boolean, default=False)
+>>>>>>> 490f0beca4eaa0ced06723ea308d2616d581f5a4

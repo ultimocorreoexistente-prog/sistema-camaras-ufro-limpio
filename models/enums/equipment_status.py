@@ -1,6 +1,4 @@
-from enum import Enum
-
-class EquipmentStatus(Enum):
+class EquipmentStatus:
     ACTIVO = 'activo'
     INACTIVO = 'inactivo'
     FALLANDO = 'fallando'

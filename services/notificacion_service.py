@@ -26,7 +26,11 @@ self.smtp_server = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
 self.smtp_port = int(os.environ.get('SMTP_PORT', 587))
 self.smtp_user = os.environ.get('SMTP_USER', '')
 self.smtp_password = os.environ.get('SMTP_PASSWORD', '')
+<<<<<<< HEAD
+self.from_email = os.environ.get('FROM_EMAIL', 'noreply@ufro.cl')
+=======
 self.from_email = os.environ.get('FROM_EMAIL', 'noreply@ufrontera.cl')
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 
 # Configuración de SMS (ejemplo con servicio externo)
 self.sms_api_key = os.environ.get('SMS_API_KEY', '')

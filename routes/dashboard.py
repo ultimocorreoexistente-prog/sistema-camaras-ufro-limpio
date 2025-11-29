@@ -1,575 +1,246 @@
-#!/usr/bin/env python3
 """
-Blueprint de Dashboard - Sistema Cámaras UFRO
-============================================
-
-Dashboard principal con estadísticas en tiempo real y context processors globales.
-- Estadísticas del sistema
-- Métricas en tiempo real
-- Gráficos de fallas y mantenimiento
-- Overview de equipos
-
-Autor: MiniMax Agent
-Fecha: 2025-11-27
-Versión: 3.0-hybrid
+Blueprint del Dashboard principal para Sistema de Cámaras UFRO
+Dashboard con estadísticas y resumen general del sistema
 """
 
-from flask import Blueprint, render_template, jsonify, request
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
-from sqlalchemy import func, desc, and_, or_, extract
 from datetime import datetime, timedelta
 import logging
 
-# Configurar logging
+dashboard_bp = Blueprint('dashboard_bp', __name__)
 logger = logging.getLogger(__name__)
-
-# Crear blueprint
-dashboard_bp = Blueprint('dashboard_bp', __name__, url_prefix='/dashboard')
 
 @dashboard_bp.route('/')
 @login_required
 def index():
-    """
-    Dashboard principal con estadísticas generales
-    """
+    """Dashboard principal con estadísticas globales"""
     try:
-        # Obtener estadísticas del sistema
-        stats = get_system_stats()
+        # Importar modelos
+        from models import Usuario, Camara, Falla, Mantenimiento, Ubicacion
+        from models import EstadoEquipoEnum, EstadoFallaEnum
         
-        # Obtener actividad reciente
-        recent_activity = get_recent_activity()
+        # Obtener estadísticas generales
+        stats = {
+            'total_usuarios': Usuario.query.count() if Usuario.query.first() else 0,
+            'total_camaras': Camara.query.count() if Camara.query.first() else 0,
+            'camaras_activas': Camara.query.filter_by(estado=EstadoEquipoEnum.ACTIVO.value).count() if Camara.query.first() else 0,
+            'total_fallas': Falla.query.count() if Falla.query.first() else 0,
+            'fallas_abiertas': Falla.query.filter_by(estado=EstadoFallaEnum.ABIERTA.value).count() if Falla.query.first() else 0,
+            'fallas_en_proceso': Falla.query.filter_by(estado=EstadoFallaEnum.EN_PROCESO.value).count() if Falla.query.first() else 0,
+            'total_mantenimientos': Mantenimiento.query.count() if Mantenimiento.query.first() else 0,
+            'total_ubicaciones': Ubicacion.query.count() if Ubicacion.query.first() else 0
+        }
         
-        # Obtener fallas críticas
-        critical_issues = get_critical_issues()
+        # Calcular porcentajes y métricas adicionales
+        if stats['total_camaras'] > 0:
+            stats['porcentaje_camaras_activas'] = round((stats['camaras_activas'] / stats['total_camaras']) * 100, 1)
+        else:
+            stats['porcentaje_camaras_activas'] = 0
+            
+        if stats['total_fallas'] > 0:
+            stats['porcentaje_fallas_abiertas'] = round((stats['fallas_abiertas'] / stats['total_fallas']) * 100, 1)
+        else:
+            stats['porcentaje_fallas_abiertas'] = 0
         
-        # Obtener próximas tareas de mantenimiento
-        upcoming_maintenance = get_upcoming_maintenance()
+        # Obtener fallas recientes (últimas 5)
+        fallas_recientes = []
+        try:
+            from models import Falla
+            fallas_recientes = Falla.query.order_by(Falla.fecha_creacion.desc()).limit(5).all()
+        except:
+            pass
         
-        return render_template('dashboard/index.html', 
+        # Obtener mantenimientos próximos (próximos 5)
+        mantenimientos_proximos = []
+        try:
+            from models import Mantenimiento
+            hoy = datetime.now()
+            proxima_semana = hoy + timedelta(days=7)
+            mantenimientos_proximos = Mantenimiento.query.filter(
+                Mantenimiento.fecha_programada >= hoy,
+                Mantenimiento.fecha_programada <= proxima_semana,
+                Mantenimiento.estado != 'completado'
+            ).order_by(Mantenimiento.fecha_programada.asc()).limit(5).all()
+        except:
+            pass
+        
+        # Obtener cámaras críticas (con fallas abiertas)
+        camaras_criticas = []
+        try:
+            from models import Camara, Falla
+            camaras_criticas = Camara.query.join(Falla, Falla.equipo_id == Camara.id).filter(
+                Falla.tipo == 'camara',
+                Falla.estado.in_([EstadoFallaEnum.ABIERTA.value, EstadoFallaEnum.EN_PROCESO.value])
+            ).distinct().limit(5).all()
+        except:
+            pass
+        
+        # Calcular health score general
+        health_score = calcular_health_score(stats)
+        
+        return render_template('dashboard.html', 
                              stats=stats,
-                             recent_activity=recent_activity,
-                             critical_issues=critical_issues,
-                             upcoming_maintenance=upcoming_maintenance)
+                             fallas_recientes=fallas_recientes,
+                             mantenimientos_proximos=mantenimientos_proximos,
+                             camaras_criticas=camaras_criticas,
+                             health_score=health_score,
+                             user=current_user,
+                             titulo="Dashboard - Sistema Cámaras UFRO v3.0-Hybrid")
                              
     except Exception as e:
-        logger.error(f"Error en dashboard: {str(e)}")
-        # Fallback a datos básicos en caso de error
-        basic_stats = get_basic_stats()
-        return render_template('dashboard/index.html', 
-                             stats=basic_stats,
-                             recent_activity=[],
-                             critical_issues=[],
-                             upcoming_maintenance=[])
+        logger.error(f"Error cargando dashboard: {e}")
+        flash('Error cargando estadísticas del dashboard', 'danger')
+        return render_template('dashboard.html', 
+                             stats={},
+                             fallas_recientes=[],
+                             mantenimientos_proximos=[],
+                             camaras_criticas=[],
+                             health_score=0,
+                             user=current_user,
+                             titulo="Dashboard - Sistema Cámaras UFRO")
 
 @dashboard_bp.route('/stats')
 @login_required
-def get_stats():
-    """
-    API endpoint para obtener estadísticas del sistema
-    """
+def dashboard_stats():
+    """API para estadísticas del dashboard en formato JSON"""
     try:
-        stats = get_system_stats()
-        return jsonify(stats)
-    except Exception as e:
-        logger.error(f"Error obteniendo estadísticas: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@dashboard_bp.route('/cameras/status')
-@login_required
-def cameras_status():
-    """
-    API endpoint para estado de cámaras
-    """
-    try:
-        from models import Camara
+        # Importar modelos
+        from models import Usuario, Camara, Falla, Mantenimiento, Ubicacion
+        from models import EstadoEquipoEnum, EstadoFallaEnum
         
-        # Estadísticas de cámaras por estado
-        status_counts = db.session.query(
-            Camara.estado,
-            func.count(Camara.id)
-        ).group_by(Camara.estado).all()
-        
-        # Estadísticas por ubicación
-        location_stats = db.session.query(
-            Camara.ubicacion,
-            func.count(Camara.id),
-            func.count(Camara.id).filter(Camara.estado == 'operativa')
-        ).group_by(Camara.ubicacion).all()
-        
-        # Cámaras con fallas recientes
-        cameras_with_failures = db.session.query(
-            func.count(Camara.id)
-        ).filter(
-            Camara.estado == 'fallas'
-        ).scalar()
-        
-        # Tiempo promedio de disponibilidad (simulado)
-        uptime_stats = {
-            'average_uptime': 99.2,
-            'total_downtime_hours': 2.4,
-            'last_incident': (datetime.now() - timedelta(days=3)).isoformat()
-        }
-        
-        return jsonify({
-            'status_distribution': dict(status_counts),
-            'location_statistics': [
-                {
-                    'location': location,
-                    'total_cameras': total,
-                    'operational_cameras': operational
-                }
-                for location, total, operational in location_stats
-            ],
-            'cameras_with_failures': cameras_with_failures,
-            'uptime_statistics': uptime_stats
-        })
-        
-    except Exception as e:
-        logger.error(f"Error obteniendo estado de cámaras: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@dashboard_bp.route('/failures/analytics')
-@login_required
-def failures_analytics():
-    """
-    API endpoint para análisis de fallas
-    """
-    try:
-        from models import Falla
-        
-        # Fallas por mes (últimos 6 meses)
-        failures_by_month = db.session.query(
-            extract('year', Falla.fecha_creacion).label('year'),
-            extract('month', Falla.fecha_creacion).label('month'),
-            func.count(Falla.id).label('count')
-        ).filter(
-            Falla.fecha_creacion >= datetime.now() - timedelta(days=180)
-        ).group_by('year', 'month').order_by('year', 'month').all()
-        
-        # Fallas por prioridad
-        failures_by_priority = db.session.query(
-            Falla.prioridad,
-            func.count(Falla.id)
-        ).group_by(Falla.prioridad).all()
-        
-        # Tiempo promedio de resolución
-        resolution_time = db.session.query(
-            func.avg(
-                func.julianday(Falla.fecha_resolucion) - 
-                func.julianday(Falla.fecha_creacion)
-            )
-        ).filter(Falla.fecha_resolucion.isnot(None)).scalar() or 0
-        
-        # Fallas abiertas por antigüedad
-        old_open_failures = db.session.query(
-            func.count(Falla.id)
-        ).filter(
-            Falla.estado == 'abierta',
-            Falla.fecha_creacion < datetime.now() - timedelta(days=7)
-        ).scalar()
-        
-        return jsonify({
-            'failures_by_month': [
-                {
-                    'year': int(row.year),
-                    'month': int(row.month),
-                    'count': row.count
-                }
-                for row in failures_by_month
-            ],
-            'failures_by_priority': dict(failures_by_priority),
-            'average_resolution_time_days': round(resolution_time, 2),
-            'old_open_failures': old_open_failures
-        })
-        
-    except Exception as e:
-        logger.error(f"Error obteniendo análisis de fallas: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@dashboard_bp.route('/maintenance/schedule')
-@login_required
-def maintenance_schedule():
-    """
-    API endpoint para programación de mantenimiento
-    """
-    try:
-        from models import Mantenimiento
-        
-        # Próximos mantenimientos (próximos 30 días)
-        upcoming_maintenance = db.session.query(
-            Mantenimiento
-        ).filter(
-            Mantenimiento.fecha_programada >= datetime.now(),
-            Mantenimiento.fecha_programada <= datetime.now() + timedelta(days=30),
-            Mantenimiento.estado.in_(['programado', 'pendiente'])
-        ).order_by(Mantenimiento.fecha_programada.asc()).all()
-        
-        # Mantenimientos vencidos
-        overdue_maintenance = db.session.query(
-            func.count(Mantenimiento.id)
-        ).filter(
-            Mantenimiento.fecha_programada < datetime.now(),
-            Mantenimiento.estado.in_(['programado', 'pendiente'])
-        ).scalar()
-        
-        # Mantenimientos por tipo
-        maintenance_by_type = db.session.query(
-            Mantenimiento.tipo,
-            func.count(Mantenimiento.id)
-        ).group_by(Mantenimiento.tipo).all()
-        
-        return jsonify({
-            'upcoming_maintenance': [
-                {
-                    'id': m.id,
-                    'tipo': m.tipo,
-                    'descripcion': m.descripcion,
-                    'fecha_programada': m.fecha_programada.isoformat(),
-                    'estado': m.estado,
-                    'equipo': f"{m.equipo_tipo} #{m.equipo_id}" if m.equipo_id else 'General'
-                }
-                for m in upcoming_maintenance
-            ],
-            'overdue_count': overdue_maintenance,
-            'maintenance_by_type': dict(maintenance_by_type)
-        })
-        
-    except Exception as e:
-        logger.error(f"Error obteniendo programación de mantenimiento: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@dashboard_bp.route('/system/health')
-@login_required
-def system_health():
-    """
-    API endpoint para salud general del sistema
-    """
-    try:
-        from models import Camara, Falla, Mantenimiento, Usuario
-        
-        # Calcular puntaje de salud general
-        camera_health = calculate_camera_health()
-        failure_health = calculate_failure_health()
-        maintenance_health = calculate_maintenance_health()
-        
-        overall_health = (camera_health + failure_health + maintenance_health) / 3
-        
-        # Alertas del sistema
-        system_alerts = get_system_alerts()
-        
-        return jsonify({
-            'overall_health_score': round(overall_health, 2),
-            'component_health': {
-                'cameras': round(camera_health, 2),
-                'failures': round(failure_health, 2),
-                'maintenance': round(maintenance_health, 2)
-            },
-            'system_alerts': system_alerts,
-            'last_updated': datetime.now().isoformat()
-        })
-        
-    except Exception as e:
-        logger.error(f"Error obteniendo salud del sistema: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@dashboard_bp.route('/realtime')
-@login_required
-def realtime_data():
-    """
-    API endpoint para datos en tiempo real
-    """
-    try:
-        # Datos actualizados en tiempo real
-        from models import Camara, Falla
-        
-        realtime_stats = {
-            'timestamp': datetime.now().isoformat(),
-            'active_cameras': Camara.query.filter_by(estado='operativa').count(),
-            'failed_cameras': Camara.query.filter_by(estado='fallas').count(),
-            'open_failures': Falla.query.filter_by(estado='abierta').count(),
-            'processing_failures': Falla.query.filter_by(estado='en_proceso').count(),
-            'resolved_today': Falla.query.filter(
-                Falla.fecha_resolucion >= datetime.now().date()
-            ).count()
-        }
-        
-        return jsonify(realtime_stats)
-        
-    except Exception as e:
-        logger.error(f"Error obteniendo datos en tiempo real: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-# Funciones auxiliares
-
-def get_system_stats():
-    """
-    Obtener estadísticas principales del sistema
-    """
-    try:
-        from models import Camara, Falla, Mantenimiento, Usuario, Ubicacion
-        
+        # Estadísticas generales
         stats = {
-            'total_camaras': Camara.query.count(),
-            'camaras_operativas': Camara.query.filter_by(estado='operativa').count(),
-            'camaras_falla': Camara.query.filter_by(estado='fallas').count(),
-            'fallas_abiertas': Falla.query.filter_by(estado='abierta').count(),
-            'fallas_en_proceso': Falla.query.filter_by(estado='en_proceso').count(),
-            'mantenimientos_pendientes': Mantenimiento.query.filter_by(estado='pendiente').count(),
-            'usuarios_activos': Usuario.query.filter_by(activo=True).count(),
-            'ubicaciones_totales': Ubicacion.query.filter_by(activo=True).count(),
-            
-            # Porcentajes de salud
-            'camera_health_percentage': 0,
-            'failure_resolution_rate': 0,
-            'maintenance_up_to_date': 0
+            'timestamp': datetime.utcnow().isoformat(),
+            'general': {
+                'total_usuarios': Usuario.query.count() if Usuario.query.first() else 0,
+                'total_camaras': Camara.query.count() if Camara.query.first() else 0,
+                'camaras_activas': Camara.query.filter_by(estado=EstadoEquipoEnum.ACTIVO.value).count() if Camara.query.first() else 0,
+                'total_fallas': Falla.query.count() if Falla.query.first() else 0,
+                'fallas_abiertas': Falla.query.filter_by(estado=EstadoFallaEnum.ABIERTA.value).count() if Falla.query.first() else 0,
+                'total_mantenimientos': Mantenimiento.query.count() if Mantenimiento.query.first() else 0,
+                'total_ubicaciones': Ubicacion.query.count() if Ubicacion.query.first() else 0
+            }
         }
         
         # Calcular porcentajes
-        if stats['total_cameras'] > 0:
-            stats['camera_health_percentage'] = round(
-                (stats['camaras_operativas'] / stats['total_cameras']) * 100, 1
+        if stats['general']['total_camaras'] > 0:
+            stats['general']['porcentaje_camaras_activas'] = round(
+                (stats['general']['camaras_activas'] / stats['general']['total_camaras']) * 100, 1
             )
+        else:
+            stats['general']['porcentaje_camaras_activas'] = 0
+            
+        if stats['general']['total_fallas'] > 0:
+            stats['general']['porcentaje_fallas_abiertas'] = round(
+                (stats['general']['fallas_abiertas'] / stats['general']['total_fallas']) * 100, 1
+            )
+        else:
+            stats['general']['porcentaje_fallas_abiertas'] = 0
         
-        total_failures = stats['fallas_abiertas'] + stats['fallas_en_proceso']
-        if total_failures > 0:
-            # Simular tasa de resolución (en producción sería calculado real)
-            stats['failure_resolution_rate'] = 85.2
+        # Health score
+        stats['health_score'] = calcular_health_score(stats['general'])
         
-        if stats['mantenimientos_pendientes'] > 0:
-            stats['maintenance_up_to_date'] = 92.1  # Simulado
-        
-        return stats
-        
-    except Exception as e:
-        logger.error(f"Error obteniendo estadísticas del sistema: {str(e)}")
-        return get_basic_stats()
-
-def get_basic_stats():
-    """
-    Estadísticas básicas en caso de error
-    """
-    return {
-        'total_camaras': 0,
-        'camaras_operativas': 0,
-        'camaras_falla': 0,
-        'fallas_abiertas': 0,
-        'fallas_en_proceso': 0,
-        'mantenimientos_pendientes': 0,
-        'usuarios_activos': 0,
-        'ubicaciones_totales': 0,
-        'camera_health_percentage': 0,
-        'failure_resolution_rate': 0,
-        'maintenance_up_to_date': 0
-    }
-
-def get_recent_activity():
-    """
-    Obtener actividad reciente del sistema
-    """
-    try:
-        from models import Falla
-        
-        # Últimas 10 fallas creadas
-        recent_failures = Falla.query.order_by(
-            Falla.fecha_creacion.desc()
-        ).limit(10).all()
-        
-        activity = []
-        for failure in recent_failures:
-            activity.append({
-                'type': 'failure',
-                'title': failure.titulo,
-                'description': failure.descripcion,
-                'timestamp': failure.fecha_creacion.isoformat(),
-                'priority': failure.prioridad,
-                'status': failure.estado
-            })
-        
-        return activity[:5]  # Solo las 5 más recientes
+        return jsonify(stats)
         
     except Exception as e:
-        logger.error(f"Error obteniendo actividad reciente: {str(e)}")
-        return []
+        logger.error(f"Error obteniendo stats: {e}")
+        return jsonify({'error': 'Error obteniendo estadísticas'}), 500
 
-def get_critical_issues():
-    """
-    Obtener issues críticos del sistema
-    """
-    try:
-        from models import Falla
-        
-        # Fallas de prioridad alta abiertas
-        critical_failures = Falla.query.filter(
-            Falla.prioridad == 'alta',
-            Falla.estado.in_(['abierta', 'en_proceso'])
-        ).order_by(Falla.fecha_creacion.desc()).limit(5).all()
-        
-        issues = []
-        for failure in critical_failures:
-            issues.append({
-                'type': 'critical_failure',
-                'title': failure.titulo,
-                'description': failure.descripcion,
-                'priority': failure.prioridad,
-                'status': failure.estado,
-                'created_date': failure.fecha_creacion.isoformat(),
-                'days_open': (datetime.now() - failure.fecha_creacion).days
-            })
-        
-        return issues
-        
-    except Exception as e:
-        logger.error(f"Error obteniendo issues críticos: {str(e)}")
-        return []
-
-def get_upcoming_maintenance():
-    """
-    Obtener próximos mantenimientos
-    """
-    try:
-        from models import Mantenimiento
-        
-        # Próximos 10 mantenimientos
-        upcoming = Mantenimiento.query.filter(
-            Mantenimiento.fecha_programada >= datetime.now(),
-            Mantenimiento.estado.in_(['programado', 'pendiente'])
-        ).order_by(Mantenimiento.fecha_programada.asc()).limit(10).all()
-        
-        maintenance = []
-        for m in upcoming:
-            maintenance.append({
-                'type': m.tipo,
-                'description': m.descripcion,
-                'scheduled_date': m.fecha_programada.isoformat(),
-                'status': m.estado,
-                'equipment': f"{m.equipo_tipo} #{m.equipo_id}" if m.equipo_id else 'General'
-            })
-        
-        return maintenance[:5]  # Solo los 5 próximos
-        
-    except Exception as e:
-        logger.error(f"Error obteniendo próximo mantenimiento: {str(e)}")
-        return []
-
-def calculate_camera_health():
-    """
-    Calcular salud de cámaras (0-100)
-    """
-    try:
-        from models import Camara
-        
-        total = Camara.query.count()
-        if total == 0:
-            return 100
-        
-        operational = Camara.query.filter_by(estado='operativa').count()
-        return (operational / total) * 100
-        
-    except Exception:
-        return 0
-
-def calculate_failure_health():
-    """
-    Calcular salud de manejo de fallas (0-100)
-    """
-    try:
-        from models import Falla
-        
-        # Simular puntaje basado en antigüedad de fallas abiertas
-        old_failures = Falla.query.filter(
-            Falla.estado == 'abierta',
-            Falla.fecha_creacion < datetime.now() - timedelta(days=7)
-        ).count()
-        
-        total_failures = Falla.query.filter(
-            Falla.estado.in_(['abierta', 'en_proceso'])
-        ).count()
-        
-        if total_failures == 0:
-            return 100
-        
-        # Penalizar por fallas antiguas
-        penalty = min(old_failures / total_failures * 50, 50)
-        return max(100 - penalty, 50)
-        
-    except Exception:
-        return 50
-
-def calculate_maintenance_health():
-    """
-    Calcular salud de mantenimiento (0-100)
-    """
-    try:
-        from models import Mantenimiento
-        
-        # Simular puntaje basado en mantenimientos al día
-        total_pendientes = Mantenimiento.query.filter_by(estado='pendiente').count()
-        overdue = Mantenimiento.query.filter(
-            Mantenimiento.fecha_programada < datetime.now(),
-            Mantenimiento.estado.in_(['programado', 'pendiente'])
-        ).count()
-        
-        if total_pendientes == 0:
-            return 100
-        
-        penalty = min(overdue / total_pendientes * 30, 30)
-        return max(100 - penalty, 70)
-        
-    except Exception:
-        return 70
-
-def get_system_alerts():
-    """
-    Obtener alertas del sistema
-    """
-    alerts = []
-    
+@dashboard_bp.route('/alerts')
+@login_required
+def get_alerts():
+    """Obtener alertas críticas del sistema"""
     try:
         from models import Camara, Falla, Mantenimiento
+        from models import EstadoEquipoEnum, EstadoFallaEnum
         
-        # Alerta: Muchas cámaras con fallas
-        failed_cameras = Camara.query.filter_by(estado='fallas').count()
-        total_cameras = Camara.query.count()
+        alertas = []
         
-        if total_cameras > 0:
-            failure_rate = failed_cameras / total_cameras
-            if failure_rate > 0.1:  # Más del 10%
-                alerts.append({
-                    'level': 'warning',
-                    'message': f'Alta tasa de fallas de cámaras: {failure_rate:.1%}',
-                    'count': failed_cameras
+        # Cámaras en estado crítico
+        try:
+            camaras_criticas = Camara.query.filter(
+                Camara.estado.in_([EstadoEquipoEnum.INACTIVO.value, EstadoEquipoEnum.MANTENIMIENTO.value])
+            ).limit(3).all()
+            
+            for camara in camaras_criticas:
+                alertas.append({
+                    'tipo': 'critical',
+                    'titulo': f'Cámara crítica: {camara.nombre}',
+                    'descripcion': f'Cámara {camara.nombre} en estado {camara.estado}',
+                    'timestamp': camara.fecha_actualizacion.isoformat() if camara.fecha_actualizacion else None
                 })
+        except:
+            pass
         
-        # Alerta: Fallas abiertas antiguas
-        old_failures = Falla.query.filter(
-            Falla.estado == 'abierta',
-            Falla.fecha_creacion < datetime.now() - timedelta(days=7)
-        ).count()
+        # Fallas abiertas
+        try:
+            fallas_criticas = Falla.query.filter(
+                Falla.estado == EstadoFallaEnum.ABIERTA.value
+            ).order_by(Falla.fecha_creacion.desc()).limit(3).all()
+            
+            for falla in fallas_criticas:
+                alertas.append({
+                    'tipo': 'warning',
+                    'titulo': f'Falla abierta: {falla.titulo}',
+                    'descripcion': f'Falla de prioridad {falla.prioridad}',
+                    'timestamp': falla.fecha_creacion.isoformat() if falla.fecha_creacion else None
+                })
+        except:
+            pass
         
-        if old_failures > 5:
-            alerts.append({
-                'level': 'error',
-                'message': f'Muchas fallas abiertas por más de 7 días: {old_failures}',
-                'count': old_failures
-            })
+        # Mantenimientos vencidos o próximos
+        try:
+            hoy = datetime.now()
+            mantenimientos_urgentes = Mantenimiento.query.filter(
+                Mantenimiento.fecha_programada <= hoy,
+                Mantenimiento.estado != 'completado'
+            ).limit(2).all()
+            
+            for mantenimiento in mantenimientos_urgentes:
+                alertas.append({
+                    'tipo': 'info',
+                    'titulo': f'Mantenimiento urgente: {mantenimiento.tipo}',
+                    'descripcion': f'Mantenimiento programado el {mantenimiento.fecha_programada.strftime("%Y-%m-%d")}',
+                    'timestamp': mantenimiento.fecha_programada.isoformat()
+                })
+        except:
+            pass
         
-        # Alerta: Mantenimientos vencidos
-        overdue_maintenance = Mantenimiento.query.filter(
-            Mantenimiento.fecha_programada < datetime.now(),
-            Mantenimiento.estado.in_(['programado', 'pendiente'])
-        ).count()
-        
-        if overdue_maintenance > 3:
-            alerts.append({
-                'level': 'info',
-                'message': f'Mantenimientos vencidos: {overdue_maintenance}',
-                'count': overdue_maintenance
-            })
+        return jsonify({'alertas': alertas})
         
     except Exception as e:
-        logger.error(f"Error obteniendo alertas del sistema: {str(e)}")
-    
-    return alerts
+        logger.error(f"Error obteniendo alertas: {e}")
+        return jsonify({'alertas': []})
 
-# Importar db para evitar circular import
-from models import db
+def calcular_health_score(stats):
+    """Calcula un score de salud general del sistema (0-100)"""
+    try:
+        score = 100
+        
+        # Penalizar cámaras inactivas
+        if stats['total_camaras'] > 0:
+            porcentaje_inactivas = ((stats['total_camaras'] - stats['camaras_activas']) / stats['total_camaras']) * 100
+            score -= porcentaje_inactivas * 0.3
+        
+        # Penalizar fallas abiertas
+        if stats['total_fallas'] > 0:
+            porcentaje_fallas_abiertas = (stats['fallas_abiertas'] / stats['total_fallas']) * 100
+            score -= porcentaje_fallas_abiertas * 0.4
+        
+        # Penalizar si no hay mantenimientos recientes
+        if stats['total_mantenimientos'] == 0:
+            score -= 10
+        
+        # Penalizar si no hay usuarios (sistema sin usar)
+        if stats['total_usuarios'] == 0:
+            score -= 20
+        
+        # Limitar score entre 0 y 100
+        score = max(0, min(100, score))
+        
+        return round(score, 1)
+        
+    except Exception as e:
+        logger.error(f"Error calculando health score: {e}")
+        return 50  # Score neutral por defecto

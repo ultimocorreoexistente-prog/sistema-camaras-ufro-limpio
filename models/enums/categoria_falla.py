@@ -1,9 +1,8 @@
 """
 Enumeraciones para categorías de fallas del sistema.
 """
-from enum import Enum
 
-class CategoriaFalla(Enum):
+class CategoriaFalla:
     """Categorías estándar para tipos de fallas."""
     
     HARDWARE = "hardware"

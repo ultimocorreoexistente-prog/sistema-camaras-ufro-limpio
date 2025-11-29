@@ -11,13 +11,13 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 import json
 
 class ValidationError(Exception):
-    """Excepción para errores de validación"""
-    pass
+"""Excepción para errores de validación"""
+pass
 
 class Validator:
-    """Clase base para validadores"""
-    
-    @staticmethod
+"""Clase base para validadores"""
+
+@staticmethod
 def is_required(value: Any) -> bool:
 """Verifica si un valor es requerido (no None, no vacío)"""
 return value is not None and str(value).strip() = ''

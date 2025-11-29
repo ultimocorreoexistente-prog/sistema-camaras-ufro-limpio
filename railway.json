@@ -1,1 +1,1 @@
-{"build": {"builder": "DOCKERFILE", "dockerfilePath": "Dockerfile"}, "deploy": {"restartPolicyType": "ON_FAILURE", "restartPolicyMaxRetries": 10}}
+{"build": {"builder": "DOCKERFILE", "dockerfilePath": "Dockerfile"}, "deploy": {"restartPolicyType": "ON_FAILURE", "restartPolicyMaxRetries": 10}, "environments": {"web": {"startCommand": "gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120"}}}

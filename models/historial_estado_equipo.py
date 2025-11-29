@@ -12,11 +12,11 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from enum import Enum as PyEnum
 
-from models.base import TimestampedModel
+from models.base import BaseModel
 from models import db
 from models.enums.equipment_status import EquipmentStatus
 
-class HistorialEstadoEquipo(db.Model, TimestampedModel):
+class HistorialEstadoEquipo(BaseModel, db.Model):
     """
     Modelo para registrar el historial de cambios de estado de equipos.
     
@@ -24,9 +24,6 @@ class HistorialEstadoEquipo(db.Model, TimestampedModel):
     que ocurren en los equipos del sistema, permitiendo auditoría y seguimiento.
     """
     __tablename__ = 'historial_estado_equipo'
-    
-    # Identificador
-    id = Column(Integer, primary_key=True, autoincrement=True, comment="ID único del registro")
     
     # === CAMPOS PRINCIPALES ===
     equipo_tipo = Column(

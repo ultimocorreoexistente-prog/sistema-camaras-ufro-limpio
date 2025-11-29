@@ -13,11 +13,11 @@ import hashlib
 from werkzeug.utils import secure_filename
 
 class FotoService:
-    """Servicio para manejar fotografías y archivos"""
-    
-    def __init__(self, upload_folder: str = 'uploads', db_session=None):
-        self.upload_folder = upload_folder
-        self.db = db_session
+"""Servicio para manejar fotografías y archivos"""
+
+def __init__(self, upload_folder: str = 'uploads', db_session=None):
+self.upload_folder = upload_folder
+self.db = db_session
 self.allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'webp'}
 self.max_file_size = 10 * 104 * 104 # 10MB
 self.thumbnail_size = (300, 300)

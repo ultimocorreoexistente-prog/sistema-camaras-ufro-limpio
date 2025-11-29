@@ -14,7 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from sqlalchemy.exc import IntegrityError
 
-from models.base import TimestampedModel
+from models.base import BaseModel
 from models import db
 
 
@@ -46,7 +46,7 @@ class CableType(Enum):
     RS485 = 'rs485'
 
 
-class NetworkConnection(db.Model, TimestampedModel):
+class NetworkConnection(BaseModel, db.Model):
     """
     Modelo para conexiones de red entre equipos
     Permite conectar cualquier tipo de equipo con cualquier otro

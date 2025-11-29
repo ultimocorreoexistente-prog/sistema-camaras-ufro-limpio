@@ -18,7 +18,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 import logging
 
-# db instance moved to __init__.py to avoid conflicts
+db = SQLAlchemy()
 
 # ======================
 # Enums de la aplicación
@@ -116,97 +116,6 @@ class TimestampedModel(ModelMixin):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-
-class BaseModelMixin(TimestampedModel):
-    """Mixin simplificado para modelos básicos que heredan de db.Model"""
-    
-    @classmethod
-    def get_by_id(cls, id_value):
-        """Obtiene un registro por ID"""
-        return cls.query.get(id_value)
-    
-    @classmethod
-    def get_all(cls, limit=None):
-        """Obtiene todos los registros"""
-        query = cls.query
-        if limit:
-            query = query.limit(limit)
-        return query.all()
-    
-    @classmethod
-    def count(cls):
-        """Cuenta el total de registros"""
-        return cls.query.count()
-    
-    @property
-    def id(self):
-        """Obtiene el ID del modelo"""
-        return getattr(self, 'id', None)
-
-class BaseModel(db.Model, TimestampedModel):
-    """Clase base para todos los modelos del sistema"""
-    __abstract__ = True
-    
-    id = db.Column(db.Integer, primary_key=True)
-    
-    @classmethod
-    def get_by_id(cls, id_value):
-        """Obtiene un registro por ID"""
-        return cls.query.get(id_value)
-    
-    @classmethod
-    def get_all(cls, limit=None):
-        """Obtiene todos los registros"""
-        query = cls.query
-        if limit:
-            query = query.limit(limit)
-        return query.all()
-    
-    @classmethod
-    def count(cls):
-        """Cuenta el total de registros"""
-        return cls.query.count()
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convierte el modelo a diccionario incluyendo el ID"""
-        return {
-            column.name: getattr(self, column.name)
-            for column in self.__table__.columns
-            if not column.name.startswith('_')
-        }
-    
-    def save(self) -> bool:
-        """Guarda el modelo en la base de datos"""
-        try:
-            db.session.add(self)
-            db.session.commit()
-            return True
-        except Exception as e:
-            db.session.rollback()
-            logging.error(f"Error saving {self.__class__.__name__}: {e}")
-            return False
-    
-    def delete(self) -> bool:
-        """Elimina el modelo de la base de datos"""
-        try:
-            db.session.delete(self)
-            db.session.commit()
-            return True
-        except Exception as e:
-            db.session.rollback()
-            logging.error(f"Error deleting {self.__class__.__name__}: {e}")
-            return False
-    
-    def update(self, **kwargs) -> bool:
-        """Actualiza los campos del modelo"""
-        try:
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return self.save()
-        except Exception as e:
-            logging.error(f"Error updating {self.__class__.__name__}: {e}")
-            return False
 
 # ======================
 # Modelos del Sistema

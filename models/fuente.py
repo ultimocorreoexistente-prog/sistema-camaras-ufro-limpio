@@ -5,7 +5,7 @@ Compatible con el sistema existente y templates.
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import TimestampedModel
+from models.base import BaseModel
 from models import db
 import enum
 
@@ -18,16 +18,13 @@ class EstadoFuente(enum.Enum):
     FUERA_SERVICIO = "fuera_servicio"
 
 
-class Fuente(db.Model, TimestampedModel):
+class Fuente(BaseModel, db.Model):
     """
     Modelo simple de fuentes de alimentación.
     Compatible con el sistema existente y templates.
     """
     __tablename__ = 'fuentes'
 
-    # Identificador
-    id = Column(Integer, primary_key=True, autoincrement=True, comment="ID único de la fuente")
-    
     # Información básica
     nombre = Column(String(255), nullable=False, comment="Nombre de la fuente")
     descripcion = Column(Text, nullable=True, comment="Descripción de la fuente")
@@ -67,9 +64,8 @@ class Fuente(db.Model, TimestampedModel):
     # created_by_user = relationship("Usuario", back_populates="created_equipos")
     
     # Relaciones con otros modelos
-    # Relaciones temporalmente comentadas para evitar errores
-    # mantenimientos = relationship("Mantenimiento", back_populates="fuente_poder", cascade="all, delete-orphan")
-    # fotografias = relationship("Fotografia", back_populates="fuente_poder", cascade="all, delete-orphan")
+    mantenimientos = relationship("Mantenimiento", back_populate="fuente_poder", cascade="all, delete-orphan")
+    fotografias = relationship("Fotografia", back_populate="fuente_poder", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Fuente(nombre='{self.nombre}', potencia='{self.potencia}W', estado='{self.estado}')>"

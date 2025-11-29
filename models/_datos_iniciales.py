@@ -16,12 +16,12 @@ from flask import Flask
 from models import init_db
 from models.usuario import Usuario
 from models.ubicacion import Ubicacion
-from models.base import Camara
+from models.camara import Camara, CameraType
 from models.nvr import NVR, NVRSystemType
 from models.switch import Switch, SwitchType
 from models.ups import UPS, UPSType
 from models.gabinete import Gabinete, CabinetType
-from models.network_connections import NetworkConnection, ConnectionType
+from models.equipo import NetworkConnection, ConnectionType
 
 def create_app():
 """Crear aplicación Flask."""
@@ -45,7 +45,11 @@ print("\n Creando usuarios iniciales...")
 
 admin = Usuario(
 username="admin",
+<<<<<<< HEAD
+email="admin@sistema.com",
+=======
 email="admin.sistema@ufrontera.cl",
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 full_name="Administrador del Sistema",
 role="administrador",
 phone="+56 9 134 5678",

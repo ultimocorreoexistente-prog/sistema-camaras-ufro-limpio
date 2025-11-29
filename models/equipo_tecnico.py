@@ -10,7 +10,7 @@ Incluye relaciones con fallas y mantenimientos.
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Date, Boolean, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from models.base import TimestampedModel
+from models.base import BaseModel
 from models import db
 import enum
 
@@ -25,7 +25,7 @@ class TecnicoStatus(enum.Enum):
     LICENCIA = "licencia"
 
 
-class EquipoTecnico(db.Model, TimestampedModel):
+class EquipoTecnico(BaseModel, db.Model):
     """
     Modelo para gestión del personal técnico del sistema.
 
@@ -52,23 +52,23 @@ class EquipoTecnico(db.Model, TimestampedModel):
                       comment="Apellido del técnico")
     especialidad = Column(String(100), nullable=True,
                           comment="Especialidad técnica del técnico")
-    telefono = Column(String(50), nullable=True,
+    telefono = Column(String(0), nullable=True,
                       comment="Número de teléfono")
-    email = Column(String(100), nullable=True, index=True,
+    email = Column(String(00), nullable=True, index=True,
                    comment="Correo electrónico")
-    estado = Column(String(50), nullable=True,
+    estado = Column(String(0), nullable=True,
                     comment="Estado actual del técnico")
     fecha_ingreso = Column(Date, nullable=True,
                            comment="Fecha de ingreso al equipo")
 
     # Campos adicionales para funcionalidad extendida
-    codigo_empleado = Column(String(50), nullable=True, unique=True,
+    codigo_empleado = Column(String(0), nullable=True, unique=True,
                              comment="Código único de empleado")
     cargo = Column(String(100), nullable=True,
                    comment="Cargo o posición")
     departamento = Column(String(100), nullable=True,
                           comment="Departamento de trabajo")
-    nivel_experiencia = Column(String(50), nullable=True,
+    nivel_experiencia = Column(String(0), nullable=True,
                                comment="Nivel de experiencia")
     certificaciones = Column(db.JSON, nullable=True,
                              comment="Certificaciones técnicas en JSON")
@@ -76,11 +76,11 @@ class EquipoTecnico(db.Model, TimestampedModel):
                          comment="Habilidades técnicas en JSON")
     disponibilidad_horario = Column(db.JSON, nullable=True,
                                     comment="Horario de disponibilidad")
-    ubicacion_asignada = Column(String(100), nullable=True,
+    ubicacion_asignada = Column(String(00), nullable=True,
                                 comment="Ubicación de trabajo asignada")
 
     # Campos de contacto y comunicación
-    telefono_emergencia = Column(String(50), nullable=True,
+    telefono_emergencia = Column(String(0), nullable=True,
                                 comment="Teléfono de emergencia")
     direccion = Column(String(300), nullable=True,
                         comment="Dirección de contacto")
@@ -94,11 +94,11 @@ class EquipoTecnico(db.Model, TimestampedModel):
     # Campos de información laboral
     fecha_nacimiento = Column(Date, nullable=True,
                               comment="Fecha de nacimiento")
-    genero = Column(String(20), nullable=True,
+    genero = Column(String(0), nullable=True,
                     comment="Género")
-    estado_civil = Column(String(30), nullable=True,
+    estado_civil = Column(String(0), nullable=True,
                           comment="Estado civil")
-    numero_legajo = Column(String(50), nullable=True, unique=True,
+    numero_legajo = Column(String(0), nullable=True, unique=True,
                            comment="Número de legajo")
     tipo_contrato = Column(String(30), nullable=True,
                            comment="Tipo de contrato laboral")

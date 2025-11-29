@@ -36,7 +36,11 @@ db.session.flush() # Para obtener el ID
 # Crear usuario de prueba
 usuario_test = Usuario(
 username="admin_test",
+<<<<<<< HEAD
+email="test@ufro.cl",
+=======
 email="test.sistema@ufrontera.cl",
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 role="administrador"
 )
 db.session.add(usuario_test)

@@ -1,16 +1,49 @@
 # models/ubicacion.py
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Float, Enum
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import db, TimestampedModel
+from models.base import BaseModel
 from . import db  # ✅ Usa la instancia compartida de models/__init__.py
 
-class Ubicacion(db.Model, TimestampedModel):
+class Ubicacion(BaseModel, db.Model):
+<<<<<<< HEAD
+__tablename__ = 'ubicaciones'
+
+nombre = Column(String(100), nullable=False)
+tipo = Column(String(50), nullable=False)
+codigo = Column(String(50), unique=True, nullable=True)
+
+parent_id = Column(Integer, ForeignKey('ubicaciones.id'), nullable=True)
+parent = relationship(
+"Ubicacion",
+foreign_keys=[parent_id],
+remote_side=lambda: [Ubicacion.id], # lambda
+backref="children"
+)
+
+latitud = Column(String(0), nullable=True)
+longitud = Column(String(0), nullable=True)
+descripcion = Column(Text, nullable=True)
+
+created_by_user_id = Column(Integer, ForeignKey('usuarios.id'), nullable=False)
+created_by_user = relationship("Usuario", back_populates="created_ubicaciones")
+
+camaras = relationship("Camara", back_populates="ubicacion")
+switches = relationship("Switch", back_populates="ubicacion") # ahora sí existe Switch.ubicacion
+ups_list = relationship("UPS", back_populates="ubicacion")
+nvr_list = relationship("NVR", back_populates="ubicacion")
+gabinetes = relationship("Gabinete", back_populates="ubicacion")
+fuentes_poder = relationship("FuentePoder", back_populates="ubicacion")
+fotografias = relationship("Fotografia", back_populates="ubicacion")
+
+@classmethod
+def get_by_codigo(cls, codigo):
+return cls.query.filter_by(codigo=codigo, deleted=False).first()
+=======
     __tablename__ = 'ubicaciones'
-    
-    # Campo ID - TimestampedModel no incluye id por defecto, así que lo agregamos
     id = Column(Integer, primary_key=True)
-    
+
+    id = Column(Integer, primary_key=True)
     nombre = Column(String(100), nullable=False)
     tipo = Column(String(50), nullable=False)
     codigo = Column(String(50), unique=True, nullable=True)
@@ -23,8 +56,8 @@ class Ubicacion(db.Model, TimestampedModel):
         backref="children"
     )
 
-    latitud = Column(Float, nullable=True)   # ✅ Corregido: usar Float en lugar de String(20)
-    longitud = Column(Float, nullable=True)  # ✅ Corregido: usar Float en lugar de String(20)
+    latitud = Column(String(20), nullable=True)   # ✅ Corregido: era String(20)
+    longitud = Column(String(20), nullable=True)  # ✅ Corregido: era String(20)
     descripcion = Column(Text, nullable=True)
 
     created_by_user_id = Column(Integer, ForeignKey('usuarios.id'), nullable=False)
@@ -44,4 +77,5 @@ class Ubicacion(db.Model, TimestampedModel):
 
     @classmethod
     def get_by_codigo(cls, codigo):
-        return cls.query.filter_by(codigo=codigo).first()
+        return cls.query.filter_by(codigo=codigo, deleted=False).first()
+>>>>>>> 490f0beca4eaa0ced06723ea308d2616d581f5a4

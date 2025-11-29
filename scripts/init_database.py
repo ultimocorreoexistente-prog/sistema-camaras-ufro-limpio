@@ -28,7 +28,11 @@ admin = User.query.filter_by(username='admin').first()
 if not admin:
 admin = User(
 username='admin',
+<<<<<<< HEAD
+email='admin@ufro.cl',
+=======
 email='admin.sistema@ufrontera.cl',
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
 full_name='Administrador del Sistema',
 role='admin'
 )
