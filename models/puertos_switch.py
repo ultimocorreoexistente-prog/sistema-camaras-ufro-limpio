@@ -8,7 +8,8 @@ y estado específico.
 from datetime import datetime, date
 from sqlalchemy import Column, Integer, String, Text, DateTime, Date, Boolean, Float, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import db, TimestampedModel
+from models.base import TimestampedModel
+from models import db
 import re
 
 

@@ -7,7 +7,8 @@ Incluye gestión de switches, puertos, VLANs y configuraciones de red.
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from models.base import db, TimestampedModel
+from models.base import TimestampedModel
+from models import db
 from models.equipo import EquipmentBase
 import enum
 

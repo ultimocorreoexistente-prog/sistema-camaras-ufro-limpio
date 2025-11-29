@@ -5,7 +5,8 @@ Incluye gestión de gabinetes, equipos instalados y distribución física.
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from models.base import db, TimestampedModel
+from models.base import TimestampedModel
+from models import db
 from models.equipo import EquipmentBase
 from models.enums.equipment_status import EquipmentStatus
 import enum

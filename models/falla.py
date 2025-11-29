@@ -4,7 +4,8 @@ Modelo para gestión de fallas del sistema
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import db, TimestampedModel
+from models.base import TimestampedModel
+from models import db
 
 class Falla(db.Model, TimestampedModel):
     __tablename__ = 'fallas'

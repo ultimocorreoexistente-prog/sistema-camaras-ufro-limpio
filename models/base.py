@@ -19,7 +19,7 @@ from flask_login import UserMixin
 import logging
 from models.enums.estado_camara import EstadoCamara
 
-db = SQLAlchemy()
+# db instance moved to __init__.py to avoid conflicts
 
 # ======================
 # Enums de la aplicación

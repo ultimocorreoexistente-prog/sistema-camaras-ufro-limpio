@@ -12,7 +12,8 @@ Características:
 from datetime import datetime, date
 from sqlalchemy import Column, Integer, String, Date, Boolean, DateTime, ForeignKey, Enum, Float, Text
 from sqlalchemy.orm import relationship
-from models.base import db, TimestampedModel, EstadoCamara, TipoUbicacion
+from models.base import TimestampedModel, EstadoCamara, TipoUbicacion
+from models import db
 import enum
 
 

@@ -4,7 +4,8 @@ Modelo para comentarios de fallas
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import db, TimestampedModel
+from models.base import TimestampedModel
+from models import db
 
 class FallaComentario(db.Model, TimestampedModel):
     __tablename__ = 'falla_comentarios'

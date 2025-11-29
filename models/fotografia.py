@@ -6,7 +6,8 @@ Representa imágenes asociadas a equipos, ubicaciones, fallas, etc.
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-from models.base import db, TimestampedModel
+from models.base import TimestampedModel
+from models import db
 
 
 class Fotografia(db.Model, TimestampedModel):

@@ -14,8 +14,6 @@ from enum import Enum
 
 class Usuario(db.Model, TimestampedModel, UserMixin):
     __tablename__ = 'usuarios'
-    
-    id = Column(Integer, primary_key=True)
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(100), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)

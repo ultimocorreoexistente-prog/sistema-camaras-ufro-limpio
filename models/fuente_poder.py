@@ -7,7 +7,8 @@ Incluye gestión de fuentes de alimentación para equipos diversos.
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from models.base import db, TimestampedModel
+from models.base import TimestampedModel
+from models import db
 from models.enums.equipment_status import EquipmentStatus
 from models.equipo import EquipmentBase
 import enum

@@ -10,7 +10,7 @@ Incluye relaciones con fallas y mantenimientos.
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Date, Boolean, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from models.base import db, TimestampedModel
+from models.base import TimestampedModel
 from models import db
 import enum
 

@@ -19,7 +19,8 @@ Estructura de 9 columnas:
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import db, TimestampedModel
+from models.base import TimestampedModel
+from models import db
 
 
 class UsuarioLog(db.Model, TimestampedModel):

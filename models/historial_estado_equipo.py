@@ -12,7 +12,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from enum import Enum as PyEnum
 
-from models.base import db, TimestampedModel
+from models.base import TimestampedModel
+from models import db
 from models.enums.equipment_status import EquipmentStatus
 
 class HistorialEstadoEquipo(db.Model, TimestampedModel):
