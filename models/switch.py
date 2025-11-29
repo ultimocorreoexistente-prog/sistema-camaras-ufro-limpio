@@ -7,7 +7,7 @@ Incluye gestión de switches, puertos, VLANs y configuraciones de red.
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from models.base import db, EquipmentStatus, BaseModel, EquipmentBase
+from models.base import db, TimestampedModel
 import enum
 
 
@@ -49,7 +49,7 @@ class VLANType(enum.Enum):
     DATA = "data"
 
 
-class Switch(EquipmentBase):
+class Switch(db.Model, TimestampedModel):
     """
     Modelo de switches de red.
 
@@ -366,7 +366,7 @@ class Switch(EquipmentBase):
             score -= 10
 
         # Comparación corregida
-        if hasattr(self, 'status') and self.status != EquipmentStatus.ACTIVO:
+        if hasattr(self, 'estado') and self.estado != 'ACTIVO':
             score -= 10
 
         # Penalizar por falta de heartbeat reciente
@@ -421,7 +421,7 @@ class Switch(EquipmentBase):
             list: Lista de switches con puertos disponibles
         """
         switches = cls.query.filter_by(
-            status=EquipmentStatus.ACTIVO,
+            estado='ACTIVO',
             deleted=False
         ).all()
 
@@ -456,7 +456,7 @@ class Switch(EquipmentBase):
         return cls.query.filter_by(stack_master=True, deleted=False).all()
 
 
-class SwitchPort(BaseModel):
+class SwitchPort(db.Model, TimestampedModel):
     """
     Modelo de puertos de switch.
 
@@ -646,7 +646,7 @@ class SwitchPort(BaseModel):
         ).all()
 
 
-class SwitchVLAN(BaseModel):
+class SwitchVLAN(db.Model, TimestampedModel):
     """
     Modelo de VLANs de switch.
 

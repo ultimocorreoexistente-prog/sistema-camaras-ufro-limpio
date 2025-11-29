@@ -5,8 +5,7 @@ Compatible con el sistema existente y templates.
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import BaseModel
-from models import db
+from models.base import db, TimestampedModel
 import enum
 
 
@@ -18,7 +17,7 @@ class EstadoFuente(enum.Enum):
     FUERA_SERVICIO = "fuera_servicio"
 
 
-class Fuente(BaseModel, db.Model):
+class Fuente(db.Model, TimestampedModel):
     """
     Modelo simple de fuentes de alimentación.
     Compatible con el sistema existente y templates.

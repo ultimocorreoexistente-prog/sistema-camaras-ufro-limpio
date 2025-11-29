@@ -1,10 +1,9 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import BaseModelMixin
-from . import db
+from models.base import db, TimestampedModel
 
-class Camara(BaseModelMixin, db.Model):
+class Camara(db.Model, TimestampedModel):
     __tablename__ = 'camaras'
     id = Column(Integer, primary_key=True)
 

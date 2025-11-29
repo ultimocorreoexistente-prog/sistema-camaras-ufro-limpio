@@ -6,7 +6,7 @@ Gestiona el ciclo de vida de mantenimientos para equipos del sistema.
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Float, Enum
 from sqlalchemy.orm import relationship
-from models.base import BaseModel
+from models.base import db, TimestampedModel
 from models import db
 import enum
 
@@ -35,7 +35,7 @@ class MaintenancePriority(enum.Enum):
     ALTA = "alta"
     CRITICA = "critica"
 
-class Mantenimiento(BaseModel, db.Model):
+class Mantenimiento(db.Model, TimestampedModel):
     """
     Modelo de mantenimientos.
 

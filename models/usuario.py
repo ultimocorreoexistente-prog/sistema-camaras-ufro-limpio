@@ -3,10 +3,9 @@ import bcrypt
 from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from . import db
-from models.base import BaseModel
+from models.base import db, TimestampedModel
 
-class Usuario(UserMixin, BaseModel):
+class Usuario(db.Model, TimestampedModel, UserMixin):
     __tablename__ = 'usuarios'
     
     username = Column(String(50), unique=True, nullable=False, index=True)

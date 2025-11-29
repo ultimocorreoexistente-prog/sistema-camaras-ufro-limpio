@@ -10,7 +10,7 @@ Incluye relaciones con fallas y mantenimientos.
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Date, Boolean, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from models.base import BaseModel
+from models.base import db, TimestampedModel
 from models import db
 import enum
 
@@ -25,7 +25,7 @@ class TecnicoStatus(enum.Enum):
     LICENCIA = "licencia"
 
 
-class EquipoTecnico(BaseModel, db.Model):
+class EquipoTecnico(db.Model, TimestampedModel):
     """
     Modelo para gestión del personal técnico del sistema.
 

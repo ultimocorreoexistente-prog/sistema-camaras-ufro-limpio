@@ -226,6 +226,10 @@ try:
     from .usuario_logs import UsuarioLog
     logger.debug("✅ UsuarioLog importado directamente")
     
+    # Importar enums
+    from .enums.equipment_status import EquipmentStatus
+    logger.debug("✅ EquipmentStatus importado directamente")
+    
     logger.info("🎉 models/__init__.py inicializado correctamente")
     
 except ImportError as e:
@@ -240,7 +244,8 @@ __all__ = [
     'Usuario', 'Camara', 'Ubicacion', 'Falla', 'FallaComentario', 'Switch', 
     'NvrDvr', 'Ups', 'Gabinete', 'FuentePoder', 'Mantenimiento', 
     'Fotografia', 'HistorialEstadoEquipo', 'CatalogoTipoFalla', 'EquipoTecnico',
-    'UsuarioLog'  # ✅ Agregado para logs de auditoría
+    'UsuarioLog',  # ✅ Agregado para logs de auditoría
+    'EquipmentStatus'  # ✅ Agregado para enum EquipmentStatus
 ]
 
 # Fin del archivo models/__init__.py

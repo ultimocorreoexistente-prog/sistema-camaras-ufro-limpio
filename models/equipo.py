@@ -7,7 +7,8 @@ from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Enum, or_
 from sqlalchemy.orm import relationship, declared_attr
 from models.base import BaseModelMixin  # Correcto: Hereda metadatos base
-from models import db, EquipmentStatus
+from models import db
+from models.enums.equipment_status import EquipmentStatus
 import enum
 import json
 

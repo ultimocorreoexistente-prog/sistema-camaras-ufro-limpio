@@ -8,12 +8,11 @@ y estado específico.
 from datetime import datetime, date
 from sqlalchemy import Column, Integer, String, Text, DateTime, Date, Boolean, Float, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import BaseModel
-from models import db
+from models.base import db, TimestampedModel
 import re
 
 
-class PuertoSwitch(BaseModel, db.Model):
+class PuertoSwitch(db.Model, TimestampedModel):
     """
     Modelo de puertos de switches de red.
 
