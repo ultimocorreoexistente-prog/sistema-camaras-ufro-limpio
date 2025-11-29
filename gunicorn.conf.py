@@ -9,7 +9,7 @@ import signal
 import sys
 
 # Configuración base
-bind = "0.0.0.0:${PORT:-8000}"
+bind = "0.0.0.0:8000"
 workers = multiprocessing.cpu_count() * 2 + 1
 
 # Configuración de workers
@@ -41,7 +41,7 @@ if os.environ.get('RAILWAY_ENVIRONMENT'):
     worker_class = "sync"
     timeout = 60
     max_requests = 500
-    bind = "0.0.0.0:${PORT:-8000}"
+    bind = "0.0.0.0:8000"
 
 elif os.environ.get('HEROKU'):
     # Heroku - Entorno de producción
