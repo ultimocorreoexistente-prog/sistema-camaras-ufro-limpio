@@ -3,12 +3,13 @@ from flask import current_app
 from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from models.base import db, TimestampedModel
+from models import db
+from models.base import TimestampedModel
 try:
     from werkzeug.security import generate_password_hash, check_password_hash
     _has_werkzeug = True
 except ImportError:
-    _has_werkzeug = False, Rol
+    _has_werkzeug = False
 from enum import Enum
 
 class Usuario(db.Model, TimestampedModel, UserMixin):

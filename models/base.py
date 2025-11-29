@@ -109,6 +109,7 @@ class TimestampedModel(ModelMixin):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    deleted = db.Column(db.Boolean, default=False, nullable=False)
 
 class BaseModelMixin(TimestampedModel):
     """Mixin simplificado para modelos básicos que heredan de db.Model"""
@@ -234,51 +235,11 @@ class Ubicacion(db.Model, TimestampedModel):
     latitud = db.Column(db.Float, nullable=True)
     longitud = db.Column(db.Float, nullable=True)
     
-    # Relación con cámaras
-    camaras = db.relationship('Camara', backref='ubicacion', lazy='dynamic')
-
-class Camara(db.Model, TimestampedModel):
-    """Modelo de cámaras de seguridad"""
-    __tablename__ = 'camaras'
+    # Relación con cámaras (se define en Camara con back_populates)
+    camaras = db.relationship('Camara', back_populates='ubicacion_obj', lazy='dynamic')
     
-    id = db.Column(db.Integer, primary_key=True)
-    codigo_interno = db.Column(db.String(50), unique=True, nullable=False)
-    marca = db.Column(db.String(50), nullable=True)
-    modelo = db.Column(db.String(50), nullable=True)
-    numero_serie = db.Column(db.String(100), nullable=True)
-    
-    # Estado y tipo
-    estado = db.Column(db.Enum(EstadoCamara), nullable=False, default=EstadoCamara.INSTALACION)
-    
-    # Ubicación
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'), nullable=False)
-    
-    # Configuración técnica
-    ip_address = db.Column(db.String(45), nullable=True)  # IPv4/IPv6
-    puerto = db.Column(db.Integer, nullable=True)
-    protocolo = db.Column(db.String(20), default='HTTP')
-    username_camara = db.Column(db.String(50), nullable=True)
-    password_camara = db.Column(db.String(100), nullable=True)
-    
-    # Configuración de video
-    resolucion = db.Column(db.String(20), nullable=True)  # "1080p", "720p", etc
-    fps = db.Column(db.Integer, nullable=True)
-    codec = db.Column(db.String(20), nullable=True)
-    
-    # Fechas importantes
-    fecha_instalacion = db.Column(db.Date, nullable=True)
-    fecha_garantia_hasta = db.Column(db.Date, nullable=True)
-    
-    # Observaciones y mantenimiento
-    observaciones = db.Column(db.Text, nullable=True)
-    ultimo_mantenimiento = db.Column(db.Date, nullable=True)
-    proximo_mantenimiento = db.Column(db.Date, nullable=True)
-    
-    # Relaciones
-    eventos = db.relationship('EventoCamara', backref='camara', lazy='dynamic')
-    tickets = db.relationship('Ticket', backref='camara', lazy='dynamic')
-    trazabilidades = db.relationship('TrazabilidadMantenimiento', backref='camara', lazy='dynamic')
-
+    # Relación con equipos que heredan de EquipmentBase
+    equipos = db.relationship('EquipmentBase', back_populates='ubicacion', lazy='dynamic')
 class EventoCamara(db.Model, TimestampedModel):
     """Registro de eventos de las cámaras"""
     __tablename__ = 'eventos_camara'
@@ -301,6 +262,9 @@ class EventoCamara(db.Model, TimestampedModel):
     
     # Resuelto por
     resuelto_por = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
+    
+    # Relación de vuelta
+    camara_obj = db.relationship('Camara', back_populates='eventos')
 
 class Ticket(db.Model, TimestampedModel):
     """Tickets de soporte y mantenimiento"""
@@ -331,6 +295,9 @@ class Ticket(db.Model, TimestampedModel):
     # Relaciones adicionales
     usuario_asignado = db.relationship('Usuario', foreign_keys=[asignado_a], backref='tickets_asignados')
     usuario_reportante = db.relationship('Usuario', foreign_keys=[reportado_por], backref='tickets_reportados')
+    
+    # Relación de vuelta
+    camara_obj = db.relationship('Camara', back_populates='tickets')
 
 class TrazabilidadMantenimiento(db.Model, TimestampedModel):
     """Trazabilidad completa de mantenimientos"""
@@ -363,6 +330,9 @@ class TrazabilidadMantenimiento(db.Model, TimestampedModel):
     
     # Técnico responsable
     tecnico = db.relationship('Usuario', foreign_keys=[tecnico_responsable])
+    
+    # Relación de vuelta
+    camara_obj = db.relationship('Camara', back_populates='trazabilidades')
 
 class Inventario(db.Model, TimestampedModel):
     """Inventario de repuestos y equipos"""

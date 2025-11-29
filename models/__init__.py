@@ -27,8 +27,8 @@ def init_models():
         from .usuario import Usuario
         logger.info("✅ Usuario importado")
         
-        from .base import Camara
-        logger.info("✅ Camara importada desde base.py")
+        from .camara import Camara
+        logger.info("✅ Camara importada desde camara.py")
         
         from .base import Ubicacion
         logger.info("✅ Ubicacion importada")
@@ -42,8 +42,12 @@ def init_models():
         from .switch import Switch
         logger.info("✅ Switch importado")
         
-        from .nvr import NvrDvr  # Posible que NVR y DVR estén en el mismo archivo
-        logger.info("✅ NvrDvr importado")
+        # NVR se importa directamente
+        from .nvr import NVR
+        logger.info("✅ NVR importado")
+        # Alias para NvrDvr (mantener compatibilidad)
+        NvrDvr = NVR
+        logger.info("✅ NvrDvr definido como alias de NVR")
         
         from .ups import UPS  # Fixed: UPS class name
         logger.info("✅ UPS importado")
@@ -69,22 +73,17 @@ def init_models():
         from .equipo_tecnico import EquipoTecnico
         logger.info("✅ EquipoTecnico importado")
         
-        # Verificar si DVR existe como clase separada en nvr.py
-        try:
-            from .nvr import DVR
-            logger.info("✅ DVR importado")
-            has_dvr = True
-        except ImportError:
-            logger.warning("⚠️ DVR no encontrada como clase separada, usando NvrDvr como DVR")
-            DVR = NvrDvr  # Alias
-            has_dvr = False
+        # DVR también es alias de NVR (mantener compatibilidad)
+        DVR = NVR
+        logger.info("✅ DVR definido como alias de NVR")
+        has_dvr = False  # No hay clase DVR separada
         
         logger.info("🎉 Todos los modelos importados exitosamente")
         
         # Retornar todas las clases importadas
         return (
-            Usuario, Camara, Ubicacion, NVR if not has_dvr else NvrDvr, 
-            DVR if has_dvr else NvrDvr, Switch, UPS, Gabinete, 
+            Usuario, Camara, Ubicacion, NVR, 
+            DVR, Switch, UPS, Gabinete, 
             FuentePoder, Falla, Mantenimiento, Fotografia, 
             HistorialEstadoEquipo, CatalogoTipoFalla, EquipoTecnico
         )
@@ -159,8 +158,8 @@ try:
     from .usuario import Usuario
     logger.debug("✅ Usuario importado directamente")
     
-    from .base import Camara
-    logger.debug("✅ Camara importado directamente desde base.py")
+    from .camara import Camara
+    logger.debug("✅ Camara importado directamente desde camara.py")
     
     from .base import Ubicacion
     logger.debug("✅ Ubicacion importado directamente")

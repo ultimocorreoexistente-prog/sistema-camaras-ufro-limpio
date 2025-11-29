@@ -8,6 +8,7 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from models.base import db, TimestampedModel
+from models.equipo import EquipmentBase
 import enum
 
 
@@ -49,9 +50,43 @@ class VLANType(enum.Enum):
     DATA = "data"
 
 
-class Switch(db.Model, TimestampedModel):
-    
-    id = db.Column(db.Integer, primary_key=True)
+class Switch(EquipmentBase):
+    """
+    Modelo de switches de red que hereda de EquipmentBase.
+
+    Attributes:
+    switch_type (str): Tipo de switch
+    total_ports (int): Número total de puertos
+    poe_ports (int): Número de puertos PoE
+    max_poe_power (int): Potencia máxima PoE en watts
+    port_speed (str): Velocidad de puertos (ej: 1Gbps, 10Gbps)
+    fiber_ports (int): Número de puertos de fibra
+    stackable (bool): Si es apilable
+    stacking_ports (int): Número de puertos de stacking
+    management_protocols (str): Protocolos de gestión soportados (JSON)
+    snmp_community (str): Comunidad SNMP
+    vlan_support (bool): Soporte para VLANs
+    qos_support (bool): Soporte para QoS
+    poe_plus_support (bool): Soporte para PoE+
+    managed (bool): Si es administrable
+    layer_support (str): Capa OSI soportada (L, L3, L4)
+    mac_address_table_size (int): Tamaño de tabla MAC
+    forwarding_rate (int): Tasa de reenvío en Mpps
+    switching_capacity (int): Capacidad de conmutación en Gbps
+    redundancy_support (bool): Soporte para redundancia
+    stack_id (int): ID del stack
+    stack_master (bool): Si es el maestro del stack
+    firmware_url (str): URL de firmware
+    configuration_template (str): Plantilla de configuración
+    backup_configuration (str): Respaldo de configuración
+    monitoring_enabled (bool): Monitoreo habilitado
+    alerting_enabled (bool): Alertas habilitadas
+    auto_negotiation (bool): Negociación automática habilitada
+    storm_control (bool): Control de tormentas habilitado
+    spanning_tree_enabled (bool): Spanning Tree habilitado
+    """
+
+    __tablename__ = 'switches'
     """
     Modelo de switches de red.
 
@@ -163,17 +198,19 @@ class Switch(db.Model, TimestampedModel):
     spanning_tree_enabled = Column(Boolean, default=True, nullable=False,
                                    comment="Spanning Tree Protocol habilitado")
 
-    # Relaciones
-    ubicacion = relationship("Ubicacion", back_populates="switches")
-    created_by_user = relationship("Usuario", back_populates="created_equipos")
+    # Relaciones heredadas de EquipmentBase:
+    # - ubicacion (defined in EquipmentBase with back_populates="equipos")
+    
+    # Relaciones con mantenimiento
+    mantenimientos = relationship("Mantenimiento", back_populates="switch", cascade="all, delete-orphan")
 
     # Relaciones con otros modelos
     mantenimientos = relationship("Mantenimiento", back_populates="switch", cascade="all, delete-orphan")
     fotografias = relationship("Fotografia", back_populates="switch", cascade="all, delete-orphan")
 
     # Relaciones con puertos y VLANs
-    puertos = relationship("SwitchPort", back_populates="switch", cascade="all, delete-orphan")
-    vlans = relationship("SwitchVLAN", back_populates="switch", cascade="all, delete-orphan")
+    puertos = relationship("SwitchPort", back_populates="switch_obj", cascade="all, delete-orphan")
+    vlans = relationship("SwitchVLAN", back_populates="switch_obj", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Switch(name='{self.name}', type='{self.switch_type.value if self.switch_type else 'N/A'}', ports={self.total_ports})>"
@@ -524,7 +561,7 @@ class SwitchPort(db.Model, TimestampedModel):
                            comment="Fecha y hora de última actividad")
 
     # Relaciones
-    switch = relationship("Switch", back_populates="puertos")
+    switch_obj = relationship("Switch", back_populates="puertos")
 
     def __repr__(self):
         return f"<SwitchPort(switch={self.switch_id}, port={self.port_number})>"
@@ -705,7 +742,7 @@ class SwitchVLAN(db.Model, TimestampedModel):
                             comment="Final del rango DHCP")
 
     # Relaciones
-    switch = relationship("Switch", back_populates="vlans")
+    switch_obj = relationship("Switch", back_populates="vlans")
 
     def __repr__(self):
         return f"<SwitchVLAN(switch={self.switch_id}, vlan={self.vlan_id} - {self.vlan_name})>"
