@@ -11,7 +11,8 @@ from sqlalchemy.orm import relationship
 from models.base import BaseModelMixin, BaseModel
 from models.equipo import EquipmentBase
 from models.network_connections import ConnectionType
-from models import db, EquipmentStatus
+from models.enums.equipment_status import EquipmentStatus
+from models import db
 import enum
 
 

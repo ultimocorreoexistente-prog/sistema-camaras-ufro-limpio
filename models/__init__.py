@@ -168,12 +168,13 @@ try:
     from .switch import Switch  # ✅ CORREGIDO: importa desde switch.py, no base.py
     logger.debug("✅ Switch importado directamente")
     
-    from .nvr import NvrDvr as NVR
-    logger.debug("✅ NVR (NvrDvr) importado directamente")
+    from .nvr import NVR
+    logger.debug("✅ NVR importado directamente")
     
-    # Alias para DVR (puede ser la misma clase que NVR)
+    # Alias para NvrDvr y DVR (mantener compatibilidad)
+    NvrDvr = NVR
     DVR = NVR
-    logger.debug("✅ DVR definido como alias de NVR")
+    logger.debug("✅ NvrDvr y DVR definidos como alias de NVR")
     
     from .ups import UPS  # Fixed: UPS class name
     logger.debug("✅ UPS importado directamente")
@@ -208,10 +209,23 @@ try:
     # Importar enums
     from .enums.equipment_status import EquipmentStatus
     logger.debug("✅ EquipmentStatus importado directamente")
+    globals()['EquipmentStatus'] = EquipmentStatus  # Hacer global
     
-    # Importar desde base.py - Enums
-    from .base import RolEnum, EstadoCamara, TipoUbicacion, EstadoTicket, PrioridadEnum
-    logger.debug("✅ Enums importados directamente desde base.py")
+    from .enums.estado_camara import EstadoCamara
+    logger.debug("✅ EstadoCamara importado directamente")
+    globals()['EstadoCamara'] = EstadoCamara  # Hacer global
+    
+    # Importar desde base.py - Otros enums si existen
+    try:
+        from .base import RolEnum, TipoUbicacion, EstadoTicket, PrioridadEnum
+        logger.debug("✅ Enums adicionales importados desde base.py")
+    except ImportError as e:
+        logger.debug(f"⚠️ Algunos enums no están en base.py: {e}")
+        # Definir alias si no están disponibles
+        RolEnum = None
+        TipoUbicacion = None
+        EstadoTicket = None
+        PrioridadEnum = None
     
     # Importar desde base.py - Mixins y clases base
     from .base import ModelMixin, TimestampedModel, BaseModelMixin, BaseModel
@@ -233,18 +247,15 @@ except Exception as e:
 __all__ = [
     'db',
     'init_db', 'init_models',
-    # Enums del sistema
-    'RolEnum', 'EstadoCamara', 'TipoUbicacion', 'EstadoTicket', 'PrioridadEnum',
-    'EquipmentStatus',
+    # Enums del sistema (solo los que existan)
+    'EquipmentStatus', 'EstadoCamara',
     # Mixins y clases base
     'ModelMixin', 'TimestampedModel', 'BaseModelMixin', 'BaseModel',
     # Modelos principales
     'Usuario', 'Camara', 'Ubicacion', 'Falla', 'FallaComentario', 'Switch', 
-    'NvrDvr', 'UPS', 'Gabinete', 'FuentePoder', 'Mantenimiento', 
+    'NVR', 'NvrDvr', 'DVR', 'UPS', 'Gabinete', 'FuentePoder', 'Mantenimiento', 
     'Fotografia', 'HistorialEstadoEquipo', 'CatalogoTipoFalla', 'EquipoTecnico',
     'UsuarioLog',  # Logs de auditoría
-    # Clases adicionales de base.py
-    'Rol', 'EventoCamara', 'Ticket', 'TrazabilidadMantenimiento', 'Inventario'
 ]
 
 # Fin del archivo models/__init__.py

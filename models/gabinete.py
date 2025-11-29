@@ -203,7 +203,7 @@ class Gabinete(db.Model, TimestampedModel):
 
     # Relaciones con otros modelos
     mantenimientos = relationship("Mantenimiento", back_populates="gabinete", cascade="all, delete-orphan")
-    fotografias = relationship("Fotografia", back_populate="gabinete", cascade="all, delete-orphan")
+    fotografias = relationship("Fotografia", back_populates="gabinete", cascade="all, delete-orphan")
 
     # Relaciones con equipos instalados
     installed_equipment = relationship("GabineteEquipment", back_populates="gabinete", cascade="all, delete-orphan")
@@ -586,6 +586,9 @@ class GabineteEquipment(db.Model, TimestampedModel):
     """
 
     __tablename__ = 'gabinete_equipment'
+
+    # Primary key
+    id = Column(Integer, primary_key=True)
 
     gabinete_id = Column(Integer, ForeignKey('gabinetes.id'), nullable=False, comment="ID del gabinete")
     connected_equipment_id = Column(Integer, nullable=True, comment="ID del equipo instalado")
