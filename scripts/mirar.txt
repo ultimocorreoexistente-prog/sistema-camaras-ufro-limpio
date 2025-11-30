@@ -1,0 +1,21 @@
+# Navegar a tu proyecto local
+cd /ruta/a/tu/proyecto/sistema-camaras-ufro
+
+# Backup de seguridad
+cp -r templates templates_backup_$(date +%Y%m%d_%H%M%S)
+cp app.py app_backup_$(date +%Y%m%d_%H%M%S)
+cp models.py models_backup_$(date +%Y%m%d_%H%M%S)
+
+# Actualizar archivos (desde donde tengas acceso al workspace)
+# Opción 1: Si tienes acceso directo al workspace
+cp -r /workspace/templates/* ./templates/
+cp /workspace/app.py ./
+cp /workspace/models.py ./
+cp /workspace/Procfile ./
+
+<<<<<<< HEAD
+# Opción : Descargar archivos individuales
+=======
+# Opción 2: Descargar archivos individuales
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
+# (Necesitarías descargar cada archivo desde el workspace)

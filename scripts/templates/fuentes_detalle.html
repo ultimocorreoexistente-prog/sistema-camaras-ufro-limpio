@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}Fuente {{ fuente.codigo }} - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Detalle de Fuente de Poder - {{ fuente.codigo }}</h1>
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white"><h5 class="mb-0">Información de la Fuente</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4"><strong>Código:</strong> {{ fuente.codigo }}</div>
+                <div class="col-md-4"><strong>Modelo:</strong> {{ fuente.modelo }}</div>
+                <div class="col-md-4"><strong>Marca:</strong> {{ fuente.marca or 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Tipo:</strong> {{ fuente.tipo or 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Voltaje Entrada:</strong> {{ fuente.voltaje_entrada }} V</div>
+                <div class="col-md-4 mt-2"><strong>Voltaje Salida:</strong> {{ fuente.voltaje_salida or 'N/A' }} V</div>
+                <div class="col-md-4 mt-2"><strong>Amperaje:</strong> {{ fuente.amperaje }} A</div>
+                <div class="col-md-4 mt-2"><strong>Potencia:</strong> {{ fuente.potencia }} W</div>
+                <div class="col-md-4 mt-2"><strong>Gabinete:</strong> {{ fuente.gabinete_asociado or 'N/A' }}</div>
+                <div class="col-md-12 mt-3"><strong>Ubicación:</strong> 
+                    {% if fuente.ubicacion %}
+                    {{ fuente.ubicacion.campus }} - {{ fuente.ubicacion.edificio }} - {{ fuente.ubicacion.piso }}
+                    {% else %}
+                    {{ fuente.ubicacion or 'N/A' }}
+                    {% endif %}
+                </div>
+                <div class="col-md-4 mt-2"><strong>Estado:</strong> 
+                    <span class="badge bg-{{ 'success' if fuente.estado == 'Operativo' else 'danger' }}">{{ fuente.estado }}</span>
+                </div>
+                <div class="col-md-4 mt-2"><strong>Fecha Instalación:</strong> {{ fuente.fecha_instalacion.strftime('%d/%m/%Y') if fuente.fecha_instalacion else 'N/A' }}</div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12"><strong>Equipos que Alimenta:</strong> {{ fuente.equipos_alimenta or 'No especificado' }}</div>
+                <div class="col-12 mt-2"><strong>Observaciones:</strong> {{ fuente.observaciones or 'Sin observaciones' }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Equipos Alimentados</h5></div>
+        <div class="card-body">
+            {% if equipos_alimentados %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Equipo</th><th>Tipo</th><th>Ubicación</th><th>Estado</th></tr></thead>
+                    <tbody>
+                        {% for equipo in equipos_alimentados %}
+                        <tr>
+                            <td>{{ equipo.nombre }}</td>
+                            <td>{{ equipo.tipo }}</td>
+                            <td>{{ equipo.ubicacion }}</td>
+                            <td><span class="badge bg-success">Alimentado</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No hay equipos alimentados registrados</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h5 class="mb-0">Historial de Mantenimientos</h5></div>
+        <div class="card-body">
+            {% if mantenimientos %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Técnico</th></tr></thead>
+                    <tbody>
+                        {% for mantenimiento in mantenimientos %}
+                        <tr>
+                            <td>{{ mantenimiento.fecha.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ mantenimiento.tipo }}</td>
+                            <td>{{ mantenimiento.descripcion }}</td>
+                            <td>{{ mantenimiento.tecnico }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No hay mantenimientos registrados</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

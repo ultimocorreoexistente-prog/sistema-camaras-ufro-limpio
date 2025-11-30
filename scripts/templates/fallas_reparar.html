@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}Reparar Falla #{{ falla.id }} - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Registrar Reparación - Falla #{{ falla.id }}</h1>
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Solución Aplicada *</label>
+                    <textarea name="solucion_aplicada" class="form-control" rows="4" required placeholder="Describa la solución aplicada..."></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Materiales Utilizados</label>
+                    <textarea name="materiales_utilizados" class="form-control" rows="2" placeholder="Liste los materiales utilizados..."></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Costo de Reparación ($)</label>
+                    <input type="number" name="costo_reparacion" class="form-control" step="0.01" min="0" value="0">
+                </div>
+                <button type="submit" class="btn btn-success">Marcar como Reparada</button>
+                <a href="{{ url_for('fallas_detalle', id=falla.id) }}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

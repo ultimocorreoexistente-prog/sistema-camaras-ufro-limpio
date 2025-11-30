@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+
+{% block title %}Fuentes de Poder - Sistema UFRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gestión de Fuentes de Poder</h1>
+        {% if current_user.rol in ['admin', 'supervisor'] %}
+        <a href="{{ url_for('fuentes_nuevo') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Fuente
+        </a>
+        {% endif %}
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Campus</label>
+                    <select name="campus" class="form-select">
+                        <option value="">Todos</option>
+                        {% for campus in campus_list %}
+                        <option value="{{ campus }}">{{ campus }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tipo</label>
+                    <select name="tipo" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="Meanwell">Meanwell</option>
+                        <option value="Generic">Generic</option>
+                        <option value="APC">APC</option>
+                        <option value="Other">Otro</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select name="estado" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="Operativo">Operativo</option>
+                        <option value="Mantenimiento">Mantenimiento</option>
+                        <option value="Fuera de Servicio">Fuera de Servicio</option>
+                        <option value="Baja">Baja</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Búsqueda</label>
+                    <input type="text" name="busqueda" class="form-control" placeholder="Código, modelo o ubicación">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Tabla de Fuentes -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Modelo</th>
+                            <th>Marca</th>
+                            <th>Voltaje (V)</th>
+                            <th>Amperaje (A)</th>
+                            <th>Potencia (W)</th>
+                            <th>Gabinete</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fuente in fuentes %}
+                        <tr>
+                            <td>{{ fuente.codigo }}</td>
+                            <td>{{ fuente.modelo }}</td>
+                            <td>{{ fuente.marca or 'N/A' }}</td>
+                            <td>{{ fuente.voltaje_entrada }}</td>
+                            <td>{{ fuente.amperaje }}</td>
+                            <td>{{ fuente.potencia }}</td>
+                            <td>{{ fuente.gabinete_asociado or 'N/A' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if fuente.estado == 'Operativo' else 'danger' }}">
+                                    {{ fuente.estado }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('fuentes_detalle', id=fuente.id) }}" class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                                {% if current_user.rol in ['admin', 'supervisor'] %}
+                                <a href="{{ url_for('fuentes_editar', id=fuente.id) }}" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-muted mt-2">Total: {{ fuentes|length }} fuentes</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

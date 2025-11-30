@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+
+{% block title %}Switches - Sistema UFRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gestión de Switches</h1>
+        {% if current_user.rol in ['admin', 'supervisor'] %}
+        <a href="{{ url_for('switches_nuevo') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nuevo Switch
+        </a>
+        {% endif %}
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Campus</label>
+                    <select name="campus" class="form-select">
+                        <option value="">Todos</option>
+                        {% for campus in campus_list %}
+                        <option value="{{ campus }}">{{ campus }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select name="estado" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="Funcionando">Funcionando</option>
+                        <option value="Mantenimiento">Mantenimiento</option>
+                        <option value="Fuera de Servicio">Fuera de Servicio</option>
+                        <option value="Baja">Baja</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Soporta PoE</label>
+                    <select name="soporta_poe" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="Sí">Sí</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Búsqueda</label>
+                    <input type="text" name="busqueda" class="form-control" placeholder="Código, nombre o IP">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Tabla de Switches -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre/Modelo</th>
+                            <th>Marca</th>
+                            <th>N° Serie</th>
+                            <th>Puertos Total/Usados</th>
+                            <th>PoE</th>
+                            <th>Gabinete</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for switch in switches %}
+                        <tr>
+                            <td>{{ switch.codigo }}</td>
+                            <td>{{ switch.nombre_modelo }}</td>
+                            <td>{{ switch.marca }}</td>
+                            <td>{{ switch.numero_serie }}</td>
+                            <td>{{ switch.puertos_total }}/{{ switch.puertos_usados }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if switch.soporta_poe == 'Sí' else 'secondary' }}">
+                                    {{ switch.soporta_poe }}
+                                </span>
+                            </td>
+                            <td>{{ switch.gabinete_asociado }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if switch.estado == 'Funcionando' else 'danger' }}">
+                                    {{ switch.estado }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('switches_detalle', id=switch.id) }}" class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                                {% if current_user.rol in ['admin', 'supervisor'] %}
+                                <a href="{{ url_for('switches_editar', id=switch.id) }}" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-muted mt-2">Total: {{ switches|length }} switches</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

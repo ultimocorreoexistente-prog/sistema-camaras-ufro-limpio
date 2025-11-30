@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Cámaras - Sistema de Gestión de Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1><i class="bi bi-camera-video"></i> Gestión de Cámaras</h1>
+<div>
+{% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'TECNICO'] %}
+<a href="{{ url_for('camaras_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Nueva Cámara
+</a>
+{% endif %}
+</div>
+</div>
+
+<-- Filtros y Búsqueda -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros de Búsqueda</h5>
+</div>
+<div class="card-body">
+<form method="GET" class="row g-3">
+<div class="col-md-3">
+<label for="busqueda" class="form-label">Buscar</label>
+<input type="text" class="form-control" id="busqueda" name="busqueda"
+value="{{ request.args.get('busqueda', '') }}"
+placeholder="Marca, modelo, IP, ubicación...">
+</div>
+
+<div class="col-md-">
+<label for="estado" class="form-label">Estado</label>
+<select class="form-select" id="estado" name="estado">
+<option value="">Todos</option>
+<option value="activa" {{ 'selected' if request.args.get('estado') == 'activa' }}>Activa</option>
+<option value="inactiva" {{ 'selected' if request.args.get('estado') == 'inactiva' }}>Inactiva</option>
+<option value="mantenimiento" {{ 'selected' if request.args.get('estado') == 'mantenimiento' }}>Mantenimiento</option>
+</select>
+</div>
+
+<div class="col-md-">
+<label for="campus" class="form-label">Campus</label>
+<select class="form-select" id="campus" name="campus">
+<option value="">Todos</option>
+<option value="campus_principal" {{ 'selected' if request.args.get('campus') == 'campus_principal' }}>Campus Principal</option>
+<option value="campus_norte" {{ 'selected' if request.args.get('campus') == 'campus_norte' }}>Campus Norte</option>
+<option value="campus_sur" {{ 'selected' if request.args.get('campus') == 'campus_sur' }}>Campus Sur</option>
+</select>
+</div>
+
+<div class="col-md-">
+<label for="edificio" class="form-label">Edificio</label>
+<select class="form-select" id="edificio" name="edificio">
+<option value="">Todos</option>
+<option value="a" {{ 'selected' if request.args.get('edificio') == 'a' }}>Edificio A</option>
+<option value="b" {{ 'selected' if request.args.get('edificio') == 'b' }}>Edificio B</option>
+<option value="c" {{ 'selected' if request.args.get('edificio') == 'c' }}>Edificio C</option>
+<option value="d" {{ 'selected' if request.args.get('edificio') == 'd' }}>Edificio D</option>
+</select>
+</div>
+
+<div class="col-md-3">
+<label for="marca" class="form-label">Marca</label>
+<select class="form-select" id="marca" name="marca">
+<option value="">Todas</option>
+<option value="hikvision" {{ 'selected' if request.args.get('marca') == 'hikvision' }}>Hikvision</option>
+<option value="dahua" {{ 'selected' if request.args.get('marca') == 'dahua' }}>Dahua</option>
+<option value="axis" {{ 'selected' if request.args.get('marca') == 'axis' }}>Axis</option>
+<option value="bosch" {{ 'selected' if request.args.get('marca') == 'bosch' }}>Bosch</option>
+</select>
+</div>
+
+<div class="col-1">
+<button type="submit" class="btn btn-primary me-">
+<i class="bi bi-search"></i> Buscar
+</button>
+<a href="{{ url_for('camaras_listar') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-clockwise"></i> Limpiar
+</a>
+</div>
+</form>
+</div>
+</div>
+
+<-- Estadísticas -->
+<div class="row mb-4">
+<div class="col-md-3">
+<div class="card card-stat">
+<div class="card-body">
+<div class="d-flex justify-content-between">
+<div>
+<h6 class="card-title">Total Cámaras</h6>
+<h class="text-primary">{{ camaras.total }}</h>
+</div>
+<div class="align-self-center">
+<i class="bi bi-camera-video text-primary" style="font-size: rem;"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card card-stat success">
+<div class="card-body">
+<div class="d-flex justify-content-between">
+<div>
+<h6 class="card-title">Activas</h6>
+<h class="text-success">{{ camaras.activas }}</h>
+</div>
+<div class="align-self-center">
+<i class="bi bi-check-circle text-success" style="font-size: rem;"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card card-stat warning">
+<div class="card-body">
+<div class="d-flex justify-content-between">
+<div>
+<h6 class="card-title">Mantenimiento</h6>
+<h class="text-warning">{{ camaras.mantenimiento }}</h>
+</div>
+<div class="align-self-center">
+<i class="bi bi-tools text-warning" style="font-size: rem;"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card card-stat danger">
+<div class="card-body">
+<div class="d-flex justify-content-between">
+<div>
+<h6 class="card-title">Inactivas</h6>
+<h class="text-danger">{{ camaras.inactivas }}</h>
+</div>
+<div class="align-self-center">
+<i class="bi bi-x-circle text-danger" style="font-size: rem;"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Tabla de Cámaras -->
+<div class="card">
+<div class="card-header">
+<h5 class="mb-0">
+<i class="bi bi-list-ul"></i> Lista de Cámaras
+<span class="badge bg-primary ms-">{{ camaras.items|length }}</span>
+</h5>
+</div>
+<div class="card-body p-0">
+{% if camaras.items %}
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+<thead class="table-light">
+<tr>
+<th>ID</th>
+<th>Ubicación</th>
+<th>Marca/Modelo</th>
+<th>IP</th>
+<th>Campus</th>
+<th>Edificio</th>
+<th>Estado</th>
+<th>Responsable</th>
+<th>Fecha Instalación</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody>
+{% for camara in camaras.items %}
+<tr>
+<td>
+<span class="badge bg-secondary">{{ camara.id }}</span>
+</td>
+<td>
+<i class="bi bi-geo-alt text-muted me-1"></i>
+{{ camara.ubicacion }}
+</td>
+<td>
+<strong>{{ camara.marca }}</strong>
+{% if camara.modelo %}
+<br><small class="text-muted">{{ camara.modelo }}</small>
+{% endif %}
+</td>
+<td>
+<code>{{ camara.ip }}</code>
+</td>
+<td>
+<span class="badge bg-info">{{ camara.campus }}</span>
+</td>
+<td>
+<span class="badge bg-secondary">{{ camara.edificio }}</span>
+</td>
+<td>
+{% if camara.estado == 'activa' %}
+<span class="badge bg-success">Activa</span>
+{% elif camara.estado == 'inactiva' %}
+<span class="badge bg-danger">Inactiva</span>
+{% elif camara.estado == 'mantenimiento' %}
+<span class="badge bg-warning">Mantenimiento</span>
+{% else %}
+<span class="badge bg-secondary">{{ camara.estado }}</span>
+{% endif %}
+</td>
+<td>{{ camara.responsable }}</td>
+<td>
+{% if camara.fecha_instalacion %}
+{{ camara.fecha_instalacion.strftime('%d/%m/%Y') }}
+{% else %}
+<span class="text-muted">-</span>
+{% endif %}
+</td>
+<td>
+<div class="btn-group" role="group">
+<a href="{{ url_for('camaras_detalle', id=camara.id) }}"
+class="btn btn-sm btn-outline-primary" title="Ver Detalles">
+<i class="bi bi-eye"></i>
+</a>
+{% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'TECNICO'] %}
+<a href="{{ url_for('camaras_editar', id=camara.id) }}"
+class="btn btn-sm btn-outline-secondary" title="Editar">
+<i class="bi bi-pencil"></i>
+</a>
+{% endif %}
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+<-- Paginación -->
+{% if camaras.pages > 1 %}
+<div class="card-footer">
+<nav aria-label="Navegación de páginas">
+<ul class="pagination justify-content-center mb-0">
+{% if camaras.has_prev %}
+<li class="page-item">
+<a class="page-link" href="{{ url_for('camaras_listar', page=camaras.prev_num, **request.args) }}">Anterior</a>
+</li>
+{% endif %}
+
+{% for page_num in camaras.iter_pages() %}
+{% if page_num %}
+{% if page_num = camaras.page %}
+<li class="page-item">
+<a class="page-link" href="{{ url_for('camaras_listar', page=page_num, **request.args) }}">{{ page_num }}</a>
+</li>
+{% else %}
+<li class="page-item active">
+<span class="page-link">{{ page_num }}</span>
+</li>
+{% endif %}
+{% else %}
+<li class="page-item disabled">
+<span class="page-link">...</span>
+</li>
+{% endif %}
+{% endfor %}
+
+{% if camaras.has_next %}
+<li class="page-item">
+<a class="page-link" href="{{ url_for('camaras_listar', page=camaras.next_num, **request.args) }}">Siguiente</a>
+</li>
+{% endif %}
+</ul>
+</nav>
+</div>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5">
+<i class="bi bi-camera-video text-muted" style="font-size: 4rem;"></i>
+<h4 class="text-muted mt-3">No se encontraron cámaras</h4>
+<p class="text-muted">Intenta ajustar los filtros de búsqueda o crear una nueva cámara.</p>
+{% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'SUPERVISOR', 'TECNICO'] %}
+<a href="{{ url_for('camaras_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Crear Primera Cámara
+</a>
+{% endif %}
+</div>
+{% endif %}
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-submit de filtros
+document.querySelectorAll('select.form-select').forEach(select => {
+select.addEventListener('change', function() {
+this.form.submit();
+});
+});
+
+// Función para exportar datos
+function exportarCamaras() {
+const params = new URLSearchParams(window.location.search);
+params.set('export', 'excel');
+window.location.href = `/camaras/export?${params.toString()}`;
+}
+</script>
+{% endblock %}

@@ -1,359 +1,241 @@
-# Scripts de Migración de Datos - Sistema Cámaras UFRO
+# Sistema de Gestión de Cámaras UFRO
 
-Este conjunto de scripts permite migrar los datos de las planillas Excel del Sistema de Cámaras UFRO a una base de datos PostgreSQL, con validaciones, limpieza y pruebas automatizadas.
+Sistema web completo para la gestión de infraestructura tecnológica y cámaras de seguridad de la Universidad de La Frontera (UFRO).
 
-## Estructura de Scripts
+## Arquitectura del Proyecto
 
-### scripts/
-- **`migrar_datos.py`** - Script principal de migración
-- **`validar_datos.py`** - Validación de integridad de datos
-- **`limpiar_datos.py`** - Limpieza y normalización de datos
-- **`test_migracion.py`** - Pruebas automatizadas de migración
-
-## Datos a Migrar
-
-Basado en el análisis de las planillas Excel, se migrarán:
-
-### Entidades Principales
-- **467 registros de cámaras** - Dispositivos de video vigilancia
-- **Fallas** - Registro de incidentes y problemas
-- **NVR/DVR** - Equipos de grabación y gestión de video
-- **Switches** - Equipos de red para conectividad
-- **UPS** - Sistemas de alimentación ininterrumpida
-- **Fuentes de poder** - Alimentación eléctrica
-- **Gabinetes** - Estructuras que alojan equipos
-- **Ubicaciones** - Definición geográfica y estructural
-- **Mantenimientos** - Actividades preventivas y correctivas
-- **Equipos técnicos** - Personal técnico
-- **Catálogo de fallas** - Clasificación de tipos de fallas
-- **Puertos de switch** - Configuración de puertos
-
-### Ubicaciones de Planillas
-- `/workspace/user_input_files/planillas-web/`
-- `/workspace/user_input_files/sistema-camaras-ufro-main/sistema-camaras-ufro-main/planillas/`
-
-## Requisitos
-
-### Dependencias Python
-```bash
-pip install pandas psycopg-binary openpyxl
+```
+sistema-camaras-ufro-completo/
+app.py # Aplicación principal Flask
+config.py # Configuraciones del sistema
+requirements.txt # Dependencias Python
+.env.example # Variables de entorno de ejemplo
+Procfile # Configuración para deployment en Railway
+templates/ # Templates HTML con Jinja
+base.html
+dashboard.html
+login.html
+usuarios/
+camaras/
+geolocalizacion/
+topologia/
+fotografias/
+fallas/
+mantenimientos/
+static/ # Archivos estáticos
+css/style.css # Estilos principales
+js/ # Scripts JavaScript
+uploads/ # Archivos subidos
+models/ # Modelos SQLAlchemy
+__init__.py
+base.py
+usuario.py
+camara.py
+equipo.py
+fotografia.py
+routes/ # Rutas de la aplicación
+__init__.py
+usuarios.py
+camaras.py
+topologia.py
+fotografias.py
+services/ # Lógica de negocio
+__init__.py
+auth_service.py
+foto_service.py
+reporte_service.py
+utils/ # Utilidades
+__init__.py
+helpers.py
+validators.py
+scripts/ # Scripts de migración y utilidad
+migrations/ # Migraciones de base de datos
+uploads/ # Directorio de archivos subidos
+docs/ # Documentación
 ```
 
-### Base de Datos PostgreSQL
-- PostgreSQL 1+
-- Crear base de datos: `camaras_ufro`
-- Usuario con permisos de lectura/escritura
+## Instalación y Configuración
 
-## Uso de los Scripts
-
-### 1. Limpieza de Datos (Obligatorio)
-
-Primero limpiar y normalizar las planillas Excel:
-
-```bash
-python scripts/limpiar_datos.py \
---entrada "/workspace/user_input_files/planillas-web" \
---salida "/workspace/datos_limpios" \
---validar
-```
-
-**Qué hace:**
-- Normaliza nombres de columnas inconsistentes
-- Limpia y valida direcciones IP
-- Estandariza fechas en múltiples formatos
-- Normaliza estados, prioridades y tipos
-- Elimina registros incompletos
-- Genera archivos JSON y Excel limpios
-
-### . Migración a Base de Datos
-
-Ejecutar la migración principal:
+### 1. Clonar y Configurar el Entorno
 
 ```bash
-python scripts/migrar_datos.py \
---host "localhost" \
---database "camaras_ufro" \
---user "postgres" \
---password "tu_password" \
---port 543 \
---planillas-dir "/workspace/datos_limpios"
+# Clonar el repositorio
+git clone <repository-url>
+cd sistema-camaras-ufro-completo
+
+# Crear entorno virtual
+python -m venv venv
+source venv/bin/activate # En Windows: venv\Scripts\activate
+
+# Instalar dependencias
+pip install -r requirements.txt
 ```
 
-**Qué hace:**
-- Establece conexión con PostgreSQL
-- Crea backups automáticos de datos existentes
-- Migra datos por entidad (cámaras, NVR, switches, fallas, etc.)
-- Maneja errores y rollback automático
-- Registra estadísticas de migración
-
-### 3. Validación de Datos (Post-Migración)
-
-Validar la integridad de los datos migrados:
+### . Configuración de Variables de Entorno
 
 ```bash
-python scripts/validar_datos.py \
---host "localhost" \
---database "camaras_ufro" \
---user "postgres" \
---password "tu_password" \
---port 543 \
---output "reporte_validacion.json"
+# Copiar archivo de ejemplo
+cp .env.example .env
+
+# Editar .env con tus configuraciones
+SECRET_KEY=tu-clave-secreta-aqui
+DATABASE_URL=postgresql://usuario:password@host:puerto/database
+FLASK_ENV=development
 ```
 
-**Qué valida:**
-- Claves primarias duplicadas
-- Direcciones IP únicas y válidas
-- Relaciones entre tablas (Foreign Keys)
-- Completitud de datos críticos
-- Jerarquía geográfica
-- Generación de estadísticas
-
-### 4. Ejecución de Pruebas
-
-Ejecutar pruebas automatizadas:
+### 3. Configuración de Base de Datos
 
 ```bash
-# Todas las pruebas
-python scripts/test_migracion.py
+# Para desarrollo (SQLite)
+export DATABASE_URL='sqlite:///sistema_camaras.db'
 
-# Solo pruebas unitarias
-python scripts/test_migracion.py --solo-unitarias
-
-# Solo pruebas de integración
-python scripts/test_migracion.py --solo-integracion
-
-# Con configuración de BD de prueba
-python scripts/test_migracion.py \
---host "localhost" \
---database "test_camaras_ufro" \
---user "test_user" \
---password "test_password"
+# Para producción (Railway PostgreSQL)
+export DATABASE_URL='postgresql://usuario:password@host:puerto/database'
 ```
 
-## Proceso de Migración Completo
+## Uso de la Aplicación
 
-### Secuencia Recomendada
+### Desarrollo Local
 
-1. **Análisis inicial:**
 ```bash
-python inspect_excel_files.py
+# Ejecutar la aplicación
+python app.py
+
+# La aplicación estará disponible en http://localhost:8000
 ```
 
-. **Limpieza:**
+### Deployment en Railway
+
+1. Conectar el repositorio a Railway
+. Configurar variables de entorno en Railway
+3. Railway detectará automáticamente el Procfile
+4. La aplicación se desplegará automáticamente
+
+## Modelos de Datos
+
+### Usuario
+- Gestión de usuarios con sistema RBAC
+- Roles: Administrador, Supervisor, Operador, Visitante
+- Sistema de autenticación seguro
+
+### Cámara
+- Gestión completa de cámaras de seguridad
+- Estados: Online, Offline, Fallando, Mantenimiento
+- Geolocalización y especificaciones técnicas
+
+### Equipo de Red
+- Gestión de NVR, DVR, Switches, UPS
+- Estados de equipos y conexiones
+- Topología de red
+
+### Fallas y Mantenimientos
+- Registro y seguimiento de fallas
+- Programación de mantenimientos
+- Historial de intervenciones
+
+### Fotografías
+- Gestión de evidencias fotográficas
+- Metadatos de imágenes
+- Asociación con fallas y mantenimientos
+
+## Funcionalidades Principales
+
+### Dashboard
+- Resumen ejecutivo del estado del sistema
+- Gráficos de estados de equipos
+- Alertas y notificaciones
+
+### Gestión de Usuarios
+- CRUD completo de usuarios
+- Sistema de roles y permisos
+- Auditoría de actividades
+
+### Gestión de Cámaras
+- Registro de cámaras con ubicación
+- Estados en tiempo real
+- Historial de fallas
+
+### Topología de Red
+- Visualización de diagramas de red
+- Conexiones entre equipos
+- Mapeo geográfico
+
+### Fotografías
+- Subida y gestión de imágenes
+- Organización por categorías
+- Visualización y descarga
+
+### Reportes
+- Informes de estado
+- Estadísticas de mantenimiento
+- Exportación de datos
+
+## Seguridad
+
+- Autenticación con Flask-Login
+- Protección CSRF
+- Validación de datos de entrada
+- Hash seguro de contraseñas
+- Roles y permisos granulares
+
+## Responsive Design
+
+- Compatible con dispositivos móviles
+- Interfaz adaptable
+- Navegación optimizada para touch
+
+## Testing
+
 ```bash
-python scripts/limpiar_datos.py \
---entrada "/workspace/user_input_files/planillas-web" \
---salida "/workspace/datos_limpios" \
---validar
+# Ejecutar tests
+python -m pytest tests/
+
+# Verificar cobertura
+python -m pytest --cov=. tests/
 ```
 
-3. **Migración:**
-```bash
-python scripts/migrar_datos.py \
---host "localhost" \
---database "camaras_ufro" \
---user "postgres" \
---password "password" \
---planillas-dir "/workspace/datos_limpios"
-```
+## Logs y Monitoreo
 
-4. **Validación:**
-```bash
-python scripts/validar_datos.py \
---host "localhost" \
---database "camaras_ufro" \
---user "postgres" \
---password "password" \
---output "reporte_final.json"
-```
+- Logs estructurados con Python logging
+- Registro de actividades de usuario
+- Monitoreo de base de datos
+- Endpoints de diagnóstico
 
-5. **Pruebas (opcional):**
-```bash
-python scripts/test_migracion.py
-```
+## Contribución
 
-## Características Principales
+1. Fork del proyecto
+. Crear rama de feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit de cambios (`git commit -am 'Agregar nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Crear Pull Request
 
-### Validaciones y Seguridad
-- **Backup automático** antes de cada migración
-- **Rollback automático** en caso de error
-- **Validación de IPs** únicas y bien formateadas
-- **Integridad referencial** entre tablas
-- **Manejo robusto de errores**
+## Licencia
 
-### Limpieza Automática
-- **Normalización de estados** (Funcionando, Error, etc.)
-- **Limpieza de texto** y eliminación de caracteres especiales
-- **Parseo inteligente de fechas** (múltiples formatos)
-- **Eliminación de duplicados**
-- **Estandarización de tipos** (cámara, prioridad, etc.)
+Este proyecto está bajo la licencia MIT. Ver archivo `LICENSE` para más detalles.
 
-### Reporting y Monitoreo
-- **Logs detallados** de cada proceso
-- **Estadísticas de migración** (registros procesados, errores, etc.)
-- **Reportes JSON** con métricas de calidad
-- **Validación de completitud** de datos
+## Soporte
 
-### Pruebas Automatizadas
-- **Pruebas unitarias** de funciones de limpieza
-- **Pruebas de integración** del proceso completo
-- **Validación de integridad** post-migración
-- **Manejo de casos edge** y errores
+Para soporte técnico o consultas:
+<<<<<<< HEAD
+- Email: soporte-tecnico@ufro.cl
+=======
+- Email: soporte-tecnico@ufrontera.cl
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
+- Documentación: `/docs/`
+- Issues: GitHub Issues
 
-## Problemas Identificados y Solucionados
+## Versionado
 
-### Datos con Issues Comunes
-- **Campos vacíos** (hasta 100% en algunas columnas)
-- **IPs duplicadas** o mal formateadas
-- **Fechas inconsistentes** (múltiples formatos)
-- **Estados no normalizados**
-- **Referencias entre tablas faltantes**
+Este proyecto usa [Semantic Versioning](https://semver.org/) para el versionado.
 
-### Soluciones Implementadas
-- Limpieza automática de campos vacíos
-- Validación y normalización de IPs
-- Parseo inteligente de fechas
-- Normalización de estados y tipos
-- Generación de IDs únicos cuando faltan
-- Backup y rollback automático
+## Agradecimientos
 
-## Logs y Archivos Generados
-
-### Archivos de Log
-- `migracion.log` - Log principal de migración
-- `limpieza.log` - Log del proceso de limpieza
-- `validacion.log` - Log de validaciones
-- `pruebas.log` - Log de pruebas
-
-### Archivos de Salida
-- `datos_limpios/normalizado_*.xlsx` - Datos normalizados en Excel
-- `datos_limpios/normalizado_*.json` - Datos normalizados en JSON
-- `reporte_limpieza_*.json` - Reporte de limpieza
-- `reporte_validacion_*.json` - Reporte de validación
-- `reporte_pruebas_*.json` - Reporte de pruebas
-
-## Estructura de Base de Datos Esperada
-
-### Tablas Principales
-```sql
--- Cámaras (467 registros esperados)
-CREATE TABLE camaras (
-id_camara SERIAL PRIMARY KEY,
-nombre_camara VARCHAR(55) NOT NULL,
-ip_camara INET UNIQUE,
-campus_edificio VARCHAR(55),
-nvr_asociado VARCHAR(55),
-tipo_camara VARCHAR(100),
-estado_funcionamiento VARCHAR(50),
-estado_conexion VARCHAR(50),
-observaciones TEXT,
-created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Fallas
-CREATE TABLE fallas (
-id_falla VARCHAR(50) PRIMARY KEY,
-fecha_reporte DATE,
-tipo_falla VARCHAR(100),
-camara_afectada VARCHAR(55),
-ubicacion TEXT,
-prioridad VARCHAR(0),
-estado VARCHAR(50),
-created_at TIMESTAMP DEFAULT NOW()
-);
-
--- NVR/DVR
-CREATE TABLE nvr_dvr (
-id_nvr VARCHAR(50) PRIMARY KEY,
-nombre_nvr VARCHAR(55),
-ip_nvr INET,
-campus_edificio VARCHAR(55),
-modelo VARCHAR(55),
-marca VARCHAR(100),
-canales_total INTEGER,
-canales_usados INTEGER,
-estado VARCHAR(50),
-created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Switches
-CREATE TABLE switches (
-id_switch VARCHAR(50) PRIMARY KEY,
-nombre_switch VARCHAR(55),
-ip_switch INET,
-campus_edificio VARCHAR(55),
-modelo VARCHAR(55),
-marca VARCHAR(100),
-puertos_total INTEGER,
-puertos_usados INTEGER,
-soporta_poe BOOLEAN,
-estado VARCHAR(50),
-created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Ubicaciones
-CREATE TABLE ubicaciones (
-id_ubicacion VARCHAR(50) PRIMARY KEY,
-campus VARCHAR(55),
-edificio VARCHAR(55),
-piso_nivel VARCHAR(100),
-zona VARCHAR(55),
-created_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-## Troubleshooting
-
-### Error: "No se pudo conectar a la base de datos"
-- Verificar credenciales de PostgreSQL
-- Confirmar que el servicio está corriendo
-- Verificar firewall/puertos
-
-### Error: "Archivo no encontrado"
-- Verificar rutas de archivos Excel
-- Confirmar que existen las planillas
-- Revisar permisos de lectura
-
-### Error: "IP inválida"
-- Validar formato de IPs en planillas
-- Revisar IPs con valores como "N/A", "TBD", etc.
-
-### Datos migrados incompletos
-- Revisar logs de limpieza
-- Verificar campos requeridos en base de datos
-- Ejecutar validación post-migración
-
-### Rollback necesario
-```bash
-python scripts/migrar_datos.py \
---host "localhost" \
---database "camaras_ufro" \
---user "postgres" \
---password "password" \
---rollback "camaras"
-```
-
-## Soporte y Documentación
-
-- **Logs detallados** en cada paso del proceso
-- **Validaciones automáticas** de integridad
-- **Backup automático** antes de cambios
-- **Documentación completa** en código fuente
-- **Pruebas automatizadas** para verificación
-
-## Estadísticas de Migración Esperadas
-
-- **Cámaras:** 467 registros
-- **Fallas:** ~6-50 registros (según archivo)
-- **NVR/DVR:** 6-10 equipos
-- **Switches:** 6-10 equipos
-- **Ubicaciones:** 8-0 ubicaciones
-- **Tasa de éxito:** >95% (datos limpios)
-- **Tiempo estimado:** 5-15 minutos
+- Universidad de La Frontera (UFRO)
+- Equipo de desarrollo
+- Bibliotecas open source utilizadas
 
 ---
 
-**Autor:** Sistema de Migración UFRO
-**Fecha:** 05-11-04
-**Versión:** 1.0
-**Estado:** Listo para producción
+**Versión:** 1.0.0
+**Fecha:** 04
+**Estado:** Producción

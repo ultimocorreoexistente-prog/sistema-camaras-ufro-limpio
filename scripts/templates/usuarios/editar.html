@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Usuario - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+<div class="row">
+<div class="col-1">
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<h><i class="bi bi-pencil-square"></i> Editar Usuario</h>
+<nav aria-label="breadcrumb">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('usuarios_listar') }}">Gestión Usuarios</a></li>
+<li class="breadcrumb-item active">Editar: {{ usuario.nombre_completo or usuario.nombre }}</li>
+</ol>
+</nav>
+</div>
+<a href="{{ url_for('usuarios_listar') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Volver a Lista
+</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+{{ message }}
+<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="row justify-content-center">
+<div class="col-lg-8">
+<div class="card">
+<div class="card-header">
+<div class="d-flex justify-content-between align-items-center">
+<h5 class="card-title mb-0">
+<i class="bi bi-person-badge"></i> Información del Usuario
+</h5>
+<div>
+<span class="badge bg-{{ 'danger' if usuario.rol == 'SUPERADMIN' else 'primary' if usuario.rol == 'ADMIN' else 'info' if usuario.rol == 'SUPERVISOR' else 'success' if usuario.rol == 'TECNICO' else 'secondary' }}">
+{{ usuario.rol }}
+</span>
+<span class="badge bg-{{ 'success' if usuario.activo else 'danger' }} ms-1">
+{{ 'ACTIVO' if usuario.activo else 'INACTIVO' }}
+</span>
+</div>
+</div>
+</div>
+<div class="card-body">
+<form method="POST" action="{{ url_for('usuarios_editar', usuario_id=usuario.id) }}" novalidate>
+<div class="row">
+<-- Información Personal -->
+<div class="col-md-6">
+<h6 class="text-muted mb-3">
+<i class="bi bi-person"></i> Información Personal
+</h6>
+
+<div class="mb-3">
+<label for="nombre" class="form-label">
+Nombre Completo <span class="text-danger">*</span>
+</label>
+<input type="text" class="form-control" id="nombre" name="nombre"
+value="{{ usuario.nombre_completo or usuario.nombre or '' }}"
+placeholder="Ej: Juan Pérez González" required>
+<div class="form-text">Nombre completo como aparece en el sistema</div>
+</div>
+
+<div class="mb-3">
+<label for="email" class="form-label">
+Correo Electrónico <span class="text-danger">*</span>
+</label>
+<input type="email" class="form-control" id="email" name="email"
+value="{{ usuario.email or '' }}"
+<<<<<<< HEAD
+placeholder="usuario@ufro.cl" required>
+=======
+placeholder="usuario@ufrontera.cl" required>
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
+<div class="form-text">Usado como nombre de usuario para login</div>
+</div>
+
+<div class="mb-3">
+<label for="telefono" class="form-label">Teléfono</label>
+<input type="tel" class="form-control" id="telefono" name="telefono"
+value="{{ usuario.telefono or '' }}"
+placeholder="+56 9 134 5678">
+<div class="form-text">Número de contacto (opcional)</div>
+</div>
+
+<div class="mb-3">
+<label for="departamento" class="form-label">Departamento</label>
+<select class="form-select" id="departamento" name="departamento">
+<option value="">Seleccionar departamento</option>
+<option value="Tecnología" {{ 'selected' if usuario.departamento == 'Tecnología' }}>Tecnología</option>
+<option value="Seguridad" {{ 'selected' if usuario.departamento == 'Seguridad' }}>Seguridad</option>
+<option value="Infraestructura" {{ 'selected' if usuario.departamento == 'Infraestructura' }}>Infraestructura</option>
+<option value="Mantenimiento" {{ 'selected' if usuario.departamento == 'Mantenimiento' }}>Mantenimiento</option>
+<option value="Administración" {{ 'selected' if usuario.departamento == 'Administración' }}>Administración</option>
+<option value="Otro" {{ 'selected' if usuario.departamento == 'Otro' }}>Otro</option>
+</select>
+<div class="form-text">Departamento al que pertenece (opcional)</div>
+</div>
+
+<-- Información adicional -->
+<div class="alert alert-light">
+<h6 class="alert-heading">Información del Usuario</h6>
+<p class="mb-1"><strong>ID:</strong> #{{ usuario.id }}</p>
+{% if usuario.fecha_registro %}
+<p class="mb-1"><strong>Registro:</strong> {{ usuario.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</p>
+{% endif %}
+{% if usuario.ultimo_acceso %}
+<p class="mb-0"><strong>Último Acceso:</strong> {{ usuario.ultimo_acceso.strftime('%d/%m/%Y %H:%M') }}</p>
+{% endif %}
+</div>
+</div>
+
+<-- Seguridad y Permisos -->
+<div class="col-md-6">
+<h6 class="text-muted mb-3">
+<i class="bi bi-shield-lock"></i> Seguridad y Permisos
+</h6>
+
+<div class="mb-3">
+<label for="rol" class="form-label">
+Rol del Usuario <span class="text-danger">*</span>
+</label>
+<select class="form-select" id="rol" name="rol" required>
+<option value="">Seleccionar rol</option>
+<option value="VISUALIZADOR" {{ 'selected' if usuario.rol == 'VISUALIZADOR' }}>VISUALIZADOR - Solo lectura</option>
+<option value="TECNICO" {{ 'selected' if usuario.rol == 'TECNICO' }}>TÉCNICO - Gestión de fallas asignadas</option>
+<option value="SUPERVISOR" {{ 'selected' if usuario.rol == 'SUPERVISOR' }}>SUPERVISOR - Supervisión y asignación</option>
+<option value="ADMIN" {{ 'selected' if usuario.rol == 'ADMIN' }}>ADMIN - Gestión completa de equipos</option>
+{% if current_user.rol == 'SUPERADMIN' %}
+<option value="SUPERADMIN" {{ 'selected' if usuario.rol == 'SUPERADMIN' }}>SUPERADMIN - Control total del sistema</option>
+{% endif %}
+</select>
+<div class="form-text">Define los permisos del usuario en el sistema</div>
+</div>
+
+<div class="mb-3">
+<label class="form-label">Estado del Usuario</label>
+<div class="form-check form-switch">
+<input class="form-check-input" type="checkbox" id="activo" name="activo"
+{{ 'checked' if usuario.activo }}>
+<label class="form-check-label" for="activo">
+Usuario Activo
+</label>
+</div>
+<div class="form-text">Los usuarios inactivos no pueden acceder al sistema</div>
+</div>
+
+<hr>
+
+<h6 class="text-muted mb-3">
+<i class="bi bi-key"></i> Cambiar Contraseña (Opcional)
+</h6>
+
+<div class="mb-3">
+<label for="password" class="form-label">Nueva Contraseña</label>
+<div class="input-group">
+<input type="password" class="form-control" id="password" name="password"
+placeholder="Dejar vacío para mantener actual">
+<button class="btn btn-outline-secondary" type="button"
+onclick="togglePassword('password')" title="Mostrar/ocultar contraseña">
+<i class="bi bi-eye" id="password-icon"></i>
+</button>
+</div>
+<div class="form-text">Solo completar si desea cambiar la contraseña</div>
+</div>
+
+<div class="mb-3">
+<label for="password_confirm" class="form-label">Confirmar Nueva Contraseña</label>
+<input type="password" class="form-control" id="password_confirm" name="password_confirm"
+placeholder="Repetir nueva contraseña">
+<div class="form-text">Debe coincidir con la nueva contraseña</div>
+</div>
+
+<-- Información sobre roles -->
+<div class="alert alert-info" id="rol-info" style="display: none;">
+<h6 class="alert-heading">Información del Rol</h6>
+<p class="mb-0" id="rol-description"></p>
+</div>
+</div>
+</div>
+
+<hr class="my-4">
+
+<div class="d-flex justify-content-between">
+<div>
+{% if usuario.id = current_user.id %}
+<button type="button" class="btn btn-outline-danger"
+data-bs-toggle="modal"
+data-bs-target="#confirmarEliminar">
+<i class="bi bi-trash"></i> Eliminar Usuario
+</button>
+{% endif %}
+</div>
+<div class="d-flex gap-">
+<a href="{{ url_for('usuarios_listar') }}" class="btn btn-secondary">
+<i class="bi bi-x-circle"></i> Cancelar
+</a>
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-check-circle"></i> Guardar Cambios
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Modal de confirmación para eliminar -->
+{% if usuario.id = current_user.id %}
+<div class="modal fade" id="confirmarEliminar" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title">Confirmar Eliminación</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<p>¿Está seguro de eliminar al usuario <strong>{{ usuario.nombre_completo or usuario.nombre }}</strong>?</p>
+<p class="text-danger"><i class="bi bi-exclamation-triangle"></i> Esta acción no se puede deshacer.</p>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<form method="POST" action="{{ url_for('usuarios_eliminar', usuario_id=usuario.id) }}" class="d-inline">
+<button type="submit" class="btn btn-danger">Eliminar Usuario</button>
+</form>
+</div>
+</div>
+</div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Función para mostrar/ocultar contraseña
+function togglePassword(fieldId) {
+const field = document.getElementById(fieldId);
+const icon = document.getElementById(fieldId + '-icon');
+
+if (field.type === 'password') {
+field.type = 'text';
+icon.className = 'bi bi-eye-slash';
+} else {
+field.type = 'password';
+icon.className = 'bi bi-eye';
+}
+}
+
+// Validación de contraseñas coincidentes
+document.getElementById('password_confirm').addEventListener('input', function() {
+const password = document.getElementById('password').value;
+const confirm = this.value;
+
+if (confirm && password == confirm) {
+this.setCustomValidity('Las contraseñas no coinciden');
+this.classList.add('is-invalid');
+} else {
+this.setCustomValidity('');
+this.classList.remove('is-invalid');
+if (confirm && password) {
+this.classList.add('is-valid');
+}
+}
+});
+
+// Información dinámica sobre roles
+const roleDescriptions = {
+'VISUALIZADOR': 'Solo puede visualizar información del sistema. No puede realizar modificaciones.',
+'TECNICO': 'Puede gestionar las fallas asignadas a él, subir fotografías y actualizar estados de reparación.',
+'SUPERVISOR': 'Puede asignar fallas a técnicos, cerrar fallas y acceder a reportes departamentales.',
+'ADMIN': 'Puede gestionar equipos, crear/modificar inventario y acceder a reportes avanzados.',
+'SUPERADMIN': 'Control total del sistema incluyendo gestión de usuarios y configuración general.'
+};
+
+document.getElementById('rol').addEventListener('change', function() {
+const selectedRole = this.value;
+const infoDiv = document.getElementById('rol-info');
+const descriptionP = document.getElementById('rol-description');
+
+if (selectedRole && roleDescriptions[selectedRole]) {
+descriptionP.textContent = roleDescriptions[selectedRole];
+infoDiv.style.display = 'block';
+} else {
+infoDiv.style.display = 'none';
+}
+});
+
+// Mostrar información del rol actual al cargar
+document.addEventListener('DOMContentLoaded', function() {
+const currentRole = document.getElementById('rol').value;
+if (currentRole && roleDescriptions[currentRole]) {
+document.getElementById('rol-description').textContent = roleDescriptions[currentRole];
+document.getElementById('rol-info').style.display = 'block';
+}
+});
+
+// Validación del formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+const password = document.getElementById('password').value;
+const confirm = document.getElementById('password_confirm').value;
+
+// Solo validar contraseñas si se está intentando cambiar
+if (password || confirm) {
+if (password == confirm) {
+e.preventDefault();
+alert('Las contraseñas no coinciden. Por favor, revíselas.');
+return false;
+}
+
+if (password.length < 8) {
+e.preventDefault();
+alert('La nueva contraseña debe tener al menos 8 caracteres.');
+return false;
+}
+}
+});
+</script>
+{% endblock %}

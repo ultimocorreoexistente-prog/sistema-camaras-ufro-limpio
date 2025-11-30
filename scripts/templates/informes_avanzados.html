@@ -1,0 +1,657 @@
+{% extends 'base.html' %}
+
+{% block title %}Informes y Análisis - Sistema de Gestión Académica UFRO{% endblock %}
+
+{% block page_title %}Informes y Análisis{% endblock %}
+{% block page_subtitle %}Reportes avanzados y análisis estadístico del sistema{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group" role="group">
+<button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#filtrosModal">
+<i class="bi bi-funnel me-"></i>Filtros
+</button>
+<button type="button" class="btn btn-outline-success" onclick="exportarInforme('excel')">
+<i class="bi bi-file-earmark-excel me-"></i>Excel
+</button>
+<button type="button" class="btn btn-outline-danger" onclick="exportarInforme('pdf')">
+<i class="bi bi-file-earmark-pdf me-"></i>PDF
+</button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+<-- Filtros rápidos -->
+<div class="col-1 mb-4">
+<div class="card content-card">
+<div class="card-body">
+<div class="row align-items-center">
+<div class="col-lg-3 col-md-6 mb-">
+<label class="form-label small fw-bold">Período</label>
+<select class="form-select form-select-sm" id="periodoSelect">
+<option value="04">Año Académico 04</option>
+<option value="03">Año Académico 03</option>
+<option value="all">Todos los años</option>
+</select>
+</div>
+<div class="col-lg-3 col-md-6 mb-">
+<label class="form-label small fw-bold">Carrera</label>
+<select class="form-select form-select-sm" id="carreraSelect">
+<option value="">Todas las carreras</option>
+{% for carrera in carreras %}
+<option value="{{ carrera.id }}">{{ carrera.nombre }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="col-lg-3 col-md-6 mb-">
+<label class="form-label small fw-bold">Tipo de Reporte</label>
+<select class="form-select form-select-sm" id="reporteSelect">
+<option value="matriculas">Matrículas</option>
+<option value="rendimiento">Rendimiento Académico</option>
+<option value="asistencia">Asistencia</option>
+<option value="profesores">Utilización Profesores</option>
+</select>
+</div>
+<div class="col-lg-3 col-md-6 mb-">
+<label class="form-label small fw-bold">Acción</label>
+<button type="button" class="btn btn-primary btn-sm w-100" onclick="generarReporte()">
+<i class="bi bi-graph-up me-"></i>Generar
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<-- Indicadores principales -->
+<div class="col-lg-3 col-md-6 mb-4">
+<div class="card content-card">
+<div class="card-body text-center">
+<div class="text-primary mb-">
+<i class="bi bi-people-fill fs-1"></i>
+</div>
+<h3 class="text-primary" id="totalEstudiantes">{{ estadisticas.total_estudiantes|default:150 }}</h3>
+<p class="text-muted mb-0">Total Estudiantes</p>
+<small class="text-success">
+<i class="bi bi-arrow-up"></i> +5.% vs período anterior
+</small>
+</div>
+</div>
+</div>
+
+<div class="col-lg-3 col-md-6 mb-4">
+<div class="card content-card">
+<div class="card-body text-center">
+<div class="text-success mb-">
+<i class="bi bi-clipboard-check-fill fs-1"></i>
+</div>
+<h3 class="text-success" id="tasaMatriculacion">{{ estadisticas.tasa_matriculacion|default:87.5 }}%</h3>
+<p class="text-muted mb-0">Tasa de Matriculación</p>
+<small class="text-info">
+<i class="bi bi-info-circle"></i> Promedio institucional
+</small>
+</div>
+</div>
+</div>
+
+<div class="col-lg-3 col-md-6 mb-4">
+<div class="card content-card">
+<div class="card-body text-center">
+<div class="text-warning mb-">
+<i class="bi bi-graph-up-arrow fs-1"></i>
+</div>
+<h3 class="text-warning" id="promedioRendimiento">{{ estadisticas.promedio_rendimiento|default:6.8 }}</h3>
+<p class="text-muted mb-0">Rendimiento Promedio</p>
+<small class="text-muted">
+<i class="bi bi-rulers"></i> Escala 1.0 - 7.0
+</small>
+</div>
+</div>
+</div>
+
+<div class="col-lg-3 col-md-6 mb-4">
+<div class="card content-card">
+<div class="card-body text-center">
+<div class="text-danger mb-">
+<i class="bi bi-clock-fill fs-1"></i>
+</div>
+<h3 class="text-danger" id="tasaDesercion">{{ estadisticas.tasa_desercion|default:8. }}%</h3>
+<p class="text-muted mb-0">Tasa de Deserción</p>
+<small class="text-success">
+<i class="bi bi-arrow-down"></i> -.1% vs año anterior
+</small>
+</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<-- Gráfico principal -->
+<div class="col-lg-8 mb-4">
+<div class="card content-card">
+<div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center">
+<h5 class="card-title mb-0">
+<i class="bi bi-bar-chart me-"></i>Tendencia de Matrículas
+</h5>
+<div class="btn-group btn-group-sm">
+<button class="btn btn-outline-secondary active" onclick="cambiarVista('mensual')">Mensual</button>
+<button class="btn btn-outline-secondary" onclick="cambiarVista('trimestral')">Trimestral</button>
+<button class="btn btn-outline-secondary" onclick="cambiarVista('anual')">Anual</button>
+</div>
+</div>
+<div class="card-body">
+<canvas id="tendenciasChart" height="100"></canvas>
+</div>
+</div>
+</div>
+
+<-- Distribución por carrera -->
+<div class="col-lg-4 mb-4">
+<div class="card content-card">
+<div class="card-header bg-transparent border-bottom">
+<h5 class="card-title mb-0">
+<i class="bi bi-pie-chart me-"></i>Distribución por Carrera
+</h5>
+</div>
+<div class="card-body">
+<canvas id="carrerasChart" height="00"></canvas>
+<div class="mt-3">
+{% for carrera_data in distribucion_carreras %}
+<div class="d-flex justify-content-between align-items-center mb-">
+<span class="small">{{ carrera_data.nombre }}</span>
+<div class="d-flex align-items-center">
+<div class="progress me-" style="width: 80px; height: 6px;">
+<div class="progress-bar"
+style="width: {{ carrera_data.porcentaje }}%; background-color: {{ carrera_data.color }}"></div>
+</div>
+<span class="small text-muted">{{ carrera_data.porcentaje }}%</span>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<-- Rendimiento académico -->
+<div class="col-lg-6 mb-4">
+<div class="card content-card">
+<div class="card-header bg-transparent border-bottom">
+<h5 class="card-title mb-0">
+<i class="bi bi-graph-up me-"></i>Rendimiento Académico por Semestre
+</h5>
+</div>
+<div class="card-body">
+<canvas id="rendimientoChart" height="150"></canvas>
+</div>
+</div>
+</div>
+
+<-- Asistencia promedio -->
+<div class="col-lg-6 mb-4">
+<div class="card content-card">
+<div class="card-header bg-transparent border-bottom">
+<h5 class="card-title mb-0">
+<i class="bi bi-calendar-check me-"></i>Asistencia Promedio por Carrera
+</h5>
+</div>
+<div class="card-body">
+<div class="table-responsive">
+<table class="table table-sm">
+<thead>
+<tr>
+<th>Carrera</th>
+<th>Asistencia</th>
+<th>Tendencia</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+{% for asistencia in asistencia_carreras %}
+<tr>
+<td class="small">{{ asistencia.carrera }}</td>
+<td>
+<div class="d-flex align-items-center">
+<div class="progress me-" style="width: 60px;">
+<div class="progress-bar {% if asistencia.porcentaje >= 90 %}bg-success{% elif asistencia.porcentaje >= 80 %}bg-warning{% else %}bg-danger{% endif %}"
+style="width: {{ asistencia.porcentaje }}%"></div>
+</div>
+<span class="small">{{ asistencia.porcentaje }}%</span>
+</div>
+</td>
+<td>
+{% if asistencia.tendencia == 'up' %}
+<i class="bi bi-arrow-up text-success"></i>
+{% elif asistencia.tendencia == 'down' %}
+<i class="bi bi-arrow-down text-danger"></i>
+{% else %}
+<i class="bi bi-dash text-muted"></i>
+{% endif %}
+</td>
+<td>
+{% if asistencia.porcentaje >= 90 %}
+<span class="badge bg-success">Excelente</span>
+{% elif asistencia.porcentaje >= 80 %}
+<span class="badge bg-warning">Bueno</span>
+{% else %}
+<span class="badge bg-danger">Atención</span>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<-- Tabla de detalles -->
+<div class="col-1">
+<div class="card content-card">
+<div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center">
+<h5 class="card-title mb-0">
+<i class="bi bi-table me-"></i>Detalle de Informes
+</h5>
+<div class="d-flex gap-">
+<input type="search" class="form-control form-control-sm" placeholder="Buscar..." id="searchInput" style="width: 00px;">
+<button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshData()">
+<i class="bi bi-arrow-clockwise"></i>
+</button>
+</div>
+</div>
+<div class="card-body">
+<div class="table-responsive">
+<table class="table table-hover table-sm" id="informesTable">
+<thead>
+<tr>
+<th>ID</th>
+<th>Tipo</th>
+<th>Período</th>
+<th>Carrera</th>
+<th>Estudiantes</th>
+<th>Matrículas</th>
+<th>Rendimiento</th>
+<th>Asistencia</th>
+<th>Estado</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody>
+{% for informe in informes_detallados %}
+<tr>
+<td class="small">{{ informe.id }}</td>
+<td>
+<span class="badge bg-{{ informe.tipo_color|default:'secondary' }}">
+{{ informe.tipo|title }}
+</span>
+</td>
+<td class="small">{{ informe.periodo }}</td>
+<td class="small">{{ informe.carrera|default:"Todas" }}</td>
+<td class="small">{{ informe.total_estudiantes }}</td>
+<td class="small">{{ informe.total_matriculas }}</td>
+<td class="small">
+<span class="badge bg-{% if informe.promedio_rendimiento >= 6.5 %}success{% elif informe.promedio_rendimiento >= 5.5 %}warning{% else %}danger{% endif %}">
+{{ informe.promedio_rendimiento|default:0|floatformat:1 }}
+</span>
+</td>
+<td class="small">{{ informe.asistencia_promedio|default:0|floatformat:1 }}%</td>
+<td>
+<span class="badge bg-{{ informe.estado_color|default:'secondary' }}">
+{{ informe.estado|title }}
+</span>
+</td>
+<td>
+<div class="btn-group btn-group-sm">
+<button class="btn btn-outline-primary"
+onclick="verDetalle({{ informe.id }})"
+title="Ver detalles">
+<i class="bi bi-eye"></i>
+</button>
+<button class="btn btn-outline-success"
+onclick="exportarDetalle({{ informe.id }})"
+title="Exportar">
+<i class="bi bi-download"></i>
+</button>
+</div>
+</td>
+</tr>
+{% empty %}
+<tr>
+<td colspan="10" class="text-center text-muted py-4">
+<i class="bi bi-inbox fs-1 mb-"></i>
+<p>No hay informes disponibles</p>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+<-- Paginación -->
+{% if informes_detallados %}
+<nav aria-label="Paginación de informes" class="mt-3">
+<ul class="pagination pagination-sm justify-content-center">
+<li class="page-item disabled">
+<a class="page-link" href="#" tabindex="-1">Anterior</a>
+</li>
+<li class="page-item active">
+<a class="page-link" href="#">1</a>
+</li>
+<li class="page-item">
+<a class="page-link" href="#"></a>
+</li>
+<li class="page-item">
+<a class="page-link" href="#">3</a>
+</li>
+<li class="page-item">
+<a class="page-link" href="#">Siguiente</a>
+</li>
+</ul>
+</nav>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+
+<-- Modal de Filtros -->
+<div class="modal fade" id="filtrosModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title">
+<i class="bi bi-funnel me-"></i>Filtros Avanzados
+</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<form id="filtrosForm">
+<div class="row">
+<div class="col-1 mb-3">
+<label class="form-label">Rango de Fechas</label>
+<div class="row">
+<div class="col-6">
+<input type="date" class="form-control form-control-sm" name="fecha_inicio">
+</div>
+<div class="col-6">
+<input type="date" class="form-control form-control-sm" name="fecha_fin">
+</div>
+</div>
+</div>
+
+<div class="col-1 mb-3">
+<label class="form-label">Profesores</label>
+<select class="form-select form-select-sm" name="profesores">
+<option value="">Todos los profesores</option>
+{% for profesor in profesores %}
+<option value="{{ profesor.id }}">{{ profesor.get_full_name }}</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="col-1 mb-3">
+<label class="form-label">Nivel de Rendimiento</label>
+<select class="form-select form-select-sm" name="rendimiento">
+<option value="">Todos los niveles</option>
+<option value="excelente">Excelente (6.5 - 7.0)</option>
+<option value="bueno">Bueno (5.5 - 6.4)</option>
+<option value="regular">Regular (4.0 - 5.4)</option>
+<option value="deficiente">Deficiente (&lt; 4.0)</option>
+</select>
+</div>
+
+<div class="col-1 mb-3">
+<label class="form-label">Estado de Matrícula</label>
+<div class="form-check">
+<input class="form-check-input" type="checkbox" name="estados" value="activa" id="estadoActiva" checked>
+<label class="form-check-label" for="estadoActiva">Activa</label>
+</div>
+<div class="form-check">
+<input class="form-check-input" type="checkbox" name="estados" value="retirada" id="estadoRetirada" checked>
+<label class="form-check-label" for="estadoRetirada">Retirada</label>
+</div>
+<div class="form-check">
+<input class="form-check-input" type="checkbox" name="estados" value="repitencia" id="estadoRepitencia">
+<label class="form-check-label" for="estadoRepitencia">Repitencia</label>
+</div>
+</div>
+</div>
+</form>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button type="button" class="btn btn-primary" onclick="aplicarFiltros()">
+<i class="bi bi-check me-"></i>Aplicar Filtros
+</button>
+</div>
+</div>
+</div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Configuración inicial de gráficos
+let tendenciasChart, rendimientoChart, carrerasChart;
+let vistaActual = 'mensual';
+
+// Inicializar gráficos
+document.addEventListener('DOMContentLoaded', function() {
+inicializarGraficos();
+});
+
+function inicializarGraficos() {
+// Gráfico de tendencias
+const tendenciasCtx = document.getElementById('tendenciasChart').getContext('d');
+tendenciasChart = new Chart(tendenciasCtx, {
+type: 'line',
+data: {
+labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+datasets: [{
+label: 'Matrículas 04',
+data: [85, 9, 78, 105, 95, 88, 9, 108, 95, 10, 98, 105],
+borderColor: '#1e3a8a',
+backgroundColor: 'rgba(30, 58, 138, 0.1)',
+tension: 0.4,
+fill: true
+}, {
+label: 'Matrículas 03',
+data: [80, 88, 75, 98, 90, 85, 88, 10, 9, 98, 94, 100],
+borderColor: '#6b780',
+backgroundColor: 'rgba(107, 114, 18, 0.1)',
+tension: 0.4,
+fill: false,
+borderDash: [5, 5]
+}]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+plugins: {
+legend: {
+position: 'top'
+}
+},
+scales: {
+y: {
+beginAtZero: true,
+grid: {
+color: 'rgba(0, 0, 0, 0.1)'
+}
+},
+x: {
+grid: {
+color: 'rgba(0, 0, 0, 0.1)'
+}
+}
+}
+}
+});
+
+// Gráfico de rendimiento
+const rendimientoCtx = document.getElementById('rendimientoChart').getContext('d');
+rendimientoChart = new Chart(rendimientoCtx, {
+type: 'bar',
+data: {
+labels: ['Primer Sem', 'Segundo Sem', 'Verano'],
+datasets: [{
+label: 'Rendimiento Promedio',
+data: [6.7, 6.9, 6.5],
+backgroundColor: ['#3b8f6', '#10b981', '#f59e0b'],
+borderColor: ['#563eb', '#059669', '#d97706'],
+borderWidth: 1
+}]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+plugins: {
+legend: {
+display: false
+}
+},
+scales: {
+y: {
+beginAtZero: true,
+max: 7,
+grid: {
+color: 'rgba(0, 0, 0, 0.1)'
+}
+}
+}
+}
+});
+
+// Gráfico de carreras (Pie)
+const carrerasCtx = document.getElementById('carrerasChart').getContext('d');
+carrerasChart = new Chart(carrerasCtx, {
+type: 'doughnut',
+data: {
+labels: ['Ingeniería', 'Medicina', 'Derecho', 'Psicología', 'Otros'],
+datasets: [{
+data: [35, 5, 0, 15, 5],
+backgroundColor: ['#1e3a8a', '#3b8f6', '#10b981', '#f59e0b', '#6b780'],
+borderWidth: ,
+borderColor: '#ffffff'
+}]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+plugins: {
+legend: {
+position: 'bottom',
+labels: {
+usePointStyle: true,
+padding: 15
+}
+}
+}
+}
+});
+}
+
+function cambiarVista(vista) {
+vistaActual = vista;
+// Actualizar botones activos
+document.querySelectorAll('.btn-group .btn').forEach(btn => {
+btn.classList.remove('active');
+});
+event.target.classList.add('active');
+
+// Aquí se podría actualizar el gráfico con datos de la vista seleccionada
+console.log('Cambiando vista a:', vista);
+}
+
+function generarReporte() {
+const periodo = document.getElementById('periodoSelect').value;
+const carrera = document.getElementById('carreraSelect').value;
+const tipo = document.getElementById('reporteSelect').value;
+
+console.log('Generando reporte:', { periodo, carrera, tipo });
+
+// Simular carga
+const btn = event.target;
+const originalText = btn.innerHTML;
+btn.innerHTML = '<span class="spinner-border spinner-border-sm me-"></span>Generando...';
+btn.disabled = true;
+
+setTimeout(() => {
+btn.innerHTML = originalText;
+btn.disabled = false;
+// Aquí se actualizarían los datos del reporte
+}, 000);
+}
+
+function exportarInforme(formato) {
+console.log('Exportando en formato:', formato);
+// Implementar lógica de exportación
+alert(`Exportando informe en formato ${formato.toUpperCase()}`);
+}
+
+function aplicarFiltros() {
+const form = document.getElementById('filtrosForm');
+const formData = new FormData(form);
+
+console.log('Aplicando filtros:', Object.fromEntries(formData));
+
+// Cerrar modal y aplicar filtros
+bootstrap.Modal.getInstance(document.getElementById('filtrosModal')).hide();
+
+// Aquí se actualizarían los datos según los filtros
+setTimeout(() => {
+location.reload();
+}, 1000);
+}
+
+function verDetalle(id) {
+console.log('Viendo detalle del informe:', id);
+// Implementar modal de detalles o redirección
+alert(`Ver detalles del informe ${id}`);
+}
+
+function exportarDetalle(id) {
+console.log('Exportando detalle del informe:', id);
+// Implementar exportación individual
+alert(`Exportando detalles del informe ${id}`);
+}
+
+function refreshData() {
+console.log('Actualizando datos...');
+location.reload();
+}
+
+// Búsqueda en tabla
+document.getElementById('searchInput').addEventListener('keyup', function() {
+const searchTerm = this.value.toLowerCase();
+const table = document.getElementById('informesTable');
+const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+for (let i = 0; i < rows.length; i++) {
+const row = rows[i];
+const cells = row.getElementsByTagName('td');
+let found = false;
+
+for (let j = 0; j < cells.length - 1; j++) { // Excluir la última columna (acciones)
+if (cells[j].textContent.toLowerCase().includes(searchTerm)) {
+found = true;
+break;
+}
+}
+
+row.style.display = found ? '' : 'none';
+}
+});
+</script>
+{% endblock %}

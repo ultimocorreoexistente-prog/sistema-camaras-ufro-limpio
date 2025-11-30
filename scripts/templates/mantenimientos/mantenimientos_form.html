@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+
+{% block title %}{% if mantenimiento %}Editar{% else %}Crear{% endif %} Mantenimiento - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<nav aria-label="breadcrumb">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('mantenimientos_list') }}">Mantenimientos</a></li>
+<li class="breadcrumb-item active">{% if mantenimiento %}Editar{% else %}Crear{% endif %}</li>
+</ol>
+</nav>
+<h1 class="mb-0">
+<i class="bi bi-tools"></i>
+{% if mantenimiento %}Editar Mantenimiento{% else %}Nuevo Mantenimiento{% endif %}
+</h1>
+</div>
+</div>
+
+<form method="POST" id="mantenimientoForm">
+<div class="row">
+<-- Formulario principal -->
+<div class="col-md-8">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-person-lines-fill"></i> Información Básica
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="tipo" class="form-label">Tipo de Mantenimiento <span class="text-danger">*</span></label>
+<select class="form-select" id="tipo" name="tipo" required>
+<option value="">Seleccionar tipo...</option>
+<option value="preventivo" {% if mantenimiento and mantenimiento.tipo == 'preventivo' %}selected{% endif %}>Preventivo</option>
+<option value="correctivo" {% if mantenimiento and mantenimiento.tipo == 'correctivo' %}selected{% endif %}>Correctivo</option>
+<option value="predictivo" {% if mantenimiento and mantenimiento.tipo == 'predictivo' %}selected{% endif %}>Predictivo</option>
+<option value="correctivo_urgente" {% if mantenimiento and mantenimiento.tipo == 'correctivo_urgente' %}selected{% endif %}>Correctivo Urgente</option>
+</select>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="prioridad" class="form-label">Prioridad <span class="text-danger">*</span></label>
+<select class="form-select" id="prioridad" name="prioridad" required>
+<option value="">Seleccionar prioridad...</option>
+<option value="alta" {% if mantenimiento and mantenimiento.prioridad == 'alta' %}selected{% endif %}>Alta</option>
+<option value="media" {% if mantenimiento and mantenimiento.prioridad == 'media' %}selected{% endif %}>Media</option>
+<option value="baja" {% if mantenimiento and mantenimiento.prioridad == 'baja' %}selected{% endif %}>Baja</option>
+</select>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="equipo_afectado" class="form-label">Equipo Afectado <span class="text-danger">*</span></label>
+<input type="text" class="form-control" id="equipo_afectado" name="equipo_afectado"
+value="{{ mantenimiento.equipo_afectado if mantenimiento else '' }}" required
+placeholder="Ej: Cámara-01, Switch-Piso1, NVR-Principal">
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="ubicacion_equipo" class="form-label">Ubicación del Equipo <span class="text-danger">*</span></label>
+<input type="text" class="form-control" id="ubicacion_equipo" name="ubicacion_equipo"
+value="{{ mantenimiento.ubicacion_equipo if mantenimiento else '' }}" required
+placeholder="Ej: Campus Principal - Edificio A - Piso 1">
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="fecha_programada" class="form-label">Fecha Programada</label>
+<input type="datetime-local" class="form-control" id="fecha_programada" name="fecha_programada"
+value="{{ mantenimiento.fecha_programada.strftime('%Y-%m-%dT%H:%M') if mantenimiento and mantenimiento.fecha_programada else '' }}">
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="duracion_estimada" class="form-label">Duración Estimada (horas)</label>
+<input type="number" class="form-control" id="duracion_estimada" name="duracion_estimada"
+value="{{ mantenimiento.duracion_estimada if mantenimiento else '' }}" min="0.5" step="0.5"
+placeholder="Ej: .5">
+</div>
+</div>
+</div>
+
+<div class="mb-3">
+<label for="descripcion" class="form-label">Descripción del Trabajo <span class="text-danger">*</span></label>
+<textarea class="form-control" id="descripcion" name="descripcion" rows="4" required
+placeholder="Describir detalladamente el trabajo a realizar...">{{ mantenimiento.descripcion if mantenimiento else '' }}</textarea>
+</div>
+
+<div class="mb-3">
+<label for="observaciones" class="form-label">Observaciones Adicionales</label>
+<textarea class="form-control" id="observaciones" name="observaciones" rows="3"
+placeholder="Notas adicionales, materiales necesarios, etc...">{{ mantenimiento.observaciones if mantenimiento else '' }}</textarea>
+</div>
+</div>
+</div>
+</div>
+
+<-- Panel lateral -->
+<div class="col-md-4">
+<-- Asignación -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-person"></i> Asignación
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<label for="tecnico_responsable" class="form-label">Técnico Responsable <span class="text-danger">*</span></label>
+<select class="form-select" id="tecnico_responsable" name="tecnico_responsable" required>
+<option value="">Seleccionar técnico...</option>
+{% for tecnico in tecnicos %}
+<option value="{{ tecnico.id }}" {% if mantenimiento and mantenimiento.tecnico_responsable == tecnico.id|string %}selected{% endif %}>
+{{ tecnico.nombre }} ({{ tecnico.especialidad }})
+</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="mb-3">
+<label for="supervisor" class="form-label">Supervisor</label>
+<select class="form-select" id="supervisor" name="supervisor">
+<option value="">Seleccionar supervisor...</option>
+{% for supervisor in supervisores %}
+<option value="{{ supervisor.id }}" {% if mantenimiento and mantenimiento.supervisor == supervisor.id|string %}selected{% endif %}>
+{{ supervisor.nombre }}
+</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="mb-3">
+<label for="estado" class="form-label">Estado</label>
+<select class="form-select" id="estado" name="estado">
+<option value="programado" {% if mantenimiento and mantenimiento.estado == 'programado' %}selected{% endif %}>Programado</option>
+<option value="en_proceso" {% if mantenimiento and mantenimiento.estado == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+<option value="completado" {% if mantenimiento and mantenimiento.estado == 'completado' %}selected{% endif %}>Completado</option>
+<option value="cancelado" {% if mantenimiento and mantenimiento.estado == 'cancelado' %}selected{% endif %}>Cancelado</option>
+</select>
+</div>
+</div>
+</div>
+
+<-- Costos y recursos -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-currency-dollar"></i> Costos
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<label for="costo" class="form-label">Costo Total ($)</label>
+<input type="number" class="form-control" id="costo" name="costo"
+value="{{ mantenimiento.costo if mantenimiento else '' }}" min="0" step="0.01"
+placeholder="0.00">
+</div>
+
+<div class="mb-3">
+<label for="costo_mano_obra" class="form-label">Mano de Obra ($)</label>
+<input type="number" class="form-control" id="costo_mano_obra" name="costo_mano_obra"
+value="{{ mantenimiento.costo_mano_obra if mantenimiento else '' }}" min="0" step="0.01"
+placeholder="0.00">
+</div>
+
+<div class="mb-3">
+<label for="costo_materiales" class="form-label">Materiales ($)</label>
+<input type="number" class="form-control" id="costo_materiales" name="costo_materiales"
+value="{{ mantenimiento.costo_materiales if mantenimiento else '' }}" min="0" step="0.01"
+placeholder="0.00">
+</div>
+
+<div class="mb-3">
+<div class="form-check">
+<input class="form-check-input" type="checkbox" id="costo_autorizado" name="costo_autorizado"
+{% if mantenimiento and mantenimiento.costo_autorizado %}checked{% endif %}>
+<label class="form-check-label" for="costo_autorizado">
+Costo autorizado
+</label>
+</div>
+</div>
+</div>
+</div>
+
+<-- Notas y seguimiento -->
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-sticky"></i> Notas
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<label for="notas_internas" class="form-label">Notas Internas</label>
+<textarea class="form-control" id="notas_internas" name="notas_internas" rows="3"
+placeholder="Notas para uso interno del departamento">{{ mantenimiento.notas_internas if mantenimiento else '' }}</textarea>
+</div>
+
+<div class="mb-3">
+<div class="form-check">
+<input class="form-check-input" type="checkbox" id="notificar_cliente" name="notificar_cliente"
+{% if mantenimiento and mantenimiento.notificar_cliente %}checked{% endif %}>
+<label class="form-check-label" for="notificar_cliente">
+Notificar al cliente
+</label>
+</div>
+</div>
+
+<div class="mb-3">
+<div class="form-check">
+<input class="form-check-input" type="checkbox" id="requiere_repuestos" name="requiere_repuestos"
+{% if mantenimiento and mantenimiento.requiere_repuestos %}checked{% endif %}>
+<label class="form-check-label" for="requiere_repuestos">
+Requiere repuestos
+</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Fechas de seguimiento (solo para edición) -->
+{% if mantenimiento %}
+<div class="row mt-4">
+<div class="col-md-1">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-clock"></i> Seguimiento
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-4">
+<div class="mb-3">
+<label for="fecha_inicio" class="form-label">Fecha de Inicio</label>
+<input type="datetime-local" class="form-control" id="fecha_inicio" name="fecha_inicio"
+value="{{ mantenimiento.fecha_inicio.strftime('%Y-%m-%dT%H:%M') if mantenimiento.fecha_inicio else '' }}">
+</div>
+</div>
+<div class="col-md-4">
+<div class="mb-3">
+<label for="fecha_completado" class="form-label">Fecha de Finalización</label>
+<input type="datetime-local" class="form-control" id="fecha_completado" name="fecha_completado"
+value="{{ mantenimiento.fecha_completado.strftime('%Y-%m-%dT%H:%M') if mantenimiento.fecha_completado else '' }}">
+</div>
+</div>
+<div class="col-md-4">
+<div class="mb-3">
+<label for="duracion_real" class="form-label">Duración Real (horas)</label>
+<input type="number" class="form-control" id="duracion_real" name="duracion_real"
+value="{{ mantenimiento.duracion_real if mantenimiento else '' }}" min="0" step="0.5"
+placeholder="0.0">
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endif %}
+
+<-- Botones de acción -->
+<div class="row mt-4">
+<div class="col-1">
+<div class="d-flex justify-content-between">
+<a href="{{ url_for('mantenimientos_list') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Cancelar
+</a>
+<div>
+<button type="button" class="btn btn-outline-primary me-" onclick="guardarBorrador()">
+<i class="bi bi-save"></i> Guardar Borrador
+</button>
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-check-circle"></i> {% if mantenimiento %}Actualizar{% else %}Crear{% endif %} Mantenimiento
+</button>
+</div>
+</div>
+</div>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Auto-calcular costo total
+const costoManoObra = document.getElementById('costo_mano_obra');
+const costoMateriales = document.getElementById('costo_materiales');
+const costoTotal = document.getElementById('costo');
+
+function calcularCostoTotal() {
+const manoObra = parseFloat(costoManoObra.value) || 0;
+const materiales = parseFloat(costoMateriales.value) || 0;
+costoTotal.value = (manoObra + materiales).toFixed();
+}
+
+costoManoObra.addEventListener('input', calcularCostoTotal);
+costoMateriales.addEventListener('input', calcularCostoTotal);
+
+// Validación del formulario
+const form = document.getElementById('mantenimientoForm');
+form.addEventListener('submit', function(e) {
+if (validarFormulario()) {
+e.preventDefault();
+return false;
+}
+});
+
+function validarFormulario() {
+let valido = true;
+const camposRequeridos = ['tipo', 'prioridad', 'equipo_afectado', 'ubicacion_equipo', 'descripcion', 'tecnico_responsable'];
+
+camposRequeridos.forEach(campo => {
+const elemento = document.getElementById(campo);
+if (elemento.value.trim()) {
+elemento.classList.add('is-invalid');
+valido = false;
+} else {
+elemento.classList.remove('is-invalid');
+}
+});
+
+if (valido) {
+alert('Por favor, complete todos los campos requeridos.');
+}
+
+return valido;
+}
+
+// Sugerir duración basada en tipo
+document.getElementById('tipo').addEventListener('change', function() {
+const duracionEstimada = document.getElementById('duracion_estimada');
+const duraciones = {
+'preventivo': ,
+'correctivo': 4,
+'predictivo': 1.5,
+'correctivo_urgente': 6
+};
+
+if (duraciones[this.value] && duracionEstimada.value) {
+duracionEstimada.value = duraciones[this.value];
+}
+});
+
+// Auto-actualizar estado basado en fechas
+function actualizarEstadoPorFechas() {
+const fechaProgramada = document.getElementById('fecha_programada').value;
+const fechaInicio = document.getElementById('fecha_inicio');
+const fechaCompletado = document.getElementById('fecha_completado');
+const estado = document.getElementById('estado');
+
+if (fechaCompletado.value && fechaInicio.value) {
+fechaInicio.value = fechaCompletado.value;
+}
+
+if (fechaInicio.value && fechaCompletado.value) {
+estado.value = 'en_proceso';
+} else if (fechaCompletado.value) {
+estado.value = 'completado';
+}
+}
+
+// Event listeners para fechas
+['fecha_programada', 'fecha_inicio', 'fecha_completado'].forEach(id => {
+const elemento = document.getElementById(id);
+if (elemento) {
+elemento.addEventListener('change', actualizarEstadoPorFechas);
+}
+});
+
+// Configurar fecha actual para nuevos mantenimientos
+{% if not mantenimiento %}
+const fechaProgramada = document.getElementById('fecha_programada');
+if (fechaProgramada && fechaProgramada.value) {
+const ahora = new Date();
+ahora.setHours(ahora.getHours() + 4); // Programar para mañana
+fechaProgramada.value = ahora.toISOString().slice(0, 16);
+}
+{% endif %}
+});
+
+function guardarBorrador() {
+const form = document.getElementById('mantenimientoForm');
+const formData = new FormData(form);
+formData.append('estado', 'borrador');
+
+fetch('/mantenimientos/guardar-borrador', {
+method: 'POST',
+body: formData,
+headers: {
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+alert('Borrador guardado exitosamente');
+} else {
+alert('Error al guardar borrador: ' + data.message);
+}
+})
+.catch(error => {
+console.error('Error:', error);
+alert('Error de conexión al guardar borrador');
+});
+}
+</script>
+{% endblock %}

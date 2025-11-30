@@ -1,0 +1,71 @@
+# Sistema de Gestión de Cámaras UFRO - Railway Production
+
+Flask==3.0.0
+Flask-Login==0.6.3
+Flask-SQLAlchemy==3.1.1
+Flask-CORS==4.0.0
+Flask-Migrate==4.0.5
+
+# Base de datos
+<<<<<<< HEAD
+<<<<<<< HEAD
+SQLAlchemy==.0.3
+=======
+SQLAlchemy==2.0.23
+>>>>>>> 490f0beca4eaa0ced06723ea308d2616d581f5a4
+=======
+SQLAlchemy==2.0.23
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
+
+
+# Autenticación y seguridad
+Werkzeug==3.0.1
+<<<<<<< HEAD
+<<<<<<< HEAD
+bcrypt==4.1.
+itsdangerous==.1.
+
+# Procesamiento de archivos
+openpyxl==3.1.
+pandas==.1.4
+Pillow==10.1.0
+
+# Gráficos y visualización
+matplotlib==3.8.
+numpy==1.5.
+
+# Servidor web
+gunicorn==1..0
+
+# Utilidades
+python-dateutil==.8.
+pytz==03.3
+python-dotenv==1.0.0
+requests==.31.0
+=======
+=======
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
+bcrypt==4.1.2
+itsdangerous==2.1.2
+
+# Procesamiento de archivos
+openpyxl==3.1.2
+pandas==2.1.4
+Pillow==10.1.0
+
+# Gráficos y visualización
+matplotlib==3.8.2
+numpy==1.25.2
+
+# Servidor web
+gunicorn==21.2.0
+
+# Utilidades
+python-dateutil==2.8.2
+pytz==2023.3
+python-dotenv==1.0.0
+requests==2.31.0
+<<<<<<< HEAD
+>>>>>>> 490f0beca4eaa0ced06723ea308d2616d581f5a4
+=======
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856

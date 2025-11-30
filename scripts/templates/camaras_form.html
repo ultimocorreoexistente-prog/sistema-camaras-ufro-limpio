@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ 'Editar' if camara else 'Nueva' }} Cámara - Sistema UFRO</title>
+</head>
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if camara else 'Nueva' }} Cámara - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">{{ 'Editar' if camara else 'Nueva' }} Cámara</h1>
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Código *</label>
+                        <input type="text" name="codigo" class="form-control" value="{{ camara.codigo if camara else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="nombre" class="form-control" value="{{ camara.nombre if camara else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">IP</label>
+                        <input type="text" name="ip" class="form-control" value="{{ camara.ip_address if camara else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Modelo</label>
+                        <input type="text" name="modelo" class="form-control" value="{{ camara.modelo if camara else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Fabricante</label>
+                        <input type="text" name="fabricante" class="form-control" value="{{ camara.marca if camara else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Tipo de Cámara *</label>
+                        <select name="tipo_camara" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                            <option value="Domo" {{ 'selected' if camara and camara.tipo_camara == 'Domo' else '' }}>Domo</option>
+                            <option value="PTZ" {{ 'selected' if camara and camara.tipo_camara == 'PTZ' else '' }}>PTZ</option>
+                            <option value="Bullet" {{ 'selected' if camara and camara.tipo_camara == 'Bullet' else '' }}>Bullet</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Ubicación *</label>
+                        <select name="ubicacion_id" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                            {% for ub in ubicaciones %}
+                            <option value="{{ ub.id }}" {{ 'selected' if camara and camara.ubicacion_id == ub.id else '' }}>
+                                {{ ub.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Estado</label>
+                        <select name="estado" class="form-select">
+                            <option value="Activo" {{ 'selected' if camara and camara.estado == 'Activo' else '' }}>Activo</option>
+                            <option value="Inactivo" {{ 'selected' if camara and camara.estado == 'Inactivo' else '' }}>Inactivo</option>
+                            <option value="Mantenimiento" {{ 'selected' if camara and camara.estado == 'Mantenimiento' else '' }}>Mantenimiento</option>
+                            <option value="Baja" {{ 'selected' if camara and camara.estado == 'Baja' else '' }}>Baja</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Fecha Alta</label>
+                        <input type="date" name="fecha_alta" class="form-control" value="{{ camara.fecha_instalacion if camara else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Latitud</label>
+                        <input type="number" name="latitud" class="form-control" step="any" value="{{ camara.latitud if camara else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Longitud</label>
+                        <input type="number" name="longitud" class="form-control" step="any" value="{{ camara.longitud if camara else '' }}">
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Observaciones</label>
+                        <textarea name="observaciones" class="form-control" rows="3">{{ camara.observaciones if camara else '' }}</textarea>
+                    </div>
+                </div>
+                <div class="d-grid gap-2 d-md-block">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <a href="{{ url_for('camaras_list') }}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

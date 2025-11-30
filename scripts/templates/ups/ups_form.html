@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if ups else 'Crear' }} UPS - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1>
+<i class="bi bi-battery-charging"></i>
+{{ 'Editar' if ups else 'Nuevo' }} Equipo UPS
+</h1>
+<a href="{{ url_for('ups_listar') }}" class="btn btn-outline-secondary">
+<i class="bi bi-arrow-left"></i> Volver a la lista
+</a>
+</div>
+
+<div class="row">
+<div class="col-lg-8">
+<form method="POST" id="upsForm">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-info-circle"></i> Información del UPS
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="marca" class="form-label">Marca *</label>
+<select name="marca" id="marca" class="form-select" required>
+<option value="">Seleccionar marca</option>
+<option value="APC" {% if ups and ups.marca == 'APC' %}selected{% endif %}>APC</option>
+<option value="CyberPower" {% if ups and ups.marca == 'CyberPower' %}selected{% endif %}>CyberPower</option>
+<option value="Tripp Lite" {% if ups and ups.marca == 'Tripp Lite' %}selected{% endif %}>Tripp Lite</option>
+<option value="Eaton" {% if ups and ups.marca == 'Eaton' %}selected{% endif %}>Eaton</option>
+<option value="Liebert" {% if ups and ups.marca == 'Liebert' %}selected{% endif %}>Liebert</option>
+<option value=" otro" {% if ups and ups.marca == ' otro' %}selected{% endif %}> otro</option>
+</select>
+<div class="form-text">Marca del fabricante del UPS</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="modelo" class="form-label">Modelo *</label>
+<input type="text" name="modelo" id="modelo" class="form-control"
+value="{{ ups.modelo if ups else '' }}" required
+placeholder="Ej: BR1500G">
+<div class="form-text">Modelo específico del UPS</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="capacidad" class="form-label">Capacidad (VA) *</label>
+<input type="number" name="capacidad" id="capacidad" class="form-control"
+value="{{ ups.capacidad if ups else '' }}" required
+min="100" max="10000" step="50" placeholder="1500">
+<div class="form-text">Capacidad en Volt-Amperes (VA)</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="bateria" class="form-label">Carga de Batería (%)</label>
+<input type="number" name="bateria" id="bateria" class="form-control"
+value="{{ ups.bateria if ups else '' }}"
+min="0" max="100" step="1" placeholder="100">
+<div class="form-text">Nivel actual de carga de la batería (0-100%)</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="ubicacion" class="form-label">Ubicación *</label>
+<input type="text" name="ubicacion" id="ubicacion" class="form-control"
+value="{{ ups.ubicacion if ups else '' }}" required
+placeholder="Ej: Sala de Servidores - Piso ">
+<div class="form-text">Ubicación física del UPS</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="estado" class="form-label">Estado *</label>
+<select name="estado" id="estado" class="form-select" required>
+<option value="">Seleccionar estado</option>
+<option value="activo" {% if ups and ups.estado == 'activo' %}selected{% endif %}>Activo</option>
+<option value="inactivo" {% if ups and ups.estado == 'inactivo' %}selected{% endif %}>Inactivo</option>
+<option value="mantenimiento" {% if ups and ups.estado == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+<option value="bateria_baja" {% if ups and ups.estado == 'bateria_baja' %}selected{% endif %}>Batería baja</option>
+<option value="falla" {% if ups and ups.estado == 'falla' %}selected{% endif %}>Con fallas</option>
+</select>
+<div class="form-text">Estado operativo actual del UPS</div>
+</div>
+</div>
+</div>
+
+{% if ups %}
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label class="form-label">Fecha de registro</label>
+<input type="text" class="form-control"
+value="{{ ups.created_at.strftime('%d/%m/%Y %H:%M') if ups.created_at else 'No disponible' }}"
+readonly>
+<div class="form-text">Fecha cuando fue registrado el UPS</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label class="form-label">Última actualización</label>
+<input type="text" class="form-control"
+value="{{ ups.updated_at.strftime('%d/%m/%Y %H:%M') if ups.updated_at else 'No disponible' }}"
+readonly>
+<div class="form-text">Fecha de la última modificación</div>
+</div>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+
+<-- Información de batería -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-battery"></i> Información de Batería
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="tipo_bateria" class="form-label">Tipo de Batería</label>
+<select name="tipo_bateria" id="tipo_bateria" class="form-select">
+<option value="">Seleccionar tipo</option>
+<option value="VRLA" {% if ups and ups.tipo_bateria == 'VRLA' %}selected{% endif %}>VRLA (Sin mantenimiento)</option>
+<option value="AGM" {% if ups and ups.tipo_bateria == 'AGM' %}selected{% endif %}>AGM</option>
+<option value="Gel" {% if ups and ups.tipo_bateria == 'Gel' %}selected{% endif %}>Gel</option>
+<option value="Litio" {% if ups and ups.tipo_bateria == 'Litio' %}selected{% endif %}>Litio</option>
+<option value="Plomo-ácido" {% if ups and ups.tipo_bateria == 'Plomo-ácido' %}selected{% endif %}>Plomo-ácido</option>
+</select>
+<div class="form-text">Tipo de tecnología de batería</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="fecha_cambio_bateria" class="form-label">Último cambio de batería</label>
+<input type="date" name="fecha_cambio_bateria" id="fecha_cambio_bateria" class="form-control"
+value="{{ ups.fecha_cambio_bateria.strftime('%Y-%m-%d') if ups and ups.fecha_cambio_bateria else '' }}">
+<div class="form-text">Fecha del último reemplazo de batería</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Configuración adicional -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-gear"></i> Configuración Adicional
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-1">
+<div class="mb-3">
+<label for="observaciones" class="form-label">Observaciones</label>
+<textarea name="observaciones" id="observaciones" class="form-control"
+rows="3" placeholder="Notas adicionales sobre el UPS...">{{ ups.observaciones if ups else '' }}</textarea>
+<div class="form-text">Información adicional sobre el UPS</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Botones de acción -->
+<div class="card mt-4">
+<div class="card-body">
+<div class="d-flex justify-content-between">
+<div>
+{% if ups %}
+<button type="button" class="btn btn-danger"
+onclick="confirmarEliminacion({{ ups.id }})">
+<i class="bi bi-trash"></i> Eliminar UPS
+</button>
+{% endif %}
+</div>
+<div>
+<a href="{{ url_for('ups_listar') }}" class="btn btn-secondary me-">
+<i class="bi bi-x"></i> Cancelar
+</a>
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-{{ 'save' if ups else 'plus-circle' }}"></i>
+{{ 'Actualizar' if ups else 'Crear' }} UPS
+</button>
+</div>
+</div>
+</div>
+</div>
+</form>
+</div>
+
+<-- Panel lateral con información -->
+<div class="col-lg-4">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-lightbulb"></i> Consejos
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<h6><i class="bi bi-lightning text-primary"></i> Capacidad</h6>
+<p class="small text-muted">La capacidad debe ser suficiente para mantener el equipamiento crítico durante los cortes de energía.</p>
+</div>
+<div class="mb-3">
+<h6><i class="bi bi-battery text-success"></i> Batería</h6>
+<p class="small text-muted">Mantén la batería por encima del 50% para asegurar autonomía suficiente en caso de corte.</p>
+</div>
+<div>
+<h6><i class="bi bi-tools text-warning"></i> Mantenimiento</h6>
+<p class="small text-muted">Cambia las baterías cada 3-5 años según el fabricante para mantener el rendimiento.</p>
+</div>
+</div>
+</div>
+
+{% if ups %}
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-tools"></i> Herramientas de Diagnóstico
+</h5>
+</div>
+<div class="card-body">
+<div class="d-grid gap-">
+<button class="btn btn-outline-primary" onclick="autoTest()" {% if ups.bateria and ups.bateria < 0 %}disabled{% endif %}>
+<i class="bi bi-play-circle"></i> Prueba Automática
+</button>
+<button class="btn btn-outline-warning" onclick="calibrarBateria()">
+<i class="bi bi-arrow-repeat"></i> Calibrar Batería
+</button>
+<button class="btn btn-outline-info" onclick="verEstado()">
+<i class="bi bi-eye"></i> Ver Estado Completo
+</button>
+<button class="btn btn-outline-success" onclick="exportarReporte()">
+<i class="bi bi-download"></i> Exportar Reporte
+</button>
+</div>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('upsForm').addEventListener('submit', function(e) {
+const submitBtn = document.querySelector('button[type="submit"]');
+submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+submitBtn.disabled = true;
+});
+
+function confirmarEliminacion(upsId) {
+if (confirm('¿Estás seguro de que deseas eliminar este equipo UPS? Esta acción no se puede deshacer.')) {
+fetch(`/ups/eliminar/${upsId}`, {
+method: 'DELETE',
+headers: {
+'Content-Type': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+window.location.href = "{{ url_for('ups_listar') }}";
+} else {
+alert('Error al eliminar el UPS: ' + data.message);
+}
+})
+.catch(error => {
+console.error('Error:', error);
+alert('Error de conexión al eliminar el UPS');
+});
+}
+}
+
+function autoTest() {
+const capacidad = document.getElementById('capacidad').value;
+if (capacidad) {
+alert('Por favor, completa la información del UPS primero');
+return;
+}
+
+if (confirm('¿Deseas ejecutar una prueba automática del UPS?')) {
+alert(`Iniciando prueba automática del UPS de ${capacidad} VA...\nDuración aproximada: 5 minutos.`);
+}
+}
+
+function calibrarBateria() {
+const bateria = document.getElementById('bateria').value;
+if (bateria) {
+alert('Por favor, especifica el nivel de batería actual');
+return;
+}
+
+if (confirm('¿Deseas calibrar la batería del UPS? Esto puede tardar varios minutos.')) {
+alert('Iniciando calibración de batería...');
+}
+}
+
+function verEstado() {
+const modelo = document.getElementById('modelo').value;
+if (modelo) {
+alert('Por favor, completa la información del UPS primero');
+return;
+}
+
+alert(`Mostrando estado completo del UPS ${modelo}...\n\nEntrada: 0V\nSalida: 18V\nCarga: 65%\nTemperatura: 35°C`);
+}
+
+function exportarReporte() {
+const modelo = document.getElementById('modelo').value;
+alert(`Generando reporte del UPS ${modelo}...\n\nReporte exportado exitosamente.`);
+}
+
+// Validación del formulario
+document.getElementById('upsForm').addEventListener('submit', function(e) {
+const bateria = document.getElementById('bateria').value;
+const capacidad = document.getElementById('capacidad').value;
+
+if (bateria && (bateria < 0 || bateria > 100)) {
+e.preventDefault();
+alert('El nivel de batería debe estar entre 0 y 100%');
+return;
+}
+
+if (capacidad && (capacidad < 100 || capacidad > 10000)) {
+e.preventDefault();
+alert('La capacidad debe estar entre 100 y 10,000 VA');
+return;
+}
+});
+</script>
+{% endblock %}

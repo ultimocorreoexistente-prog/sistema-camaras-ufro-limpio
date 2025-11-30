@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}{{ nvr.modelo }} - NVR Detail{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1>
+<i class="bi bi-tv"></i>
+Equipo NVR - {{ nvr.marca }} {{ nvr.modelo }}
+</h1>
+<div>
+<a href="{{ url_for('nvr_listar') }}" class="btn btn-outline-secondary">
+<i class="bi bi-arrow-left"></i> Volver a la lista
+</a>
+<a href="{{ url_for('nvr_editar', nvr_id=nvr.id) }}" class="btn btn-warning">
+<i class="bi bi-pencil"></i> Editar
+</a>
+</div>
+</div>
+
+<div class="row">
+<-- Información principal -->
+<div class="col-lg-8">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-info-circle"></i> Información del Equipo
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<table class="table table-borderless">
+<tr>
+<td><strong>Marca:</strong></td>
+<td>{{ nvr.marca }}</td>
+</tr>
+<tr>
+<td><strong>Modelo:</strong></td>
+<td>{{ nvr.modelo }}</td>
+</tr>
+<tr>
+<td><strong>Dirección IP:</strong></td>
+<td><code>{{ nvr.ip }}</code></td>
+</tr>
+<tr>
+<td><strong>Canales:</strong></td>
+<td><span class="badge bg-info">{{ nvr.canales }} canales</span></td>
+</tr>
+</table>
+</div>
+<div class="col-md-6">
+<table class="table table-borderless">
+<tr>
+<td><strong>Almacenamiento:</strong></td>
+<td>
+{% if nvr.almacenamiento %}
+{{ nvr.almacenamiento }} TB
+{% else %}
+<span class="text-muted">No especificado</span>
+{% endif %}
+</td>
+</tr>
+<tr>
+<td><strong>Estado:</strong></td>
+<td>
+{% if nvr.estado == 'activo' %}
+<span class="badge bg-success">Activo</span>
+{% elif nvr.estado == 'inactivo' %}
+<span class="badge bg-danger">Inactivo</span>
+{% elif nvr.estado == 'mantenimiento' %}
+<span class="badge bg-warning">Mantenimiento</span>
+{% endif %}
+</td>
+</tr>
+<tr>
+<td><strong>Fecha de registro:</strong></td>
+<td>{{ nvr.created_at.strftime('%d/%m/%Y %H:%M') if nvr.created_at else 'No disponible' }}</td>
+</tr>
+<tr>
+<td><strong>Última actualización:</strong></td>
+<td>{{ nvr.updated_at.strftime('%d/%m/%Y %H:%M') if nvr.updated_at else 'No disponible' }}</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+
+<-- Estado de salud del NVR -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-heart-pulse"></i> Estado de Salud
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-4">
+<div class="text-center">
+<div class="mb-">
+<i class="bi bi-cpu-fill text-primary" style="font-size: rem;"></i>
+</div>
+<h4 class="text-primary">95%</h4>
+<p class="text-muted">CPU</p>
+</div>
+</div>
+<div class="col-md-4">
+<div class="text-center">
+<div class="mb-">
+<i class="bi bi-memory text-success" style="font-size: rem;"></i>
+</div>
+<h4 class="text-success">67%</h4>
+<p class="text-muted">Memoria</p>
+</div>
+</div>
+<div class="col-md-4">
+<div class="text-center">
+<div class="mb-">
+<i class="bi bi-hdd text-info" style="font-size: rem;"></i>
+</div>
+<h4 class="text-info">78%</h4>
+<p class="text-muted">Disco</p>
+</div>
+</div>
+</div>
+<div class="mt-3">
+<small class="text-muted">
+<i class="bi bi-clock"></i> Última verificación: {{ nvr.updated_at.strftime('%d/%m/%Y %H:%M') if nvr.updated_at else 'No disponible' }}
+</small>
+</div>
+</div>
+</div>
+</div>
+
+<-- Panel lateral -->
+<div class="col-lg-4">
+<-- Acciones rápidas -->
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-lightning"></i> Acciones Rápidas
+</h5>
+</div>
+<div class="card-body">
+<div class="d-grid gap-">
+<button class="btn btn-primary" onclick="reconectarNVR({{ nvr.id }})">
+<i class="bi bi-arrow-clockwise"></i> Reconectar
+</button>
+<button class="btn btn-warning" onclick="reiniciarNVR({{ nvr.id }})">
+<i class="bi bi-arrow-repeat"></i> Reiniciar Sistema
+</button>
+<button class="btn btn-info" onclick="verLogs()">
+<i class="bi bi-file-text"></i> Ver Logs
+</button>
+</div>
+</div>
+</div>
+
+<-- Configuración de red -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-network"></i> Configuración de Red
+</h5>
+</div>
+<div class="card-body">
+<div class="row text-center">
+<div class="col-1">
+<h6>Conectividad</h6>
+<div class="mt-">
+<i class="bi bi-wifi text-success" style="font-size: 1.5rem;"></i>
+<p class="mt-1">
+<span class="badge bg-success">Conectado</span>
+</p>
+<small class="text-muted">IP: {{ nvr.ip }}</small>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Estadísticas -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-bar-chart"></i> Estadísticas
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<div class="d-flex justify-content-between">
+<span>Uso de ancho de banda</span>
+<span>45%</span>
+</div>
+<div class="progress">
+<div class="progress-bar bg-info" role="progressbar" style="width: 45%"></div>
+</div>
+</div>
+<div class="mb-3">
+<div class="d-flex justify-content-between">
+<span>Grabaciones activas</span>
+<span>8/16</span>
+</div>
+<div class="progress">
+<div class="progress-bar bg-success" role="progressbar" style="width: 50%"></div>
+</div>
+</div>
+<div>
+<div class="d-flex justify-content-between">
+<span>Almacenamiento usado</span>
+<span>{{ (nvr.almacenamiento or 0) * 0.78 | round(1) if nvr.almacenamiento else 0 }}TB</span>
+</div>
+<div class="progress">
+<div class="progress-bar bg-warning" role="progressbar" style="width: 78%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function reconectarNVR(nvrId) {
+if (confirm('¿Deseas reconectar el equipo NVR?')) {
+// Implementar reconexión
+alert('Reconectando equipo NVR...');
+}
+}
+
+function reiniciarNVR(nvrId) {
+if (confirm('¿Estás seguro de reiniciar el sistema NVR?')) {
+// Implementar reinicio
+alert('Reiniciando sistema NVR...');
+}
+}
+
+function verLogs() {
+// Implementar visualización de logs
+alert('Abriendo logs del sistema...');
+}
+</script>
+{% endblock %}

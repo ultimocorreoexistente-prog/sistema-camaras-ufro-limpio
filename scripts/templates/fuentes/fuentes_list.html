@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Fuentes de Poder - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1><i class="bi bi-lightning-charge"></i> Gestionar Fuentes de Poder</h1>
+<a href="{{ url_for('fuentes_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Nueva Fuente
+</a>
+</div>
+
+<-- Filtros -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="card-title mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+</div>
+<div class="card-body">
+<form method="GET" class="row g-3">
+<div class="col-md-3">
+<label for="marca" class="form-label">Marca</label>
+<select name="marca" id="marca" class="form-select">
+<option value="">Todas las marcas</option>
+<option value="Mean Well" {% if request.args.get('marca') == 'Mean Well' %}selected{% endif %}>Mean Well</option>
+<option value="Phoenix Contact" {% if request.args.get('marca') == 'Phoenix Contact' %}selected{% endif %}>Phoenix Contact</option>
+<option value="Siemens" {% if request.args.get('marca') == 'Siemens' %}selected{% endif %}>Siemens</option>
+<option value="Omron" {% if request.args.get('marca') == 'Omron' %}selected{% endif %}>Omron</option>
+<option value="Schneider" {% if request.args.get('marca') == 'Schneider' %}selected{% endif %}>Schneider</option>
+<option value="Generic" {% if request.args.get('marca') == 'Generic' %}selected{% endif %}>Genérica</option>
+</select>
+</div>
+<div class="col-md-3">
+<label for="estado" class="form-label">Estado</label>
+<select name="estado" id="estado" class="form-select">
+<option value="">Todos los estados</option>
+<option value="activo" {% if request.args.get('estado') == 'activo' %}selected{% endif %}>Activo</option>
+<option value="inactivo" {% if request.args.get('estado') == 'inactivo' %}selected{% endif %}>Inactivo</option>
+<option value="mantenimiento" {% if request.args.get('estado') == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+<option value="sobrecarga" {% if request.args.get('estado') == 'sobrecarga' %}selected{% endif %}>Sobrecarga</option>
+<option value="falla" {% if request.args.get('estado') == 'falla' %}selected{% endif %}>Con fallas</option>
+</select>
+</div>
+<div class="col-md-3">
+<label for="campus" class="form-label">Campus/Edificio</label>
+<input type="text" name="campus" id="campus" class="form-control"
+value="{{ request.args.get('campus', '') }}" placeholder="Campus o edificio...">
+</div>
+<div class="col-md-3">
+<label class="form-label">&nbsp;</label>
+<div class="d-grid">
+<button type="submit" class="btn btn-outline-primary">
+<i class="bi bi-search"></i> Filtrar
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+
+<-- Lista de Fuentes -->
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-collection"></i> Lista de Fuentes de Poder
+<span class="badge bg-primary ms-">{{ fuentes|length }}</span>
+</h5>
+</div>
+<div class="card-body p-0">
+{% if fuentes %}
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+<thead class="table-light">
+<tr>
+<th>Nombre Fuente</th>
+<th>Marca</th>
+<th>Potencia</th>
+<th>Voltaje Salida</th>
+<th>Ubicación</th>
+<th>Estado</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody>
+{% for fuente in fuentes %}
+<tr>
+<td>
+<strong>{{ fuente.nombre }}</strong>
+</td>
+<td>{{ fuente.marca }}</td>
+<td>
+<i class="bi bi-lightning text-primary"></i>
+{{ fuente.potencia }} W
+</td>
+<td>
+<i class="bi bi-voltage text-success"></i>
+{{ fuente.voltaje_salida }}
+</td>
+<td>
+<i class="bi bi-geo-alt text-primary"></i>
+{{ fuente.ubicacion }}
+</td>
+<td>
+{% if fuente.estado == 'activo' %}
+<span class="badge bg-success">Activo</span>
+{% elif fuente.estado == 'inactivo' %}
+<span class="badge bg-danger">Inactivo</span>
+{% elif fuente.estado == 'mantenimiento' %}
+<span class="badge bg-warning">Mantenimiento</span>
+{% elif fuente.estado == 'sobrecarga' %}
+<span class="badge bg-warning">Sobrecarga</span>
+{% elif fuente.estado == 'falla' %}
+<span class="badge bg-danger">Con fallas</span>
+{% endif %}
+</td>
+<td>
+<div class="btn-group btn-group-sm" role="group">
+<a href="{{ url_for('fuentes_detalle', fuente_id=fuente.id) }}"
+class="btn btn-outline-primary" title="Ver detalles">
+<i class="bi bi-eye"></i>
+</a>
+<a href="{{ url_for('fuentes_editar', fuente_id=fuente.id) }}"
+class="btn btn-outline-warning" title="Editar">
+<i class="bi bi-pencil"></i>
+</a>
+<button type="button" class="btn btn-outline-danger"
+onclick="confirmarEliminacion({{ fuente.id }})" title="Eliminar">
+<i class="bi bi-trash"></i>
+</button>
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="text-center py-5">
+<i class="bi bi-lightning-charge display-1 text-muted"></i>
+<h3 class="text-muted mt-3">No hay fuentes de poder registradas</h3>
+<p class="text-muted">Comienza agregando una nueva fuente de poder al sistema.</p>
+<a href="{{ url_for('fuentes_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Agregar primera fuente
+</a>
+</div>
+{% endif %}
+</div>
+</div>
+
+<-- Resumen estadístico -->
+<div class="row mt-4">
+<div class="col-md-3">
+<div class="card card-stat">
+<div class="card-body text-center">
+<i class="bi bi-lightning-charge text-primary" style="font-size: rem;"></i>
+<h3 class="mt-">{{ fuentes|length }}</h3>
+<p class="text-muted mb-0">Total Fuentes</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat success">
+<div class="card-body text-center">
+<i class="bi bi-check-circle text-success" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ fuentes|selectattr('estado', 'equalto', 'activo')|list|length }}
+</h3>
+<p class="text-muted mb-0">Activas</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat warning">
+<div class="card-body text-center">
+<i class="bi bi-exclamation-triangle text-warning" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ fuentes|selectattr('estado', 'in', ['sobrecarga', 'mantenimiento'])|list|length }}
+</h3>
+<p class="text-muted mb-0">Requieren atención</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat danger">
+<div class="card-body text-center">
+<i class="bi bi-x-circle text-danger" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ fuentes|selectattr('estado', 'in', ['inactivo', 'falla'])|list|length }}
+</h3>
+<p class="text-muted mb-0">Con problemas</p>
+</div>
+</div>
+</div>
+</div>
+
+<-- Estado de carga por ubicación -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-building"></i> Distribución por Ubicación
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+{% for fuente in fuentes %}
+<div class="col-md-6 col-lg-3 mb-3">
+<div class="card border-{{ 'success' if fuente.estado == 'activo' else 'warning' if fuente.estado in ['sobrecarga', 'mantenimiento'] else 'danger' }}">
+<div class="card-body p-3">
+<div class="d-flex justify-content-between align-items-center">
+<div>
+<h6 class="card-title mb-1">{{ fuente.nombre }}</h6>
+<p class="card-text small text-muted mb-">{{ fuente.marca }}</p>
+<p class="card-text small text-muted mb-">
+<i class="bi bi-geo-alt"></i> {{ fuente.ubicacion }}
+</p>
+<span class="badge bg-{{ 'success' if fuente.estado == 'activo' else 'warning' if fuente.estado in ['sobrecarga', 'mantenimiento'] else 'danger' }}">
+{{ fuente.estado.title() }}
+</span>
+</div>
+<div class="text-end">
+<i class="bi bi-lightning-charge text-{{ 'success' if fuente.estado == 'activo' else 'warning' if fuente.estado in ['sobrecarga', 'mantenimiento'] else 'danger' }}"
+style="font-size: rem;"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarEliminacion(fuenteId) {
+if (confirm('¿Estás seguro de que deseas eliminar esta fuente de poder?')) {
+fetch(`/fuentes/eliminar/${fuenteId}`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+location.reload();
+} else {
+alert('Error al eliminar la fuente: ' + data.message);
+}
+})
+.catch(error => {
+console.error('Error:', error);
+alert('Error de conexión al eliminar la fuente');
+});
+}
+}
+
+// Auto-refresh cada 60 segundos para mostrar estados actualizados
+setInterval(function() {
+location.reload();
+}, 60000);
+</script>
+{% endblock %}

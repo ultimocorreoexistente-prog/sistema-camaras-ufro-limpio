@@ -1,0 +1,706 @@
+{% extends "base.html" %}
+
+{% block title %}Geolocalización GPS - Sistema Cámaras UFRO{% endblock %}
+
+{% block extra_css %}
+<style>
+.mapa-container {
+height: 70vh;
+min-height: 500px;
+border-radius: 8px;
+box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.filtros-container {
+background: #f8f9fa;
+border-radius: 8px;
+padding: 1rem;
+margin-bottom: 1rem;
+}
+
+.stats-card {
+background: linear-gradient(135deg, #667eea 0%, #764ba 100%);
+color: white;
+border-radius: 10px;
+padding: 1rem;
+margin-bottom: 1rem;
+}
+
+.marker-popup {
+min-width: 50px;
+}
+
+.legend {
+background: white;
+border-radius: 5px;
+padding: 10px;
+box-shadow: 0 px 5px rgba(0,0,0,0.);
+}
+
+.legend-item {
+display: flex;
+align-items: center;
+margin-bottom: 5px;
+}
+
+.legend-color {
+width: 0px;
+height: 0px;
+border-radius: 50%;
+margin-right: 8px;
+border: px solid #333;
+}
+
+.control-panel {
+position: absolute;
+top: 10px;
+right: 10px;
+z-index: 1000;
+background: white;
+padding: 10px;
+border-radius: 8px;
+box-shadow: 0 px 10px rgba(0,0,0,0.1);
+max-width: 300px;
+}
+
+.coordinates-display {
+background: #e3ffd;
+border-left: 4px solid #196f3;
+padding: 10px;
+margin-top: 10px;
+border-radius: 4px;
+font-family: monospace;
+font-size: 0.9rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+<div class="row">
+<div class="col-1">
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<h><i class="bi bi-geo-alt"></i> Geolocalización GPS - Sistema Cámaras UFRO</h>
+<p class="text-muted">Visualización interactiva de equipos por ubicación geográfica</p>
+</div>
+<div class="d-flex gap-">
+<button class="btn btn-outline-primary" onclick="centrarMapa()">
+<i class="bi bi-crosshair"></i> Centrar Mapa
+</button>
+<button class="btn btn-outline-success" onclick="mostrarTodosMarkers()">
+<i class="bi bi-eye"></i> Ver Todos
+</button>
+</div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+{{ message }}
+<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<-- Estadísticas rápidas -->
+<div class="row mb-4">
+<div class="col-md-3">
+<div class="stats-card">
+<div class="d-flex justify-content-between align-items-center">
+<div>
+<h6 class="mb-0">Ubicaciones GPS</h6>
+<h3 class="mb-0" id="total-ubicaciones">-</h3>
+</div>
+<i class="bi bi-geo-alt-fill display-6"></i>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="stats-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+<div class="d-flex justify-content-between align-items-center">
+<div>
+<h6 class="mb-0">Total Cámaras</h6>
+<h3 class="mb-0" id="total-camaras">-</h3>
+</div>
+<i class="bi bi-camera-video-fill display-6"></i>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="stats-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba 100%);">
+<div class="d-flex justify-content-between align-items-center">
+<div>
+<h6 class="mb-0">Total Switches</h6>
+<h3 class="mb-0" id="total-switches">-</h3>
+</div>
+<i class="bi bi-hdd-network-fill display-6"></i>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="stats-card" style="background: linear-gradient(135deg, #ffecd 0%, #fcb69f 100%); color: #333;">
+<div class="d-flex justify-content-between align-items-center">
+<div>
+<h6 class="mb-0">Total UPS</h6>
+<h3 class="mb-0" id="total-ups">-</h3>
+</div>
+<i class="bi bi-battery-charging display-6"></i>
+</div>
+</div>
+</div>
+</div>
+
+<-- Filtros -->
+<div class="filtros-container">
+<div class="row align-items-center">
+<div class="col-md-3">
+<label for="filtro-campus" class="form-label">
+<i class="bi bi-building"></i> Filtrar por Campus
+</label>
+<select id="filtro-campus" class="form-select" onchange="aplicarFiltros()">
+<option value="">Todos los Campus</option>
+{% for campus in campus_list %}
+<option value="{{ campus }}">{{ campus }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="col-md-3">
+<label for="filtro-edificio" class="form-label">
+<i class="bi bi-house"></i> Filtrar por Edificio
+</label>
+<select id="filtro-edificio" class="form-select" onchange="aplicarFiltros()">
+<option value="">Todos los Edificios</option>
+{% for edificio in edificios_list %}
+<option value="{{ edificio }}">{{ edificio }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="col-md-3">
+<label for="filtro-tipo" class="form-label">
+<i class="bi bi-filter"></i> Filtrar por Tipo
+</label>
+<select id="filtro-tipo" class="form-select" onchange="aplicarFiltros()">
+<option value="">Todos los Tipos</option>
+<option value="camaras">Con Cámaras</option>
+<option value="switches">Con Switches</option>
+<option value="ups">Con UPS</option>
+</select>
+</div>
+<div class="col-md-3">
+<label class="form-label">Acciones</label>
+<div class="d-flex gap-">
+<button class="btn btn-outline-warning btn-sm" onclick="limpiarFiltros()">
+<i class="bi bi-x-circle"></i> Limpiar
+</button>
+<button class="btn btn-outline-info btn-sm" onclick="exportarDatos()">
+<i class="bi bi-download"></i> Exportar
+</button>
+</div>
+</div>
+</div>
+</div>
+
+<-- Mapa principal -->
+<div class="card">
+<div class="card-header">
+<div class="d-flex justify-content-between align-items-center">
+<h5 class="card-title mb-0">
+<i class="bi bi-map"></i> Mapa Interactivo de Equipos
+</h5>
+<div class="d-flex align-items-center gap-3">
+<span class="badge bg-info" id="markers-visible">0 ubicaciones visibles</span>
+<div class="form-check form-switch">
+<input class="form-check-input" type="checkbox" id="modo-satelite" onchange="cambiarTipoMapa()">
+<label class="form-check-label" for="modo-satelite">Vista Satélite</label>
+</div>
+</div>
+</div>
+</div>
+<div class="card-body p-0 position-relative">
+<-- Panel de control flotante -->
+<div class="control-panel">
+<h6><i class="bi bi-info-circle"></i> Información</h6>
+<p class="mb- small">Haz clic en cualquier marcador para ver detalles de equipos en esa ubicación.</p>
+
+<-- Leyenda -->
+<div class="legend">
+<h6 class="mb-">Leyenda</h6>
+<div class="legend-item">
+<div class="legend-color" style="background-color: #8a745;"></div>
+<span class="small">Múltiples equipos (5+)</span>
+</div>
+<div class="legend-item">
+<div class="legend-color" style="background-color: #ffc107;"></div>
+<span class="small">Pocos equipos (-4)</span>
+</div>
+<div class="legend-item">
+<div class="legend-color" style="background-color: #dc3545;"></div>
+<span class="small">Un equipo (1)</span>
+</div>
+<div class="legend-item">
+<div class="legend-color" style="background-color: #6c757d;"></div>
+<span class="small">Sin equipos</span>
+</div>
+</div>
+
+<-- Coordenadas del cursor -->
+<div class="coordinates-display" id="coordenadas-cursor" style="display: none;">
+<strong>Coordenadas:</strong><br>
+Lat: <span id="cursor-lat">-</span><br>
+Lng: <span id="cursor-lng">-</span>
+</div>
+</div>
+
+<-- Contenedor del mapa -->
+<div id="mapa" class="mapa-container"></div>
+</div>
+</div>
+
+<-- Información adicional -->
+<div class="row mt-4">
+<div class="col-md-8">
+<div class="card">
+<div class="card-header">
+<h6 class="mb-0"><i class="bi bi-list-ul"></i> Ubicaciones Detalladas</h6>
+</div>
+<div class="card-body">
+<div class="table-responsive">
+<table class="table table-sm table-striped">
+<thead>
+<tr>
+<th>Campus</th>
+<th>Edificio</th>
+<th>Piso</th>
+<th>Cámaras</th>
+<th>Switches</th>
+<th>UPS</th>
+<th>Coordenadas</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody id="tabla-ubicaciones">
+<-- Se llena dinámicamente con JavaScript -->
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="col-md-4">
+<div class="card">
+<div class="card-header">
+<h6 class="mb-0"><i class="bi bi-gear"></i> Configuración del Mapa</h6>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<label class="form-label">Zoom del Mapa</label>
+<input type="range" class="form-range" id="zoom-control" min="5" max="18" value="1" onchange="cambiarZoom(this.value)">
+<div class="d-flex justify-content-between">
+<small>Alejado</small>
+<small>Cercano</small>
+</div>
+</div>
+
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" id="mostrar-coordenadas" onchange="toggleCoordenadas()" checked>
+<label class="form-check-label" for="mostrar-coordenadas">
+Mostrar coordenadas del cursor
+</label>
+</div>
+
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" id="agrupar-markers" onchange="toggleAgrupacion()" checked>
+<label class="form-check-label" for="agrupar-markers">
+Agrupar marcadores cercanos
+</label>
+</div>
+
+<button class="btn btn-outline-primary w-100" onclick="irUbicacionActual()">
+<i class="bi bi-geo-alt"></i> Mi Ubicación Actual
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+
+<script>
+// Variables globales
+let mapa;
+let markersData = {{ markers|safe }};
+let allMarkers = [];
+let markerClusterGroup;
+let currentTileLayer;
+
+// Configuración del mapa
+const UFRO_CENTER = [-38.7364, -7.5986]; // Coordenadas aproximadas de UFRO Temuco
+const DEFAULT_ZOOM = 1;
+
+// Inicializar mapa cuando la página carga
+document.addEventListener('DOMContentLoaded', function() {
+inicializarMapa();
+cargarDatos();
+actualizarEstadisticas();
+llenarTablaUbicaciones();
+});
+
+function inicializarMapa() {
+// Crear el mapa
+mapa = L.map('mapa').setView(UFRO_CENTER, DEFAULT_ZOOM);
+
+// Capa base - OpenStreetMap
+currentTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+attribution: ' OpenStreetMap contributors',
+maxZoom: 18
+}).addTo(mapa);
+
+// Inicializar cluster de marcadores
+markerClusterGroup = L.markerClusterGroup({
+chunkedLoading: true,
+spiderfyOnMaxZoom: true,
+showCoverageOnHover: false,
+zoomToBoundsOnClick: true,
+maxClusterRadius: 50
+});
+
+mapa.addLayer(markerClusterGroup);
+
+// Event listeners del mapa
+mapa.on('mousemove', function(e) {
+if (document.getElementById('mostrar-coordenadas').checked) {
+document.getElementById('cursor-lat').textContent = e.latlng.lat.toFixed(6);
+document.getElementById('cursor-lng').textContent = e.latlng.lng.toFixed(6);
+document.getElementById('coordenadas-cursor').style.display = 'block';
+}
+});
+
+mapa.on('zoomend', function() {
+document.getElementById('zoom-control').value = mapa.getZoom();
+});
+}
+
+function cargarDatos() {
+// Limpiar marcadores existentes
+markerClusterGroup.clearLayers();
+allMarkers = [];
+
+markersData.forEach(function(ubicacion) {
+const marker = crearMarker(ubicacion);
+allMarkers.push({
+marker: marker,
+data: ubicacion
+});
+markerClusterGroup.addLayer(marker);
+});
+
+// Centrar mapa en todos los marcadores
+if (allMarkers.length > 0) {
+const group = new L.featureGroup(allMarkers.map(m => m.marker));
+mapa.fitBounds(group.getBounds().pad(0.1));
+}
+}
+
+function crearMarker(ubicacion) {
+// Determinar color del marcador basado en cantidad de equipos
+let color = '#6c757d'; // Sin equipos
+if (ubicacion.total_equipos >= 5) color = '#8a745'; // Verde - muchos equipos
+else if (ubicacion.total_equipos >= ) color = '#ffc107'; // Amarillo - pocos equipos
+else if (ubicacion.total_equipos >= 1) color = '#dc3545'; // Rojo - un equipo
+
+// Crear icono personalizado
+const iconHtml = `
+<div style="
+background-color: ${color};
+border: 3px solid white;
+border-radius: 50%;
+width: 5px;
+height: 5px;
+display: flex;
+align-items: center;
+justify-content: center;
+color: white;
+font-weight: bold;
+font-size: 1px;
+box-shadow: 0 px 5px rgba(0,0,0,0.3);
+">${ubicacion.total_equipos}</div>
+`;
+
+const customIcon = L.divIcon({
+html: iconHtml,
+className: 'custom-marker',
+iconSize: [5, 5],
+iconAnchor: [1, 1],
+popupAnchor: [0, -1]
+});
+
+// Crear marcador
+const marker = L.marker([ubicacion.lat, ubicacion.lng], {icon: customIcon});
+
+// Crear popup con información detallada
+const popupContent = `
+<div class="marker-popup">
+<h6><i class="bi bi-geo-alt-fill"></i> ${ubicacion.campus} - ${ubicacion.edificio}</h6>
+<p class="mb- text-muted">Piso: ${ubicacion.piso}</p>
+${ubicacion.descripcion ? `<p class="mb-"><i class="bi bi-info-circle"></i> ${ubicacion.descripcion}</p>` : ''}
+
+<div class="row text-center mb-">
+<div class="col-4">
+<div class="border rounded p-">
+<i class="bi bi-camera-video text-primary"></i><br>
+<strong>${ubicacion.total_camaras}</strong><br>
+<small>Cámaras</small>
+</div>
+</div>
+<div class="col-4">
+<div class="border rounded p-">
+<i class="bi bi-hdd-network text-info"></i><br>
+<strong>${ubicacion.total_switches}</strong><br>
+<small>Switches</small>
+</div>
+</div>
+<div class="col-4">
+<div class="border rounded p-">
+<i class="bi bi-battery-charging text-warning"></i><br>
+<strong>${ubicacion.total_ups}</strong><br>
+<small>UPS</small>
+</div>
+</div>
+</div>
+
+<div class="text-center">
+<small class="text-muted">
+${ubicacion.lat.toFixed(6)}, ${ubicacion.lng.toFixed(6)}
+</small>
+</div>
+
+<div class="d-flex gap-1 mt-">
+<button class="btn btn-sm btn-outline-primary" onclick="centrarEnMarcador(${ubicacion.lat}, ${ubicacion.lng})">
+<i class="bi bi-crosshair"></i> Centrar
+</button>
+<button class="btn btn-sm btn-outline-success" onclick="verDetallesUbicacion(${ubicacion.id})">
+<i class="bi bi-eye"></i> Detalles
+</button>
+</div>
+</div>
+`;
+
+marker.bindPopup(popupContent, {
+maxWidth: 300,
+className: 'custom-popup'
+});
+
+return marker;
+}
+
+function aplicarFiltros() {
+const campusFiltro = document.getElementById('filtro-campus').value;
+const edificioFiltro = document.getElementById('filtro-edificio').value;
+const tipoFiltro = document.getElementById('filtro-tipo').value;
+
+markerClusterGroup.clearLayers();
+let marcadoresVisibles = 0;
+
+allMarkers.forEach(function(markerObj) {
+const data = markerObj.data;
+let mostrar = true;
+
+// Filtro por campus
+if (campusFiltro && data.campus == campusFiltro) {
+mostrar = false;
+}
+
+// Filtro por edificio
+if (edificioFiltro && data.edificio == edificioFiltro) {
+mostrar = false;
+}
+
+// Filtro por tipo de equipo
+if (tipoFiltro) {
+switch(tipoFiltro) {
+case 'camaras':
+if (data.total_camaras === 0) mostrar = false;
+break;
+case 'switches':
+if (data.total_switches === 0) mostrar = false;
+break;
+case 'ups':
+if (data.total_ups === 0) mostrar = false;
+break;
+}
+}
+
+if (mostrar) {
+markerClusterGroup.addLayer(markerObj.marker);
+marcadoresVisibles++;
+}
+});
+
+document.getElementById('markers-visible').textContent = `${marcadoresVisibles} ubicaciones visibles`;
+}
+
+function limpiarFiltros() {
+document.getElementById('filtro-campus').value = '';
+document.getElementById('filtro-edificio').value = '';
+document.getElementById('filtro-tipo').value = '';
+aplicarFiltros();
+}
+
+function actualizarEstadisticas() {
+let totalUbicaciones = markersData.length;
+let totalCamaras = markersData.reduce((sum, loc) => sum + loc.total_camaras, 0);
+let totalSwitches = markersData.reduce((sum, loc) => sum + loc.total_switches, 0);
+let totalUps = markersData.reduce((sum, loc) => sum + loc.total_ups, 0);
+
+document.getElementById('total-ubicaciones').textContent = totalUbicaciones;
+document.getElementById('total-camaras').textContent = totalCamaras;
+document.getElementById('total-switches').textContent = totalSwitches;
+document.getElementById('total-ups').textContent = totalUps;
+}
+
+function llenarTablaUbicaciones() {
+const tbody = document.getElementById('tabla-ubicaciones');
+tbody.innerHTML = '';
+
+markersData.forEach(function(ubicacion) {
+const row = document.createElement('tr');
+row.innerHTML = `
+<td>${ubicacion.campus}</td>
+<td>${ubicacion.edificio}</td>
+<td>${ubicacion.piso}</td>
+<td><span class="badge bg-primary">${ubicacion.total_camaras}</span></td>
+<td><span class="badge bg-info">${ubicacion.total_switches}</span></td>
+<td><span class="badge bg-warning text-dark">${ubicacion.total_ups}</span></td>
+<td class="small">${ubicacion.lat.toFixed(4)}, ${ubicacion.lng.toFixed(4)}</td>
+<td>
+<button class="btn btn-sm btn-outline-primary" onclick="centrarEnMarcador(${ubicacion.lat}, ${ubicacion.lng})">
+<i class="bi bi-geo-alt"></i>
+</button>
+</td>
+`;
+tbody.appendChild(row);
+});
+}
+
+// Funciones de control del mapa
+function centrarMapa() {
+if (allMarkers.length > 0) {
+const group = new L.featureGroup(allMarkers.map(m => m.marker));
+mapa.fitBounds(group.getBounds().pad(0.1));
+} else {
+mapa.setView(UFRO_CENTER, DEFAULT_ZOOM);
+}
+}
+
+function mostrarTodosMarkers() {
+limpiarFiltros();
+centrarMapa();
+}
+
+function centrarEnMarcador(lat, lng) {
+mapa.setView([lat, lng], 16);
+}
+
+function cambiarZoom(valor) {
+mapa.setZoom(parseInt(valor));
+}
+
+function cambiarTipoMapa() {
+const satelite = document.getElementById('modo-satelite').checked;
+
+mapa.removeLayer(currentTileLayer);
+
+if (satelite) {
+currentTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+attribution: 'Tiles Esri',
+maxZoom: 18
+});
+} else {
+currentTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+attribution: ' OpenStreetMap contributors',
+maxZoom: 18
+});
+}
+
+currentTileLayer.addTo(mapa);
+}
+
+function toggleCoordenadas() {
+const mostrar = document.getElementById('mostrar-coordenadas').checked;
+if (mostrar) {
+document.getElementById('coordenadas-cursor').style.display = 'none';
+}
+}
+
+function toggleAgrupacion() {
+const agrupar = document.getElementById('agrupar-markers').checked;
+
+if (agrupar) {
+mapa.addLayer(markerClusterGroup);
+} else {
+mapa.removeLayer(markerClusterGroup);
+allMarkers.forEach(markerObj => {
+markerObj.marker.addTo(mapa);
+});
+}
+}
+
+function irUbicacionActual() {
+if (navigator.geolocation) {
+navigator.geolocation.getCurrentPosition(function(position) {
+const lat = position.coords.latitude;
+const lng = position.coords.longitude;
+mapa.setView([lat, lng], 16);
+
+// Agregar marcador temporal de ubicación actual
+L.marker([lat, lng])
+.addTo(mapa)
+.bindPopup('<strong>Tu ubicación actual</strong>')
+.openPopup();
+}, function(error) {
+alert('No se pudo obtener tu ubicación: ' + error.message);
+});
+} else {
+alert('La geolocalización no está soportada en este navegador.');
+}
+}
+
+function verDetallesUbicacion(ubicacionId) {
+// Aquí podrías redirigir a una página de detalles
+// Por ahora, mostrar información en consola
+console.log('Ver detalles de ubicación ID:', ubicacionId);
+alert('Funcionalidad de detalles en desarrollo');
+}
+
+function exportarDatos() {
+// Crear CSV con datos de ubicaciones
+let csvContent = "Campus,Edificio,Piso,Latitud,Longitud,Cámaras,Switches,UPS,Total Equipos\n";
+
+markersData.forEach(function(ubicacion) {
+csvContent += `"${ubicacion.campus}","${ubicacion.edificio}","${ubicacion.piso}",${ubicacion.lat},${ubicacion.lng},${ubicacion.total_camaras},${ubicacion.total_switches},${ubicacion.total_ups},${ubicacion.total_equipos}\n`;
+});
+
+// Descargar archivo
+const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+const link = document.createElement("a");
+const url = URL.createObjectURL(blob);
+link.setAttribute("href", url);
+link.setAttribute("download", "ubicaciones_gps_ufro.csv");
+link.style.visibility = 'hidden';
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
+}
+</script>
+{% endblock %}

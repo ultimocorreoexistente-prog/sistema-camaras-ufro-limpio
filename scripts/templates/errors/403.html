@@ -1,0 +1,528 @@
+{% extends 'base.html' %}
+
+{% block title %}Acceso Denegado (403) - Sistema de Gestión de Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="container">
+<div class="row justify-content-center align-items-center min-vh-100">
+<div class="col-md-6 text-center">
+<!-- Icono de acceso denegado -->
+<div class="mb-4">
+<i class="bi bi-shield-lock-fill text-danger" style="font-size: 8rem;"></i>
+</div>
+
+<!-- Título del error -->
+<h1 class="display-1 fw-bold text-danger mb-3">403</h1>
+
+<!-- Mensaje principal -->
+<h3 class="mb-3">Acceso Denegado</h3>
+
+<!-- Descripción del error -->
+<p class="lead text-muted mb-4">
+No tienes permisos suficientes para acceder a este recurso.
+Tu nivel de acceso no permite realizar esta acción o visitar esta página.
+</p>
+
+<!-- Información del usuario y permisos -->
+<div class="alert alert-info" role="alert">
+<h5 class="alert-heading">
+<i class="bi bi-person-badge me-2"></i>Información de Acceso
+</h5>
+<div class="row text-start">
+<div class="col-md-6">
+<p class="mb-2"><strong>Usuario:</strong> {{ current_user.nombre if current_user else "No identificado" }}</p>
+<p class="mb-2"><strong>Email:</strong> {{ current_user.email if current_user else "N/A" }}</p>
+<p class="mb-0"><strong>Estado:</strong>
+{% if current_user and current_user.is_active %}
+<span class="badge bg-success">Activo</span>
+{% else %}
+<span class="badge bg-danger">Inactivo</span>
+{% endif %}
+</p>
+</div>
+<div class="col-md-6">
+<p class="mb-2"><strong>Rol:</strong>
+<span class="badge bg-secondary">
+{{ current_user.rol if current_user else "Invitado" }}
+</span>
+</p>
+<p class="mb-2"><strong>Departamento:</strong> {{ current_user.departamento if current_user else "No especificado" }}</p>
+<p class="mb-0"><strong>Último acceso:</strong> {{ "Hoy" if current_user else "No disponible" }}</p>
+</div>
+</div>
+</div>
+
+<!-- Permisos requeridos vs actuales -->
+<div class="mb-4">
+<div class="row g-3">
+<div class="col-md-6">
+<div class="card content-card border-success">
+<div class="card-header bg-success bg-opacity-10">
+<h6 class="card-title mb-0 text-success">
+<i class="bi bi-check-circle me-2"></i>Tus Permisos Actuales
+</h6>
+</div>
+<div class="card-body text-start">
+<ul class="list-unstyled small mb-0">
+{% if current_user and current_user.rol %}
+<li><i class="bi bi-check text-success me-2"></i>Usuario del sistema</li>
+{% if current_user.rol in ['admin', 'super_admin'] %}
+<li><i class="bi bi-check text-success me-2"></i>Acceso administrativo</li>
+{% endif %}
+{% if current_user.rol == 'super_admin'] %}
+<li><i class="bi bi-check text-success me-2"></i>Control total del sistema</li>
+{% endif %}
+{% else %}
+<li><i class="bi bi-dash text-muted me-2"></i>Acceso básico</li>
+{% endif %}
+</ul>
+</div>
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="card content-card border-danger">
+<div class="card-header bg-danger bg-opacity-10">
+<h6 class="card-title mb-0 text-danger">
+<i class="bi bi-exclamation-triangle me-2"></i>Permisos Requeridos
+</h6>
+</div>
+<div class="card-body text-start">
+<ul class="list-unstyled small mb-0">
+<li><i class="bi bi-x-circle text-danger me-2"></i>Permisos administrativos</li>
+<li><i class="bi bi-x-circle text-danger me-2"></i>Acceso de administrador requerido</li>
+<li><i class="bi bi-question-circle text-muted me-2"></i>Consultar con administrador del sistema</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Acciones recomendadas -->
+<div class="mb-5">
+<h5 class="mb-3">¿Qué puedes hacer?</h5>
+<div class="row g-3">
+<div class="col-md-4">
+<div class="card content-card h-100 border-primary">
+<div class="card-body text-center">
+<i class="bi bi-house fs-1 text-primary mb-3"></i>
+<h6 class="card-title">Ir al Dashboard</h6>
+<p class="card-text small">Volver a tu área de trabajo</p>
+<a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-sm">
+<i class="bi bi-house me-1"></i>Dashboard
+</a>
+</div>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="card content-card h-100 border-info">
+<div class="card-body text-center">
+<i class="bi bi-person-check fs-1 text-info mb-3"></i>
+<h6 class="card-title">Solicitar Acceso</h6>
+<p class="card-text small">Contactar al administrador</p>
+<button class="btn btn-info btn-sm" onclick="solicitarAcceso()">
+<i class="bi bi-plus-circle me-1"></i>Solicitar
+</button>
+</div>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="card content-card h-100 border-warning">
+<div class="card-body text-center">
+<i class="bi bi-question-circle fs-1 text-warning mb-3"></i>
+<h6 class="card-title">Ver Ayuda</h6>
+<p class="card-text small">Entender los permisos</p>
+<button class="btn btn-warning btn-sm" onclick="mostrarAyuda()">
+<i class="bi bi-question-circle me-1"></i>Ayuda
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Roles y permisos del sistema -->
+<div class="mb-4">
+<div class="card content-card">
+<div class="card-header bg-transparent">
+<h5 class="card-title mb-0">
+<i class="bi bi-people me-2"></i>Roles del Sistema
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<h6 class="text-muted mb-3">Descripción de Roles</h6>
+<div class="small">
+{% if current_user and current_user.rol == 'super_admin' %}
+<div class="mb-2">
+<span class="badge bg-danger">SUPER ADMIN</span>
+<span class="text-muted ms-2">Control total del sistema</span>
+</div>
+{% endif %}
+
+{% if current_user and (current_user.rol == 'admin' or current_user.rol == 'super_admin') %}
+<div class="mb-2">
+<span class="badge bg-warning">ADMINISTRADOR</span>
+<span class="text-muted ms-2">Gestión completa del sistema</span>
+</div>
+{% endif %}
+
+<div class="mb-2">
+<span class="badge bg-info">TÉCNICO</span>
+<span class="text-muted ms-2">Gestión de cámaras y equipos</span>
+</div>
+
+<div class="mb-2">
+<span class="badge bg-success">USUARIO</span>
+<span class="text-muted ms-2">Consulta y monitoreo básico</span>
+</div>
+</div>
+</div>
+
+<div class="col-md-6">
+<h6 class="text-muted mb-3">Permisos por Acción</h6>
+<div class="small">
+<div class="mb-2">
+<strong>Cámaras:</strong>
+<span class="text-muted">
+{% if current_user and (current_user.rol == 'admin' or current_user.rol == 'super_admin') %}
+Completo
+{% elif current_user and current_user.rol == 'tecnico'] %}
+Gestión técnica
+{% else %}
+Solo lectura
+{% endif %}
+</span>
+</div>
+<div class="mb-2">
+<strong>Equipos:</strong>
+<span class="text-muted">
+{% if current_user and (current_user.rol == 'admin' or current_user.rol == 'super_admin' or current_user.rol == 'tecnico') %}
+Completo
+{% else %}
+Consulta
+{% endif %}
+</span>
+</div>
+<div class="mb-2">
+<strong>Informes:</strong>
+<span class="text-muted">
+{% if current_user and (current_user.rol in ['admin', 'super_admin', 'tecnico']) %}
+Completo
+{% else %}
+Básico
+{% endif %}
+</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Información de contacto -->
+<div class="row g-3">
+<div class="col-md-6">
+<div class="card content-card h-100">
+<div class="card-body">
+<h6 class="text-primary mb-3">
+<i class="bi bi-envelope me-2"></i>Solicitar Permisos
+</h6>
+<p class="small mb-3">
+Si necesitas acceso adicional, contacta a tu supervisor directo o al administrador del sistema.
+</p>
+<ul class="list-unstyled small">
+<li class="mb-2">
+<i class="bi bi-person me-2"></i>
+<span>Administrador: admin.sistema@ufrontera.cl</span>
+</li>
+<li class="mb-2">
+<i class="bi bi-building me-2"></i>
+<span>Departamento de TI: soporte.seguridad@ufrontera.cl</span>
+</li>
+<li class="mb-2">
+<i class="bi bi-telephone me-2"></i>
+<span>+56 45 2 205800</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="card content-card h-100">
+<div class="card-body">
+<h6 class="text-success mb-3">
+<i class="bi bi-shield-check me-2"></i>Seguridad
+</h6>
+<p class="small mb-3">
+Este control de acceso protege la infraestructura crítica del sistema de cámaras.
+</p>
+<ul class="list-unstyled small">
+<li class="mb-2">
+<i class="bi bi-lock me-2"></i>
+<span>Todos los accesos son auditados</span>
+</li>
+<li class="mb-2">
+<i class="bi bi-clock me-2"></i>
+<span>Historial de intentos de acceso</span>
+</li>
+<li class="mb-2">
+<i class="bi bi-eye me-2"></i>
+<span>Monitoreo 24/7 de seguridad</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Código de error y detalles -->
+<div class="mt-4 p-3 bg-light rounded">
+<h6 class="text-muted mb-2">Detalles del Error 403</h6>
+<p class="small text-muted mb-2">
+<strong>Código:</strong> 403 Forbidden<br>
+<strong>Recurso:</strong> {{ request.path if request else "Página solicitada" }}<br>
+<strong>Timestamp:</strong> {{ "Ahora" if not timestamp else timestamp }}<br>
+<strong>Session ID:</strong> {{ "Disponible" if session else "No disponible" }}
+</p>
+<p class="small text-muted mb-0">
+Este error indica que el servidor entendió la solicitud pero se niega a autorizarla.
+Para más información sobre tu nivel de acceso, consulta con el administrador del sistema.
+</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Modal de solicitud de acceso -->
+<div class="modal fade" id="accessModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title">
+<i class="bi bi-shield-plus me-2"></i>Solicitar Acceso
+</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<form id="accessRequestForm">
+<div class="mb-3">
+<label class="form-label">Tipo de Acceso Solicitado</label>
+<select class="form-select" name="access_type" required>
+<option value="">Seleccionar tipo</option>
+<option value="admin">Acceso de Administrador</option>
+<option value="tecnico">Gestión Técnica</option>
+<option value="reportes">Informes Avanzados</option>
+<option value="equipos">Gestión de Equipos</option>
+<option value="otro">Otro (especificar)</option>
+</select>
+</div>
+
+<div class="mb-3">
+<label class="form-label">Justificación</label>
+<textarea class="form-control"
+name="justification"
+rows="3"
+placeholder="Describe por qué necesitas este acceso..."
+required></textarea>
+</div>
+
+<div class="mb-3">
+<label class="form-label">Supervisor/Responsable</label>
+<input type="email"
+class="form-control"
+name="supervisor_email"
+placeholder="email@ufrontera.cl"
+required>
+<div class="form-text">Email de tu supervisor directo</div>
+</div>
+
+<div class="form-check">
+<input class="form-check-input"
+type="checkbox"
+name="acknowledge"
+id="acknowledgeCheck"
+required>
+<label class="form-check-label" for="acknowledgeCheck">
+Acepto los términos de uso y confirmo que esta solicitud es legítima
+</label>
+</div>
+</form>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button type="button" class="btn btn-primary" onclick="submitAccessRequest()">
+<i class="bi bi-send me-1"></i>Enviar Solicitud
+</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Modal de ayuda -->
+<div class="modal fade" id="helpModal" tabindex="-1">
+<div class="modal-dialog modal-lg">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title">
+<i class="bi bi-question-circle me-2"></i>Ayuda sobre Permisos
+</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<h6>¿Qué significa "Acceso Denegado"?</h6>
+<p>Este mensaje aparece cuando intentas acceder a una función o página para la cual no tienes los permisos necesarios.</p>
+
+<h6>Tipos de roles en el sistema:</h6>
+<ul>
+<li><strong>Usuario:</strong> Puede ver el estado de las cámaras y reportes básicos</li>
+<li><strong>Técnico:</strong> Puede gestionar cámaras, equipos y realizar mantenimiento</li>
+<li><strong>Administrador:</strong> Puede gestionar todo el sistema y usuarios</li>
+<li><strong>Super Administrador:</strong> Control total del sistema</li>
+</ul>
+
+<h6>¿Cómo obtener más permisos?</h6>
+<p>Contacta a tu supervisor directo o al administrador del sistema para solicitar un cambio en tu nivel de acceso.</p>
+</div>
+</div>
+</div>
+</div>
+
+<style>
+.min-vh-100 {
+min-height: 100vh;
+}
+
+.card {
+transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+transform: translateY(-5px);
+}
+
+.btn:hover {
+transform: translateY(-1px);
+}
+
+code {
+background-color: #f8f9fa;
+padding: 2px 4px;
+border-radius: 3px;
+font-size: 0.875em;
+}
+</style>
+
+<script>
+// Función para solicitar acceso
+function solicitarAcceso() {
+new bootstrap.Modal(document.getElementById('accessModal')).show();
+}
+
+// Función para mostrar ayuda
+function mostrarAyuda() {
+new bootstrap.Modal(document.getElementById('helpModal')).show();
+}
+
+// Función para enviar solicitud de acceso
+function submitAccessRequest() {
+const form = document.getElementById('accessRequestForm');
+const formData = new FormData(form);
+
+// Validar formulario
+if (!form.checkValidity()) {
+form.reportValidity();
+return;
+}
+
+const button = event.target;
+const originalText = button.innerHTML;
+
+// Mostrar loading
+button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enviando...';
+button.disabled = true;
+
+// Crear datos de la solicitud
+const requestData = {
+user_id: '{{ current_user.id if current_user else "unknown" }}',
+access_type: formData.get('access_type'),
+justification: formData.get('justification'),
+supervisor_email: formData.get('supervisor_email'),
+timestamp: new Date().toISOString(),
+requested_resource: '{{ request.path if request else "N/A" }}'
+};
+
+// Simular envío de solicitud
+setTimeout(() => {
+console.log('Enviando solicitud de acceso:', requestData);
+
+// Aquí se enviaría al servidor
+// fetch('/api/access-request/', {
+// method: 'POST',
+// headers: { 'Content-Type': 'application/json' },
+// body: JSON.stringify(requestData)
+// });
+
+// Cerrar modal
+bootstrap.Modal.getInstance(document.getElementById('accessModal')).hide();
+
+// Mostrar confirmación
+alert('Solicitud de acceso enviada exitosamente. Recibirás una respuesta por email.');
+
+// Restaurar botón
+button.innerHTML = originalText;
+button.disabled = false;
+
+// Limpiar formulario
+form.reset();
+}, 1000);
+}
+
+// Auto-redireccionar después de un tiempo si es una sesión caducada
+setTimeout(() => {
+if (confirm('¿Deseas volver al dashboard para verificar tu estado?')) {
+window.location.href = "{{ url_for('dashboard') }}";
+}
+}, 60000); // 1 minuto
+
+// Tracking para analytics
+if (typeof gtag != 'undefined') {
+gtag('event', 'exception', {
+'description': '403 Access Denied',
+'fatal': false,
+'custom_map': {
+'user_role': '{{ current_user.rol if current_user else "unknown" }}',
+'requested_resource': '{{ request.path if request else "unknown" }}'
+}
+});
+}
+
+// Log del intento de acceso para auditoría
+const accessAttempt = {
+timestamp: new Date().toISOString(),
+user_id: '{{ current_user.id if current_user else "unknown" }}',
+user_role: '{{ current_user.rol if current_user else "unknown" }}',
+requested_resource: '{{ request.path if request else "unknown" }}',
+user_agent: navigator.userAgent,
+ip_address: 'unknown'
+};
+
+console.log('Registro de intento de acceso denegado:', accessAttempt);
+
+// Enviar log de acceso (simulado)
+fetch('/api/access-log/', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(accessAttempt)
+}).catch(error => {
+console.log('Error enviando log de acceso (esperado en este entorno)');
+});
+</script>
+
+{% endblock %}

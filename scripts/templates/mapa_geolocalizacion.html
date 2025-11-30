@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}Mapa de Geolocalización - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Mapa de Geolocalización de Equipos</h1>
+    <div class="card">
+        <div class="card-body">
+            <div id="map" style="height: 700px;"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    // Inicializar mapa Leaflet
+    const map = L.map('map').setView([-38.7359, -72.5904], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Marcadores de cámaras
+    {% for camara in camaras %}
+    {% if camara.latitud and camara.longitud %}
+    L.marker([{{ camara.latitud }}, {{ camara.longitud }}])
+        .addTo(map)
+        .bindPopup('<strong>{{ camara.codigo }}</strong><br>{{ camara.nombre }}<br>Estado: {{ camara.estado }}');
+    {% endif %}
+    {% endfor %}
+    
+    // Marcadores de gabinetes
+    {% for gabinete in gabinetes %}
+    {% if gabinete.latitud and gabinete.longitud %}
+    L.marker([{{ gabinete.latitud }}, {{ gabinete.longitud }}], {
+        icon: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            iconSize: [25, 41]
+        })
+    }).addTo(map).bindPopup('<strong>Gabinete {{ gabinete.codigo }}</strong><br>{{ gabinete.nombre }}');
+    {% endif %}
+    {% endfor %}
+</script>
+{% endblock %}

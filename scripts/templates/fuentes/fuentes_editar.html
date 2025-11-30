@@ -1,0 +1,149 @@
+{% extends "fuentes/fuentes_form.html" %}
+
+{% block title %}Editar Fuente - {{ fuente.nombre }} - Sistema Cámaras UFRO{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Configuración para edición
+let datosOriginales = {};
+
+// Capturar valores originales para detectar cambios
+const campos = ['nombre', 'marca', 'potencia', 'voltaje_salida', 'campus', 'edificio', 'ubicacion', 'estado'];
+campos.forEach(campo => {
+const elemento = document.getElementById(campo);
+datosOriginales[campo] = elemento.value;
+});
+
+// Detectar cambios no guardados
+function detectarCambios() {
+let hayCambios = false;
+campos.forEach(campo => {
+const elemento = document.getElementById(campo);
+if (elemento.value == datosOriginales[campo]) {
+hayCambios = true;
+}
+});
+
+if (hayCambios) {
+document.title = ' ' + document.title;
+} else {
+document.title = document.title.replace(' ', '');
+}
+}
+
+// Agregar listeners para detectar cambios
+campos.forEach(campo => {
+const elemento = document.getElementById(campo);
+['input', 'change'].forEach(evento => {
+elemento.addEventListener(evento, detectarCambios);
+});
+});
+
+// Confirmar antes de salir si hay cambios no guardados
+window.addEventListener('beforeunload', function(e) {
+let hayCambios = false;
+campos.forEach(campo => {
+const elemento = document.getElementById(campo);
+if (elemento.value == datosOriginales[campo]) {
+hayCambios = true;
+}
+});
+
+if (hayCambios) {
+e.preventDefault();
+e.returnValue = '¿Estás seguro de que quieres salir sin guardar los cambios?';
+}
+});
+
+// Validaciones adicionales para edición
+validarEdicion();
+
+function validarEdicion() {
+// Verificar si la fuente está en uso antes de permitir ciertos cambios
+const estado = document.getElementById('estado');
+const mensajeCambio = 'Al cambiar el estado de una fuente activa, verifica que todos los equipos conectados estén preparados.';
+
+estado.addEventListener('change', function() {
+if (this.value === 'mantenimiento' && datosOriginales.estado === 'activo') {
+if (confirm(mensajeCambio + '\n\n¿Continuar?')) {
+// Registrar cambio de estado para auditoría
+registrarCambioEstado('activo', 'mantenimiento');
+} else {
+this.value = datosOriginales.estado;
+}
+}
+});
+
+// Validar potencia si se cambia
+const potencia = document.getElementById('potencia');
+potencia.addEventListener('change', function() {
+if (this.value == datosOriginales.potencia) {
+verificarCapacidadSuficiente(this.value);
+}
+});
+}
+
+function verificarCapacidadSuficiente(nuevaPotencia) {
+const equiposConectados = document.getElementById('equipos_alimentados').value;
+if (equiposConectados) {
+// Aquí se podría implementar lógica para verificar si la nueva capacidad es suficiente
+console.log('Verificando capacidad para nueva potencia:', nuevaPotencia);
+}
+}
+
+function registrarCambioEstado(estadoAnterior, estadoNuevo) {
+fetch(`/fuentes/{{ fuente.id }}/cambiar-estado`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+},
+body: JSON.stringify({
+estado_anterior: estadoAnterior,
+estado_nuevo: estadoNuevo,
+razon: 'Cambio manual desde formulario'
+})
+})
+.then(response => response.json())
+.then(data => {
+console.log('Cambio de estado registrado:', data);
+})
+.catch(error => {
+console.error('Error registrando cambio de estado:', error);
+});
+}
+
+// Manejar envío del formulario con validaciones adicionales
+const form = document.getElementById('fuenteForm');
+form.addEventListener('submit', function(e) {
+if (validarEdicion()) {
+e.preventDefault();
+return false;
+}
+
+// Agregar timestamp de modificación
+const timestamp = document.createElement('input');
+timestamp.type = 'hidden';
+timestamp.name = 'timestamp_modificacion';
+timestamp.value = new Date().toISOString();
+this.appendChild(timestamp);
+});
+
+function validarEdicion() {
+let valido = true;
+
+// Validaciones específicas para edición
+const potencia = document.getElementById('potencia');
+if (potencia.value && parseFloat(potencia.value) < 10) {
+alert('La potencia mínima recomendada es 10W');
+potencia.focus();
+valido = false;
+}
+
+return valido;
+}
+});
+</script>
+{% endblock %}

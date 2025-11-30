@@ -1,0 +1,554 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Cámara - {{ camara.ubicacion }} - Sistema de Gestión de Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<nav aria-label="breadcrumb">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('camaras_listar') }}">Cámaras</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('camaras_detalle', id=camara.id) }}">{{ camara.ubicacion }}</a></li>
+<li class="breadcrumb-item active">Editar</li>
+</ol>
+</nav>
+<h1><i class="bi bi-pencil"></i> Editar Cámara: {{ camara.ubicacion }}</h1>
+</div>
+<div>
+<a href="{{ url_for('camaras_detalle', id=camara.id) }}" class="btn btn-outline-primary me-">
+<i class="bi bi-eye"></i> Ver Detalle
+</a>
+<a href="{{ url_for('camaras_listar') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Volver a la Lista
+</a>
+</div>
+</div>
+
+<div class="row">
+<div class="col-lg-8">
+<form action="{{ url_for('camaras_editar', id=camara.id) }}" method="POST" id="formCamara">
+{{ form.hidden_tag() }}
+
+<-- Información Básica -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-info-circle"></i> Información Básica</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-8">
+<div class="mb-3">
+{{ form.ubicacion.label(class="form-label") }}
+{{ form.ubicacion(class="form-control", placeholder="Ej: Edificio A - Pasillo Principal - Piso ") }}
+{% if form.ubicacion.errors %}
+<div class="text-danger small mt-1">
+{{ form.ubicacion.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="mb-3">
+{{ form.estado.label(class="form-label") }}
+{{ form.estado(class="form-select") }}
+{% if form.estado.errors %}
+<div class="text-danger small mt-1">
+{{ form.estado.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.marca.label(class="form-label") }}
+{{ form.marca(class="form-select", id="marcaSelect") }}
+{% if form.marca.errors %}
+<div class="text-danger small mt-1">
+{{ form.marca.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.modelo.label(class="form-label") }}
+{{ form.modelo(class="form-control", placeholder="Ej: DS-CD14FWD-I") }}
+{% if form.modelo.errors %}
+<div class="text-danger small mt-1">
+{{ form.modelo.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.ip.label(class="form-label") }}
+{{ form.ip(class="form-control", placeholder="19.168.1.100") }}
+{% if form.ip.errors %}
+<div class="text-danger small mt-1">
+{{ form.ip.errors[0] }}
+</div>
+{% endif %}
+<div class="form-text">Dirección IP de la cámara en la red local</div>
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.responsable.label(class="form-label") }}
+{{ form.responsable(class="form-control", placeholder="Nombre del responsable técnico") }}
+{% if form.responsable.errors %}
+<div class="text-danger small mt-1">
+{{ form.responsable.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Ubicación Física -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-geo-alt"></i> Ubicación Física</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-4">
+<div class="mb-3">
+{{ form.campus.label(class="form-label") }}
+{{ form.campus(class="form-select", id="campusSelect") }}
+{% if form.campus.errors %}
+<div class="text-danger small mt-1">
+{{ form.campus.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="mb-3">
+{{ form.edificio.label(class="form-label") }}
+{{ form.edificio(class="form-select", id="edificioSelect") }}
+{% if form.edificio.errors %}
+<div class="text-danger small mt-1">
+{{ form.edificio.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="mb-3">
+{{ form.fecha_instalacion.label(class="form-label") }}
+{{ form.fecha_instalacion(class="form-control", type="date") }}
+{% if form.fecha_instalacion.errors %}
+<div class="text-danger small mt-1">
+{{ form.fecha_instalacion.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<-- Coordenadas GPS (Opcional) -->
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.latitud.label(class="form-label") }}
+<div class="input-group">
+{{ form.latitud(class="form-control", placeholder="-38.9456", id="latitud") }}
+<button type="button" class="btn btn-outline-secondary" onclick="obtenerGPS()">
+<i class="bi bi-geo-alt"></i> GPS
+</button>
+</div>
+<div class="form-text">Coordenada latitude (opcional)</div>
+{% if form.latitud.errors %}
+<div class="text-danger small mt-1">
+{{ form.latitud.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="mb-3">
+{{ form.longitud.label(class="form-label") }}
+{{ form.longitud(class="form-control", placeholder="-7.3306", id="longitud") }}
+<div class="form-text">Coordenada longitude (opcional)</div>
+{% if form.longitud.errors %}
+<div class="text-danger small mt-1">
+{{ form.longitud.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Información Adicional -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-plus-circle"></i> Información Adicional</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+{{ form.observaciones.label(class="form-label") }}
+{{ form.observaciones(class="form-control", rows="4", placeholder="Observaciones adicionales, características especiales, notas técnicas...") }}
+{% if form.observaciones.errors %}
+<div class="text-danger small mt-1">
+{{ form.observaciones.errors[0] }}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<-- Historial de Cambios -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-clock-history"></i> Historial de Cambios</h5>
+</div>
+<div class="card-body">
+<div class="alert alert-info">
+<i class="bi bi-info-circle"></i>
+Se registrará automáticamente el cambio realizado con tu usuario y timestamp.
+</div>
+
+<div class="mb-3">
+<label for="motivo_cambio" class="form-label">Motivo del Cambio (Opcional)</label>
+<textarea class="form-control" id="motivo_cambio" name="motivo_cambio"
+rows="" placeholder="Describe brevemente por qué realizas este cambio..."></textarea>
+<div class="form-text">Esta información se guardará en el historial para auditoría</div>
+</div>
+</div>
+</div>
+
+<-- Botones de Acción -->
+<div class="card">
+<div class="card-body">
+<div class="d-flex justify-content-between">
+<div>
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-check-circle"></i> Actualizar Cámara
+</button>
+<button type="reset" class="btn btn-secondary">
+<i class="bi bi-arrow-clockwise"></i> Restaurar
+</button>
+</div>
+<div>
+<a href="{{ url_for('camaras_detalle', id=camara.id) }}" class="btn btn-outline-secondary">
+<i class="bi bi-x-circle"></i> Cancelar
+</a>
+</div>
+</div>
+</div>
+</div>
+</form>
+</div>
+
+<-- Sidebar con información original y validación -->
+<div class="col-lg-4">
+<-- Información Original -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-database"></i> Información Original</h5>
+</div>
+<div class="card-body">
+<div class="row text-center">
+<div class="col-6">
+<h6 class="text-muted">ID</h6>
+<span class="badge bg-secondary">{{ camara.id }}</span>
+</div>
+<div class="col-6">
+<h6 class="text-muted">Creada</h6>
+<small>{{ camara.fecha_creacion.strftime('%d/%m/%Y') if camara.fecha_creacion else '-' }}</small>
+</div>
+</div>
+<hr>
+<dl class="row small">
+<dt class="col-4">Ubicación:</dt>
+<dd class="col-8">{{ camara.ubicacion }}</dd>
+
+<dt class="col-4">Marca:</dt>
+<dd class="col-8">{{ camara.marca }}</dd>
+
+<dt class="col-4">IP:</dt>
+<dd class="col-8"><code>{{ camara.ip }}</code></dd>
+
+<dt class="col-4">Estado:</dt>
+<dd class="col-8">
+{% if camara.estado == 'activa' %}
+<span class="badge bg-success">Activa</span>
+{% elif camara.estado == 'inactiva' %}
+<span class="badge bg-danger">Inactiva</span>
+{% elif camara.estado == 'mantenimiento' %}
+<span class="badge bg-warning">Mantenimiento</span>
+{% else %}
+<span class="badge bg-secondary">{{ camara.estado }}</span>
+{% endif %}
+</dd>
+</dl>
+</div>
+</div>
+
+<-- Cambios Detectados -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-diff"></i> Cambios Detectados</h5>
+</div>
+<div class="card-body">
+<div id="cambios-detectados">
+<div class="alert alert-light">
+<i class="bi bi-arrow-clockwise"></i>
+Los cambios se detectarán automáticamente
+</div>
+</div>
+</div>
+</div>
+
+<-- Validación -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-shield-check"></i> Validación</h5>
+</div>
+<div class="card-body">
+<div id="validation-panel">
+<div class="alert alert-info">
+<i class="bi bi-info-circle"></i>
+La validación se realizará automáticamente
+</div>
+</div>
+</div>
+</div>
+
+<-- Acciones Adicionales -->
+<div class="card">
+<div class="card-header">
+<h5 class="mb-0"><i class="bi bi-gear"></i> Acciones Adicionales</h5>
+</div>
+<div class="card-body">
+<div class="d-grid gap-">
+<button type="button" class="btn btn-outline-warning" onclick="testearCamara()">
+<i class="bi bi-wifi"></i> Probar Conectividad
+</button>
+<button type="button" class="btn btn-outline-info" onclick="reiniciarCamara()">
+<i class="bi bi-arrow-clockwise"></i> Reiniciar Cámara
+</button>
+{% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN'] %}
+<button type="button" class="btn btn-outline-danger" onclick="confirmarEliminacion()">
+<i class="bi bi-trash"></i> Eliminar Cámara
+</button>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"><i class="bi bi-exclamation-triangle text-danger"></i> Confirmar Eliminación</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<p>¿Estás seguro de que deseas eliminar esta cámara?</p>
+<div class="alert alert-danger">
+<strong>Atención:</strong> Esta acción no se puede deshacer. Se perderán todos los datos asociados.
+</div>
+<p><strong>Cámara:</strong> {{ camara.ubicacion }}</p>
+<p><strong>IP:</strong> {{ camara.ip }}</p>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<form action="{{ url_for('camaras_eliminar', id=camara.id) }}" method="POST" style="display: inline;">
+{{ form.hidden_tag() }}
+<button type="submit" class="btn btn-danger">
+<i class="bi bi-trash"></i> Eliminar Definitivamente
+</button>
+</form>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Detectar cambios en los campos
+const campos = ['{{ form.ubicacion.id }}', '{{ form.marca.id }}', '{{ form.modelo.id }}',
+'{{ form.ip.id }}', '{{ form.estado.id }}', '{{ form.campus.id }}',
+'{{ form.edificio.id }}', '{{ form.responsable.id }}', '{{ form.observaciones.id }}'];
+
+campos.forEach(campoId => {
+const campo = document.getElementById(campoId);
+if (campo) {
+campo.addEventListener('input', detectarCambios);
+campo.addEventListener('change', detectarCambios);
+}
+});
+
+// Validación de IP
+const ipInput = document.getElementById('{{ form.ip.id }}');
+if (ipInput) {
+ipInput.addEventListener('blur', validarIP);
+}
+});
+
+const valoresOriginales = {};
+
+function detectarCambios() {
+const cambios = [];
+
+campos.forEach(campoId => {
+const campo = document.getElementById(campoId);
+if (campo) {
+const valorActual = campo.value;
+const valorOriginal = valoresOriginales[campoId] || '';
+
+if (valorActual == valorOriginal) {
+cambios.push({
+campo: campo.previousElementSibling?.textContent || campoId,
+original: valorOriginal || 'Vacío',
+actual: valorActual || 'Vacío'
+});
+}
+}
+});
+
+mostrarCambiosDetectados(cambios);
+}
+
+function mostrarCambiosDetectados(cambios) {
+const panel = document.getElementById('cambios-detectados');
+
+if (cambios.length === 0) {
+panel.innerHTML = '<div class="alert alert-light"><i class="bi bi-arrow-clockwise"></i> No hay cambios pendientes</div>';
+} else {
+let html = '<div class="alert alert-warning">';
+html += '<i class="bi bi-exclamation-triangle"></i> <strong>Cambios detectados:</strong><br>';
+cambios.forEach(cambio => {
+html += `<small><strong>${cambio.campo}:</strong> ${cambio.original} → ${cambio.actual}</small><br>`;
+});
+html += '</div>';
+panel.innerHTML = html;
+}
+}
+
+function validarIP() {
+const ip = document.getElementById('{{ form.ip.id }}').value;
+const ipRegex = /^(([0-9]|[1-9][0-9]|1[0-9]{}|[0-4][0-9]|5[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{}|[0-4][0-9]|5[0-5])$/;
+
+if (ip && ipRegex.test(ip)) {
+mostrarValidacion('error', 'Formato de IP inválido');
+return false;
+} else if (ip) {
+mostrarValidacion('success', 'IP válida');
+return true;
+}
+return true;
+}
+
+function mostrarValidacion(tipo, mensaje) {
+const panel = document.getElementById('validation-panel');
+panel.innerHTML = `
+<div class="alert alert-${tipo === 'error' ? 'danger' : 'success'}">
+<i class="bi bi-${tipo === 'error' ? 'exclamation-circle' : 'check-circle'}"></i>
+${mensaje}
+</div>
+`;
+}
+
+function obtenerGPS() {
+if (navigator.geolocation) {
+navigator.geolocation.getCurrentPosition(
+function(position) {
+document.getElementById('latitud').value = position.coords.latitude.toFixed(6);
+document.getElementById('longitud').value = position.coords.longitude.toFixed(6);
+mostrarValidacion('success', 'Coordenadas GPS actualizadas');
+},
+function(error) {
+mostrarValidacion('error', 'Error al obtener GPS: ' + error.message);
+}
+);
+} else {
+mostrarValidacion('error', 'Geolocalización no soportada');
+}
+}
+
+function testearCamara() {
+fetch(`/api/camaras/{{ camara.id }}/test`)
+.then(response => response.json())
+.then(data => {
+if (data.status === 'success') {
+alert(' Cámara accesible: ' + data.message);
+} else {
+alert(' Error: ' + data.message);
+}
+})
+.catch(error => {
+alert(' Error al probar la cámara: ' + error.message);
+});
+}
+
+function reiniciarCamara() {
+if (confirm('¿Confirmas que deseas reiniciar la cámara?')) {
+fetch(`/api/camaras/{{ camara.id }}/restart`, { method: 'POST' })
+.then(response => response.json())
+.then(data => {
+if (data.status === 'success') {
+alert(' Comando de reinicio enviado correctamente');
+} else {
+alert(' Error: ' + data.message);
+}
+})
+.catch(error => {
+alert(' Error al reiniciar la cámara: ' + error.message);
+});
+}
+}
+
+function confirmarEliminacion() {
+const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+modal.show();
+}
+
+// Validación antes del envío
+document.getElementById('formCamara').addEventListener('submit', function(e) {
+if (validarIP()) {
+e.preventDefault();
+return false;
+}
+
+const cambios = document.querySelector('#cambios-detectados .alert-warning');
+if (cambios) {
+e.preventDefault();
+alert('No hay cambios para guardar.');
+return false;
+}
+});
+
+// Inicializar valores originales
+campos.forEach(campoId => {
+const campo = document.getElementById(campoId);
+if (campo) {
+valoresOriginales[campoId] = campo.value;
+}
+});
+</script>
+{% endblock %}

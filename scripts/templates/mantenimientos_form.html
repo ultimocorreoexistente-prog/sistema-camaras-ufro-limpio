@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}Nuevo Mantenimiento - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Registrar Mantenimiento</h1>
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Tipo de Equipo *</label>
+                    <select name="equipo_tipo" class="form-select" required>
+                        <option value="Camara">Cámara</option>
+                        <option value="Gabinete">Gabinete</option>
+                        <option value="Switch">Switch</option>
+                        <option value="UPS">UPS</option>
+                        <option value="NVR">NVR/DVR</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">ID del Equipo *</label>
+                    <input type="number" name="equipo_id" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tipo de Mantenimiento *</label>
+                    <select name="tipo" class="form-select" required>
+                        <option value="Preventivo">Preventivo</option>
+                        <option value="Correctivo">Correctivo</option>
+                        <option value="Predictivo">Predictivo</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción *</label>
+                    <textarea name="descripcion" class="form-control" rows="4" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Materiales Utilizados</label>
+                    <textarea name="materiales_utilizados" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Tiempo de Ejecución (horas)</label>
+                        <input type="number" name="tiempo_ejecucion_horas" class="form-control" step="0.5" min="0">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Costo ($)</label>
+                        <input type="number" name="costo" class="form-control" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Observaciones</label>
+                    <textarea name="observaciones" class="form-control" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-success">Registrar Mantenimiento</button>
+                <a href="{{ url_for('mantenimientos_list') }}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

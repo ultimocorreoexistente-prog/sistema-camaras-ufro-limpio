@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Mantenimientos - Sistema de Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="card">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: rem;">
+<h style="color: #1e93b;">Registro de Mantenimientos</h>
+<span style="color: #64748b;">Total: {{ mantenimientos.total }} mantenimientos</span>
+</div>
+
+{% if mantenimientos.items %}
+<table class="table">
+<thead>
+<tr>
+<th>Código</th>
+<th>Título</th>
+<th>Tipo</th>
+<th>Fecha Programada</th>
+<th>Estado</th>
+<th>Responsable</th>
+<th>Costo</th>
+</tr>
+</thead>
+<tbody>
+{% for mant in mantenimientos.items %}
+<tr>
+<td><strong>{{ mant.codigo }}</strong></td>
+<td>{{ mant.titulo }}</td>
+<td>{{ mant.tipo or '-' }}</td>
+<td>{{ mant.fecha_programada.strftime('%d/%m/%Y') if mant.fecha_programada else '-' }}</td>
+<td>
+{% if mant.estado == 'completado' %}
+<span class="badge badge-success">Completado</span>
+{% elif mant.estado == 'programado' %}
+<span class="badge badge-info">Programado</span>
+{% else %}
+<span class="badge badge-warning">{{ mant.estado }}</span>
+{% endif %}
+</td>
+<td>{{ mant.responsable or '-' }}</td>
+<td>${{ '{:,.0f}'.format(mant.costo) if mant.costo else '0' }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% if mantenimientos.pages > 1 %}
+<div style="margin-top: rem; text-align: center;">
+{% if mantenimientos.has_prev %}
+<a href="{{ url_for('mantenimientos', page=mantenimientos.prev_num) }}" class="btn btn-primary">Anterior</a>
+{% endif %}
+<span style="margin: 0 1rem;">Página {{ mantenimientos.page }} de {{ mantenimientos.pages }}</span>
+{% if mantenimientos.has_next %}
+<a href="{{ url_for('mantenimientos', page=mantenimientos.next_num) }}" class="btn btn-primary">Siguiente</a>
+{% endif %}
+</div>
+{% endif %}
+{% else %}
+<p style="color: #64748b;">No hay mantenimientos registrados.</p>
+{% endif %}
+</div>
+{% endblock %}

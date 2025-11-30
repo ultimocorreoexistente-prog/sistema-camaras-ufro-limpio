@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Fuente - {{ fuente.nombre }} - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<nav aria-label="breadcrumb">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('fuentes_list') }}">Fuentes de Poder</a></li>
+<li class="breadcrumb-item active">{{ fuente.nombre }}</li>
+</ol>
+</nav>
+<h1 class="mb-0">
+<i class="bi bi-lightning-charge"></i>
+{{ fuente.nombre }}
+</h1>
+</div>
+<div>
+<a href="{{ url_for('fuentes_editar', fuente_id=fuente.id) }}" class="btn btn-warning">
+<i class="bi bi-pencil"></i> Editar
+</a>
+<button type="button" class="btn btn-danger" onclick="confirmarEliminacion({{ fuente.id }})">
+<i class="bi bi-trash"></i> Eliminar
+</button>
+</div>
+</div>
+
+<-- Información general -->
+<div class="row mb-4">
+<div class="col-md-8">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-info-circle"></i> Información General
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<dl class="row">
+<dt class="col-sm-4">Nombre:</dt>
+<dd class="col-sm-8"><strong>{{ fuente.nombre }}</strong></dd>
+
+<dt class="col-sm-4">Marca:</dt>
+<dd class="col-sm-8">{{ fuente.marca }}</dd>
+
+<dt class="col-sm-4">Potencia:</dt>
+<dd class="col-sm-8">
+<i class="bi bi-lightning text-primary"></i>
+{{ fuente.potencia }} W
+</dd>
+
+<dt class="col-sm-4">Voltaje:</dt>
+<dd class="col-sm-8">
+<i class="bi bi-voltage text-success"></i>
+{{ fuente.voltaje_salida }}
+</dd>
+</dl>
+</div>
+<div class="col-md-6">
+<dl class="row">
+<dt class="col-sm-4">Campus:</dt>
+<dd class="col-sm-8">{{ fuente.campus }}</dd>
+
+<dt class="col-sm-4">Edificio:</dt>
+<dd class="col-sm-8">{{ fuente.edificio }}</dd>
+
+<dt class="col-sm-4">Ubicación:</dt>
+<dd class="col-sm-8">
+<i class="bi bi-geo-alt text-primary"></i>
+{{ fuente.ubicacion }}
+</dd>
+
+<dt class="col-sm-4">Estado:</dt>
+<dd class="col-sm-8">
+{% if fuente.estado == 'activo' %}
+<span class="badge bg-success">Activo</span>
+{% elif fuente.estado == 'inactivo' %}
+<span class="badge bg-danger">Inactivo</span>
+{% elif fuente.estado == 'mantenimiento' %}
+<span class="badge bg-warning">Mantenimiento</span>
+{% elif fuente.estado == 'sobrecarga' %}
+<span class="badge bg-warning">Sobrecarga</span>
+{% elif fuente.estado == 'falla' %}
+<span class="badge bg-danger">Con fallas</span>
+{% endif %}
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="col-md-4">
+<-- Estado actual -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-speedometer"></i> Estado Actual
+</h5>
+</div>
+<div class="card-body text-center">
+<div class="display-1 mb-3">
+{% if fuente.estado == 'activo' %}
+<i class="bi bi-lightning-charge text-success"></i>
+{% elif fuente.estado == 'sobrecarga' %}
+<i class="bi bi-exclamation-triangle text-warning"></i>
+{% elif fuente.estado == 'mantenimiento' %}
+<i class="bi bi-tools text-warning"></i>
+{% elif fuente.estado == 'falla' %}
+<i class="bi bi-x-circle text-danger"></i>
+{% else %}
+<i class="bi bi-dash-circle text-secondary"></i>
+{% endif %}
+</div>
+<h4>
+{% if fuente.estado == 'activo' %}
+Funcionando
+{% elif fuente.estado == 'sobrecarga' %}
+Sobrecargada
+{% elif fuente.estado == 'mantenimiento' %}
+En mantenimiento
+{% elif fuente.estado == 'falla' %}
+Con fallas
+{% elif fuente.estado == 'inactivo' %}
+Inactiva
+{% endif %}
+</h4>
+<p class="text-muted">{{ fuente.voltaje_salida }} | {{ fuente.potencia }}W</p>
+</div>
+</div>
+
+<-- Acciones rápidas -->
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-lightning"></i> Acciones
+</h5>
+</div>
+<div class="card-body">
+<div class="d-grid gap-">
+<button class="btn btn-outline-primary btn-sm">
+<i class="bi bi-arrow-clockwise"></i> Reiniciar
+</button>
+<button class="btn btn-outline-warning btn-sm">
+<i class="bi bi-tools"></i> Modo Mantenimiento
+</button>
+<button class="btn btn-outline-info btn-sm">
+<i class="bi bi-file-text"></i> Ver Log
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Especificaciones técnicas -->
+<div class="row mb-4">
+<div class="col-md-1">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-cpu"></i> Especificaciones Técnicas
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<h6>Características Eléctricas</h6>
+<table class="table table-sm">
+<tr>
+<td><strong>Potencia Nominal:</strong></td>
+<td>{{ fuente.potencia }} W</td>
+</tr>
+<tr>
+<td><strong>Voltaje de Salida:</strong></td>
+<td>{{ fuente.voltaje_salida }}</td>
+</tr>
+<tr>
+<td><strong>Corriente Máxima:</strong></td>
+<td>{{ (fuente.potencia / 1) | round(1) }} A</td>
+</tr>
+<tr>
+<td><strong>Eficiencia:</strong></td>
+<td>85-90%</td>
+</tr>
+</table>
+</div>
+<div class="col-md-6">
+<h6>Información Física</h6>
+<table class="table table-sm">
+<tr>
+<td><strong>Dimensiones:</strong></td>
+<td>00 x 100 x 50 mm</td>
+</tr>
+<tr>
+<td><strong>Peso:</strong></td>
+<td>1. kg</td>
+</tr>
+<tr>
+<td><strong>Montaje:</strong></td>
+<td>DIN Rail / Panel</td>
+</tr>
+<tr>
+<td><strong>Protección:</strong></td>
+<td>IP0 / IP40</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Equipos conectados -->
+<div class="row mb-4">
+<div class="col-md-1">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-diagram-3"></i> Equipos que Alimenta
+</h5>
+</div>
+<div class="card-body">
+{% if fuente.equipos_alimentados %}
+<div class="list-group list-group-flush">
+{% for equipo in fuente.equipos_alimentados %}
+<div class="list-group-item d-flex justify-content-between align-items-center">
+<div>
+<h6 class="mb-1">{{ equipo.nombre }}</h6>
+<p class="mb-1 text-muted">{{ equipo.tipo }} - {{ equipo.ubicacion }}</p>
+</div>
+<span class="badge bg-secondary">{{ equipo.consumo }}W</span>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="text-center py-4">
+<i class="bi bi-diagram-3 text-muted" style="font-size: 3rem;"></i>
+<p class="text-muted mt-">No hay equipos conectados registrados</p>
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+</div>
+
+<-- Historial de mantenimiento -->
+<div class="row">
+<div class="col-md-1">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-clock-history"></i> Historial de Mantenimiento
+</h5>
+</div>
+<div class="card-body">
+<div class="table-responsive">
+<table class="table table-hover">
+<thead class="table-light">
+<tr>
+<th>Fecha</th>
+<th>Tipo</th>
+<th>Técnico</th>
+<th>Descripción</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+{% for mantenimiento in mantenimientos %}
+<tr>
+<td>{{ mantenimiento.fecha.strftime('%d/%m/%Y') if mantenimiento.fecha else '-' }}</td>
+<td>{{ mantenimiento.tipo }}</td>
+<td>{{ mantenimiento.tecnico }}</td>
+<td>{{ mantenimiento.descripcion }}</td>
+<td>
+{% if mantenimiento.estado == 'completado' %}
+<span class="badge bg-success">Completado</span>
+{% elif mantenimiento.estado == 'en_proceso' %}
+<span class="badge bg-warning">En proceso</span>
+{% else %}
+<span class="badge bg-secondary">Programado</span>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarEliminacion(fuenteId) {
+if (confirm('¿Estás seguro de que deseas eliminar esta fuente de poder?')) {
+fetch(`/fuentes/eliminar/${fuenteId}`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+window.location.href = "{{ url_for('fuentes_list') }}";
+} else {
+alert('Error al eliminar la fuente: ' + data.message);
+}
+})
+.catch(error => {
+console.error('Error:', error);
+alert('Error de conexión al eliminar la fuente');
+});
+}
+}
+
+// Auto-actualizar estado cada 30 segundos
+setInterval(function() {
+// Aquí se podría implementar una llamada AJAX para actualizar el estado
+console.log('Actualizando estado...');
+}, 30000);
+
+// Manejo de botones de acción
+document.addEventListener('DOMContentLoaded', function() {
+// Botón reiniciar
+document.querySelector('[data-action="reiniciar"]').addEventListener('click', function() {
+if (confirm('¿Deseas reiniciar esta fuente de poder?')) {
+// Lógica de reinicio
+alert('Reiniciando fuente...');
+}
+});
+});
+</script>
+{% endblock %}

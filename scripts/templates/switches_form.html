@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if switch else 'Nuevo' }} Switch - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">{{ 'Editar' if switch else 'Nuevo' }} Switch</h1>
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Código *</label>
+                        <input type="text" name="codigo" class="form-control" value="{{ switch.codigo if switch else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nombre/Modelo *</label>
+                        <input type="text" name="nombre_modelo" class="form-control" value="{{ switch.nombre_modelo if switch else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Marca *</label>
+                        <input type="text" name="marca" class="form-control" value="{{ switch.marca if switch else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Número de Serie</label>
+                        <input type="text" name="numero_serie" class="form-control" value="{{ switch.numero_serie if switch else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Gabinete Asociado</label>
+                        <select name="gabinete_asociado" class="form-select">
+                            <option value="">Seleccione...</option>
+                            {% for gabinete in gabinetes %}
+                            <option value="{{ gabinete.codigo }}" {{ 'selected' if switch and switch.gabinete_asociado == gabinete.codigo else '' }}>
+                                {{ gabinete.codigo }} - {{ gabinete.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Número Total de Puertos</label>
+                        <input type="number" name="puertos_total" class="form-control" value="{{ switch.puertos_total if switch else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Puertos Usados</label>
+                        <input type="number" name="puertos_usados" class="form-control" value="{{ switch.puertos_usados if switch else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Soporta PoE</label>
+                        <select name="soporta_poe" class="form-select">
+                            <option value="No" {{ 'selected' if switch and switch.soporta_poe == 'No' else '' }}>No</option>
+                            <option value="Sí" {{ 'selected' if switch and switch.soporta_poe == 'Sí' else '' }}>Sí</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Estado</label>
+                        <select name="estado" class="form-select">
+                            <option value="Funcionando" {{ 'selected' if switch and switch.estado == 'Funcionando' else '' }}>Funcionando</option>
+                            <option value="Mantenimiento" {{ 'selected' if switch and switch.estado == 'Mantenimiento' else '' }}>Mantenimiento</option>
+                            <option value="Fuera de Servicio" {{ 'selected' if switch and switch.estado == 'Fuera de Servicio' else '' }}>Fuera de Servicio</option>
+                            <option value="Baja" {{ 'selected' if switch and switch.estado == 'Baja' else '' }}>Baja</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Fecha de Instalación</label>
+                        <input type="date" name="fecha_instalacion" class="form-control" value="{{ switch.fecha_instalacion if switch and switch.fecha_instalacion else '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Fecha de Último Mantenimiento</label>
+                        <input type="date" name="fecha_ultimo_mantenimiento" class="form-control" value="{{ switch.fecha_ultimo_mantenimiento if switch and switch.fecha_ultimo_mantenimiento else '' }}">
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Observaciones</label>
+                        <textarea name="observaciones" class="form-control" rows="3">{{ switch.observaciones if switch else '' }}</textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a href="{{ url_for('switches_list') }}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

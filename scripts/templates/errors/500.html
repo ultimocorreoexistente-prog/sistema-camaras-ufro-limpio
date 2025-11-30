@@ -1,0 +1,368 @@
+{% extends 'base.html' %}
+
+{% block title %}Error del Servidor (500) - Sistema de Gestión Académica UFRO{% endblock %}
+
+{% block content %}
+<div class="container">
+<div class="row justify-content-center align-items-center min-vh-100">
+<div class="col-md-6 text-center">
+<!-- Icono de error crítico -->
+<div class="mb-4">
+<i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 8rem;"></i>
+</div>
+
+<!-- Título del error -->
+<h1 class="display-1 fw-bold text-danger mb-3">500</h1>
+
+<!-- Mensaje principal -->
+<h class="h3 mb-3">Error Interno del Servidor</h>
+
+<!-- Descripción del error -->
+<p class="lead text-muted mb-4">
+Se ha producido un error interno en el servidor. Nuestro equipo técnico ha sido notificado
+automáticamente y está trabajando para resolver el problema lo antes posible.
+</p>
+
+<!-- Información del estado -->
+<div class="alert alert-warning" role="alert">
+<h5 class="alert-heading">
+<i class="bi bi-exclamation-triangle me-"></i>Estado del Sistema
+</h5>
+<p class="mb-"><strong>Error detectado:</strong> {{ timestamp|default:"Ahora" }}</p>
+<p class="mb-"><strong>ID de error:</strong> <code>{{ error_id|default:"ERR-" }}{{ random_id|default:"50001" }}</code></p>
+<p class="mb-0"><strong>Estado:</strong> El equipo técnico ha sido notificado automáticamente</p>
+</div>
+
+<!-- Acciones recomendadas -->
+<div class="mb-5">
+<h5 class="mb-3">¿Qué puedes hacer ahora?</h5>
+<div class="row g-3">
+<div class="col-md-4">
+<div class="card content-card h-100 border-warning">
+<div class="card-body text-center">
+<i class="bi bi-arrow-clockwise fs-1 text-warning mb-"></i>
+<h6 class="card-title">Intentar de Nuevo</h6>
+<p class="card-text small">El problema podría ser temporal</p>
+<button class="btn btn-warning btn-sm" onclick="retryRequest()">
+<i class="bi bi-arrow-clockwise me-1"></i>Reintentar
+</button>
+</div>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="card content-card h-100 border-info">
+<div class="card-body text-center">
+<i class="bi bi-house fs-1 text-info mb-"></i>
+<h6 class="card-title">Ir al Dashboard</h6>
+<p class="card-text small">Volver a la página principal</p>
+<a href="{{ url_for('dashboard') }}" class="btn btn-info btn-sm">
+<i class="bi bi-house me-1"></i>Dashboard
+</a>
+</div>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="card content-card h-100 border-danger">
+<div class="card-body text-center">
+<i class="bi bi-life-preserver fs-1 text-danger mb-"></i>
+<h6 class="card-title">Reportar Problema</h6>
+<p class="card-text small">Ayúdanos a mejorar</p>
+<button class="btn btn-outline-danger btn-sm" onclick="reportError()">
+<i class="bi bi-bug me-1"></i>Reportar
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Panel de estado del servidor -->
+<div class="mb-4">
+<div class="card content-card border-start border-5 border-danger">
+<div class="card-header bg-transparent">
+<h6 class="card-title mb-0">
+<i class="bi bi-server me-"></i>Estado del Servidor
+</h6>
+</div>
+<div class="card-body">
+<div class="row text-center">
+<div class="col-6">
+<div class="p-3">
+<div class="display-6 text-success mb-">
+<i class="bi bi-check-circle-fill"></i>
+</div>
+<h5 class="text-success">Online</h5>
+<small class="text-muted">Base de Datos</small>
+</div>
+</div>
+<div class="col-6">
+<div class="p-3">
+<div class="display-6 text-danger mb-">
+<i class="bi bi-x-circle-fill"></i>
+</div>
+<h5 class="text-danger">Error</h5>
+<small class="text-muted">Aplicación Web</small>
+</div>
+</div>
+</div>
+
+<div class="progress mb-3" style="height: 8px;">
+<div class="progress-bar bg-success" style="width: 85%"></div>
+<div class="progress-bar bg-danger" style="width: 15%"></div>
+</div>
+
+<div class="row small text-muted">
+<div class="col-6">
+<strong>CPU:</strong> 45% utilizado
+</div>
+<div class="col-6">
+<strong>Memoria:</strong> 67% utilizado
+</div>
+<div class="col-6">
+<strong>Disco:</strong> 3% utilizado
+</div>
+<div class="col-6">
+<strong>Red:</strong> Estable
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Información de contacto y soporte -->
+<div class="row g-3">
+<div class="col-md-6">
+<div class="card content-card h-100">
+<div class="card-body">
+<h6 class="text-primary mb-3">
+<i class="bi bi-headset me-"></i>Soporte Técnico
+</h6>
+<ul class="list-unstyled small">
+<li class="mb-">
+<i class="bi bi-envelope me-"></i>
+<<<<<<< HEAD
+<a href="mailto:techsupport@ufro.cl" class="text-decoration-none">
+techsupport@ufro.cl
+=======
+<a href="mailto:soporte.tecnico@ufrontera.cl" class="text-decoration-none">
+soporte.tecnico@ufrontera.cl
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
+</a>
+</li>
+<li class="mb-">
+<i class="bi bi-telephone me-"></i>
+<span>+56 45 0 5100</span>
+</li>
+<li class="mb-">
+<i class="bi bi-clock me-"></i>
+<span>4/7 - Soporte crítico</span>
+</li>
+<li class="mb-">
+<i class="bi bi-ticket me-"></i>
+<a href="#" class="text-decoration-none">Crear Ticket</a>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="card content-card h-100">
+<div class="card-body">
+<h6 class="text-success mb-3">
+<i class="bi bi-tools me-"></i>Soluciones Comunes
+</h6>
+<ul class="list-unstyled small">
+<li class="mb-">
+<i class="bi bi-arrow-clockwise me-"></i>
+Esperar unos minutos e intentar de nuevo
+</li>
+<li class="mb-">
+<i class="bi bi-arrow-left me-"></i>
+Regresar a la página anterior
+</li>
+<li class="mb-">
+<i class="bi bi-browser-chrome me-"></i>
+Limpiar cache del navegador
+</li>
+<li class="mb-">
+<i class="bi bi-wifi me-"></i>
+Verificar conexión a internet
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Tiempo estimado de reparación -->
+<div class="mt-4 p-3 bg-warning bg-opacity-10 border border-warning rounded">
+<h6 class="text-warning mb-">
+<i class="bi bi-clock me-"></i>Tiempo Estimado de Reparación
+</h6>
+<p class="mb-0 small">
+<strong>15-30 minutos:</strong> Para errores menores de la aplicación<br>
+<strong>1- horas:</strong> Para problemas de infraestructura<br>
+<strong>Notificaciones:</strong> Recibirás actualizaciones por email si hay cambios
+</p>
+</div>
+
+<!-- Información técnica (para desarrolladores) -->
+<div class="mt-4">
+<button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#techDetails">
+<i class="bi bi-code-slash me-1"></i>Detalles Técnicos (Desarrolladores)
+</button>
+</div>
+
+<div class="collapse mt-3" id="techDetails">
+<div class="card content-card">
+<div class="card-header">
+<h6 class="mb-0">Información Técnica del Error</h6>
+</div>
+<div class="card-body">
+<pre class="small text-muted"><code>Error 500: Internal Server Error
+Timestamp: {{ timestamp|default:"04-01-15T10:30:45Z" }}
+Request ID: {{ error_id|default:"REQ-" }}{{ random_id|default:"abc13def" }}
+Server: {{ server_name|default:"ufro-academic-app" }}
+Environment: {{ environment|default:"production" }}
+
+Stack trace disponible en logs del servidor
+<<<<<<< HEAD
+Contactar a: development@ufro.cl</code></pre>
+=======
+Contactar a: desarrollo.sistemas@ufrontera.cl</code></pre>
+>>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<style>
+.min-vh-100 {
+min-height: 100vh;
+}
+
+.card {
+transition: transform 0.s ease-in-out;
+}
+
+.card:hover {
+transform: translateY(-px);
+}
+
+.btn:hover {
+transform: translateY(-1px);
+}
+
+code {
+background-color: #f8f9fa;
+padding: px 4px;
+border-radius: 3px;
+font-size: 0.875em;
+}
+</style>
+
+<script>
+let retryCount = 0;
+const maxRetries = 3;
+
+// Función para reintentar la solicitud
+function retryRequest() {
+if (retryCount >= maxRetries) {
+alert(`Ya has intentado ${maxRetries} veces. Te recomendamos contactar al soporte técnico.`);
+return;
+}
+
+retryCount++;
+
+const button = event.target;
+const originalText = button.innerHTML;
+
+// Mostrar loading
+button.innerHTML = '<span class="spinner-border spinner-border-sm me-"></span>Reintentando...';
+button.disabled = true;
+
+// Simular reintento
+setTimeout(() => {
+// Intentar recargar la página o la acción que causó el error
+if (document.referrer && document.referrer == window.location.href) {
+window.location.href = document.referrer;
+} else {
+// Si no hay página anterior, ir al dashboard
+window.location.href = "{{ url_for('dashboard') }}";
+}
+}, 000);
+}
+
+// Función para reportar error
+function reportError() {
+const errorData = {
+errorType: '500',
+timestamp: new Date().toISOString(),
+url: window.location.href,
+userAgent: navigator.userAgent,
+userId: '{{ request.user.id if request and request.user else 'anonymous' }}',
+sessionId: getSessionId(),
+errorId: '{{ error_id|default:"ERR-500" }}{{ random_id|default:"001" }}',
+stackTrace: getErrorDetails()
+};
+
+// Enviar reporte de error
+console.log('Enviando reporte de error:', errorData);
+
+// Simular envío de reporte
+fetch('/api/error-report/', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'X-CSRFToken': getCSRFToken()
+},
+body: JSON.stringify(errorData)
+}).catch(error => {
+console.log('Error enviando reporte (esperado en este entorno)');
+});
+
+alert('Error reportado exitosamente. Gracias por tu colaboración.');
+}
+
+// Funciones auxiliares
+function getSessionId() {
+// Obtener ID de sesión desde cookies o generar uno
+const match = document.cookie.match(/sessionid=([^;]+)/);
+return match ? match[1] : 'session-' + Math.random().toString(36).substr(, 9);
+}
+
+function getCSRFToken() {
+const match = document.cookie.match(/csrftoken=([^;]+)/);
+return match ? match[1] : '';
+}
+
+function getErrorDetails() {
+// En un entorno real, esto capturaría detalles del error de JavaScript
+return 'Error capturado por el sistema de manejo de errores';
+}
+
+// Auto-refresh después de un tiempo
+setTimeout(() => {
+if (confirm('Han pasado 5 minutos desde el error. ¿Deseas intentar cargar la página nuevamente?')) {
+window.location.reload();
+}
+}, 300000); // 5 minutos
+
+// Tracking para analytics
+if (typeof gtag == 'undefined') {
+gtag('event', 'exception', {
+'description': '500 Internal Server Error',
+'fatal': false,
+'custom_map': {
+'error_id': '{{ error_id|default:"ERR-500" }}'
+}
+});
+}
+</script>
+
+{% endblock %}

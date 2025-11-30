@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de UPS - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1><i class="bi bi-battery-charging"></i> Gestionar Equipos UPS</h1>
+<a href="{{ url_for('ups_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Nuevo UPS
+</a>
+</div>
+
+<-- Filtros -->
+<div class="card mb-4">
+<div class="card-header">
+<h5 class="card-title mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+</div>
+<div class="card-body">
+<form method="GET" class="row g-3">
+<div class="col-md-3">
+<label for="marca" class="form-label">Marca</label>
+<select name="marca" id="marca" class="form-select">
+<option value="">Todas las marcas</option>
+<option value="APC" {% if request.args.get('marca') == 'APC' %}selected{% endif %}>APC</option>
+<option value="CyberPower" {% if request.args.get('marca') == 'CyberPower' %}selected{% endif %}>CyberPower</option>
+<option value="Tripp Lite" {% if request.args.get('marca') == 'Tripp Lite' %}selected{% endif %}>Tripp Lite</option>
+<option value="Eaton" {% if request.args.get('marca') == 'Eaton' %}selected{% endif %}>Eaton</option>
+<option value="Liebert" {% if request.args.get('marca') == 'Liebert' %}selected{% endif %}>Liebert</option>
+</select>
+</div>
+<div class="col-md-3">
+<label for="estado" class="form-label">Estado</label>
+<select name="estado" id="estado" class="form-select">
+<option value="">Todos los estados</option>
+<option value="activo" {% if request.args.get('estado') == 'activo' %}selected{% endif %}>Activo</option>
+<option value="inactivo" {% if request.args.get('estado') == 'inactivo' %}selected{% endif %}>Inactivo</option>
+<option value="mantenimiento" {% if request.args.get('estado') == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+<option value="bateria_baja" {% if request.args.get('estado') == 'bateria_baja' %}selected{% endif %}>Batería baja</option>
+<option value="falla" {% if request.args.get('estado') == 'falla' %}selected{% endif %}>Con fallas</option>
+</select>
+</div>
+<div class="col-md-4">
+<label for="buscar" class="form-label">Buscar</label>
+<input type="text" name="buscar" id="buscar" class="form-control"
+value="{{ request.args.get('buscar', '') }}" placeholder="Modelo o ubicación...">
+</div>
+<div class="col-md-">
+<label class="form-label">&nbsp;</label>
+<div class="d-grid">
+<button type="submit" class="btn btn-outline-primary">
+<i class="bi bi-search"></i> Filtrar
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+
+<-- Lista de UPS -->
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-collection"></i> Lista de Equipos UPS
+<span class="badge bg-primary ms-">{{ ups|length }}</span>
+</h5>
+</div>
+<div class="card-body p-0">
+{% if ups %}
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+<thead class="table-light">
+<tr>
+<th>Marca</th>
+<th>Modelo</th>
+<th>Capacidad</th>
+<th>Batería</th>
+<th>Ubicación</th>
+<th>Estado</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody>
+{% for ups_item in ups %}
+<tr>
+<td>
+<strong>{{ ups_item.marca }}</strong>
+</td>
+<td>{{ ups_item.modelo }}</td>
+<td>
+<i class="bi bi-lightning text-primary"></i>
+{{ ups_item.capacidad }} VA
+</td>
+<td>
+{% if ups_item.bateria %}
+<div class="progress" style="height: 0px; width: 80px;">
+<div class="progress-bar bg-{{ 'success' if ups_item.bateria >= 80 else 'warning' if ups_item.bateria >= 50 else 'danger' }}"
+role="progressbar" style="width: {{ ups_item.bateria }}%"></div>
+</div>
+<small>{{ ups_item.bateria }}%</small>
+{% else %}
+<span class="text-muted">No especificado</span>
+{% endif %}
+</td>
+<td>
+<i class="bi bi-geo-alt text-primary"></i>
+{{ ups_item.ubicacion }}
+</td>
+<td>
+{% if ups_item.estado == 'activo' %}
+<span class="badge bg-success">Activo</span>
+{% elif ups_item.estado == 'inactivo' %}
+<span class="badge bg-danger">Inactivo</span>
+{% elif ups_item.estado == 'mantenimiento' %}
+<span class="badge bg-warning">Mantenimiento</span>
+{% elif ups_item.estado == 'bateria_baja' %}
+<span class="badge bg-warning">Batería baja</span>
+{% elif ups_item.estado == 'falla' %}
+<span class="badge bg-danger">Con fallas</span>
+{% endif %}
+</td>
+<td>
+<div class="btn-group btn-group-sm" role="group">
+<a href="{{ url_for('ups_detalle', ups_id=ups_item.id) }}"
+class="btn btn-outline-primary" title="Ver detalles">
+<i class="bi bi-eye"></i>
+</a>
+<a href="{{ url_for('ups_editar', ups_id=ups_item.id) }}"
+class="btn btn-outline-warning" title="Editar">
+<i class="bi bi-pencil"></i>
+</a>
+<button type="button" class="btn btn-outline-danger"
+onclick="confirmarEliminacion({{ ups_item.id }})" title="Eliminar">
+<i class="bi bi-trash"></i>
+</button>
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="text-center py-5">
+<i class="bi bi-battery-charging display-1 text-muted"></i>
+<h3 class="text-muted mt-3">No hay equipos UPS registrados</h3>
+<p class="text-muted">Comienza agregando un nuevo equipo UPS al sistema.</p>
+<a href="{{ url_for('ups_crear') }}" class="btn btn-primary">
+<i class="bi bi-plus-circle"></i> Agregar primer UPS
+</a>
+</div>
+{% endif %}
+</div>
+</div>
+
+<-- Resumen estadístico -->
+<div class="row mt-4">
+<div class="col-md-3">
+<div class="card card-stat">
+<div class="card-body text-center">
+<i class="bi bi-battery-charging text-primary" style="font-size: rem;"></i>
+<h3 class="mt-">{{ ups|length }}</h3>
+<p class="text-muted mb-0">Total UPS</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat success">
+<div class="card-body text-center">
+<i class="bi bi-check-circle text-success" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ ups|selectattr('estado', 'equalto', 'activo')|list|length }}
+</h3>
+<p class="text-muted mb-0">Activos</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat warning">
+<div class="card-body text-center">
+<i class="bi bi-exclamation-triangle text-warning" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ ups|selectattr('estado', 'in', ['bateria_baja', 'mantenimiento'])|list|length }}
+</h3>
+<p class="text-muted mb-0">Requieren atención</p>
+</div>
+</div>
+</div>
+<div class="col-md-3">
+<div class="card card-stat danger">
+<div class="card-body text-center">
+<i class="bi bi-x-circle text-danger" style="font-size: rem;"></i>
+<h3 class="mt-">
+{{ ups|selectattr('estado', 'in', ['inactivo', 'falla'])|list|length }}
+</h3>
+<p class="text-muted mb-0">Con problemas</p>
+</div>
+</div>
+</div>
+</div>
+
+<-- Estado de baterías general -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-battery"></i> Resumen de Baterías
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+{% for ups_item in ups %}
+<div class="col-md-6 col-lg-3 mb-3">
+<div class="card border-{{ 'success' if ups_item.bateria and ups_item.bateria >= 80 else 'warning' if ups_item.bateria and ups_item.bateria >= 50 else 'danger' }}">
+<div class="card-body p-3">
+<div class="d-flex justify-content-between align-items-center">
+<div>
+<h6 class="card-title mb-1">{{ ups_item.marca }}</h6>
+<p class="card-text small text-muted mb-">{{ ups_item.modelo }}</p>
+<span class="badge bg-{{ 'success' if ups_item.bateria and ups_item.bateria >= 80 else 'warning' if ups_item.bateria and ups_item.bateria >= 50 else 'danger' }}">
+{{ ups_item.bateria if ups_item.bateria else 0 }}%
+</span>
+</div>
+<div class="text-end">
+<i class="bi bi-battery-{{ 'full' if ups_item.bateria and ups_item.bateria >= 80 else 'half' if ups_item.bateria and ups_item.bateria >= 50 else 'low' }} text-{{ 'success' if ups_item.bateria and ups_item.bateria >= 80 else 'warning' if ups_item.bateria and ups_item.bateria >= 50 else 'danger' }}"
+style="font-size: rem;"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarEliminacion(upsId) {
+if (confirm('¿Estás seguro de que deseas eliminar este equipo UPS?')) {
+fetch(`/ups/eliminar/${upsId}`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+location.reload();
+} else {
+alert('Error al eliminar el UPS: ' + data.message);
+}
+})
+.catch(error => {
+console.error('Error:', error);
+alert('Error de conexión al eliminar el UPS');
+});
+}
+}
+
+// Actualizar estado de baterías cada 30 segundos
+setInterval(function() {
+// Simular actualización de estado de baterías
+location.reload();
+}, 30000);
+</script>
+{% endblock %}

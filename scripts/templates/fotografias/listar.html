@@ -1,0 +1,601 @@
+{% extends "base.html" %}
+
+{% block title %}Sistema de Fotografías - Sistema Cámaras UFRO{% endblock %}
+
+{% block extra_css %}
+<style>
+.fotografia-card {
+transition: transform 0.s, box-shadow 0.s;
+cursor: pointer;
+}
+
+.fotografia-card:hover {
+transform: translateY(-px);
+box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.fotografia-thumbnail {
+height: 00px;
+object-fit: cover;
+border-radius: 8px 8px 0 0;
+}
+
+.categoria-badge {
+position: absolute;
+top: 10px;
+right: 10px;
+z-index: 1;
+}
+
+.filtros-fotografias {
+background: linear-gradient(135deg, #667eea 0%, #764ba 100%);
+color: white;
+border-radius: 8px;
+padding: 1rem;
+margin-bottom: 1rem;
+}
+
+.stats-fotografias {
+background: white;
+border-radius: 8px;
+padding: 1rem;
+box-shadow: 0 px 4px rgba(0,0,0,0.1);
+margin-bottom: 1rem;
+}
+
+.galeria-container {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+gap: 1.5rem;
+margin-top: 1rem;
+}
+
+.fotografia-info {
+position: absolute;
+bottom: 0;
+left: 0;
+right: 0;
+background: linear-gradient(transparent, rgba(0,0,0,0.8));
+color: white;
+padding: 15px 10px 10px;
+border-radius: 0 0 8px 8px;
+}
+
+.lightbox {
+display: none;
+position: fixed;
+z-index: 000;
+left: 0;
+top: 0;
+width: 100%;
+height: 100%;
+background-color: rgba(0,0,0,0.9);
+}
+
+.lightbox-content {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+max-width: 90%;
+max-height: 90%;
+}
+
+.lightbox img {
+width: 100%;
+height: auto;
+border-radius: 8px;
+}
+
+.lightbox-close {
+position: absolute;
+top: 15px;
+right: 5px;
+color: white;
+font-size: 35px;
+font-weight: bold;
+cursor: pointer;
+}
+
+.empty-state {
+text-align: center;
+padding: 60px 0px;
+color: #6c757d;
+}
+
+.quick-upload {
+position: fixed;
+bottom: 30px;
+right: 30px;
+z-index: 1000;
+}
+
+@media (max-width: 768px) {
+.galeria-container {
+grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+}
+
+.quick-upload {
+bottom: 0px;
+right: 0px;
+}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+<div class="row">
+<div class="col-1">
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<h><i class="bi bi-camera"></i> Sistema de Fotografías - Intervenciones Técnicas</h>
+<p class="text-muted">
+{% if current_user.rol.upper() == 'TECNICO' %}
+Mis fotografías de intervenciones técnicas
+{% else %}
+Gestión de fotografías de intervenciones por todos los técnicos
+{% endif %}
+</p>
+</div>
+<div class="d-flex gap-">
+{% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'TECNICO'] %}
+<a href="{{ url_for('fotografias_subir') }}" class="btn btn-primary">
+<i class="bi bi-camera-fill"></i> Nueva Fotografía
+</a>
+{% endif %}
+<button class="btn btn-outline-secondary" onclick="toggleVistaGaleria()">
+<i class="bi bi-grid-3x3" id="vista-icon"></i> <span id="vista-text">Vista Lista</span>
+</button>
+</div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+{{ message }}
+<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<-- Estadísticas rápidas -->
+<div class="row mb-4">
+<div class="col-md-3">
+<div class="stats-fotografias text-center">
+<h4 class="text-primary mb-0">{{ fotografias|length }}</h4>
+<small class="text-muted">Total Fotografías</small>
+</div>
+</div>
+<div class="col-md-3">
+<div class="stats-fotografias text-center">
+<h4 class="text-success mb-0">{{ fotografias|selectattr('categoria', 'equalto', 'Antes')|list|length }}</h4>
+<small class="text-muted">Fotos "Antes"</small>
+</div>
+</div>
+<div class="col-md-3">
+<div class="stats-fotografias text-center">
+<h4 class="text-warning mb-0">{{ fotografias|selectattr('categoria', 'equalto', 'Durante')|list|length }}</h4>
+<small class="text-muted">Fotos "Durante"</small>
+</div>
+</div>
+<div class="col-md-3">
+<div class="stats-fotografias text-center">
+<h4 class="text-info mb-0">{{ fotografias|selectattr('categoria', 'equalto', 'Después')|list|length }}</h4>
+<small class="text-muted">Fotos "Después"</small>
+</div>
+</div>
+</div>
+
+<-- Filtros -->
+<div class="filtros-fotografias">
+<div class="row align-items-center">
+<div class="col-md-3">
+<label for="filtro-categoria" class="form-label">
+<i class="bi bi-tag"></i> Categoría
+</label>
+<select id="filtro-categoria" class="form-select" onchange="aplicarFiltros()">
+<option value="">Todas las Categorías</option>
+<option value="Antes">Antes de Intervención</option>
+<option value="Durante">Durante Intervención</option>
+<option value="Después">Después de Intervención</option>
+</select>
+</div>
+<div class="col-md-3">
+<label for="filtro-equipo" class="form-label">
+<i class="bi bi-gear"></i> Tipo de Equipo
+</label>
+<select id="filtro-equipo" class="form-select" onchange="aplicarFiltros()">
+<option value="">Todos los Equipos</option>
+<option value="Camara">Cámaras</option>
+<option value="Switch">Switches</option>
+<option value="Ups">UPS</option>
+<option value="Nvr_dvr">NVR/DVR</option>
+</select>
+</div>
+<div class="col-md-3">
+<label for="filtro-fecha" class="form-label">
+<i class="bi bi-calendar"></i> Fecha
+</label>
+<select id="filtro-fecha" class="form-select" onchange="aplicarFiltros()">
+<option value="">Todas las Fechas</option>
+<option value="hoy">Hoy</option>
+<option value="semana">Esta Semana</option>
+<option value="mes">Este Mes</option>
+</select>
+</div>
+{% if current_user.rol.upper() = 'TECNICO' %}
+<div class="col-md-3">
+<label for="filtro-tecnico" class="form-label">
+<i class="bi bi-person"></i> Técnico
+</label>
+<select id="filtro-tecnico" class="form-select" onchange="aplicarFiltros()">
+<option value="">Todos los Técnicos</option>
+{% for foto in fotografias %}
+{% if foto.tecnico and foto.tecnico.nombre_completo not in (filtro_tecnicos or []) %}
+{% set _ = filtro_tecnicos.append(foto.tecnico.nombre_completo) if filtro_tecnicos else none %}
+{% endif %}
+{% endfor %}
+{% set filtro_tecnicos = [] %}
+{% for foto in fotografias|groupby('tecnico.nombre_completo') %}
+{% if foto[0] %}
+<option value="{{ foto[0] }}">{{ foto[0] }}</option>
+{% endif %}
+{% endfor %}
+</select>
+</div>
+{% endif %}
+</div>
+<div class="row mt-3">
+<div class="col-md-6">
+<div class="d-flex gap-">
+<button class="btn btn-outline-light btn-sm" onclick="limpiarFiltros()">
+<i class="bi bi-x-circle"></i> Limpiar Filtros
+</button>
+<button class="btn btn-outline-light btn-sm" onclick="exportarFotografias()">
+<i class="bi bi-download"></i> Exportar Lista
+</button>
+</div>
+</div>
+<div class="col-md-6 text-end">
+<span class="badge bg-light text-dark" id="contador-filtrado">{{ fotografias|length }} fotografías</span>
+</div>
+</div>
+</div>
+
+{% if fotografias %}
+<-- Vista de galería (default) -->
+<div id="vista-galeria">
+<div class="galeria-container" id="galeria-fotografias">
+{% for foto in fotografias %}
+<div class="card fotografia-card position-relative"
+data-categoria="{{ foto.categoria }}"
+data-equipo="{{ foto.equipo_tipo }}"
+data-fecha="{{ foto.fecha_subida.strftime('%Y-%m-%d') }}"
+data-tecnico="{{ foto.tecnico.nombre_completo if foto.tecnico else '' }}"
+onclick="abrirFoto('{{ url_for('fotografias_archivo', filename=foto.nombre_archivo) }}', '{{ foto.descripcion or 'Sin descripción' }}')">
+
+<-- Badge de categoría -->
+<div class="categoria-badge">
+{% if foto.categoria == 'Antes' %}
+<span class="badge bg-danger">Antes</span>
+{% elif foto.categoria == 'Durante' %}
+<span class="badge bg-warning">Durante</span>
+{% elif foto.categoria == 'Después' %}
+<span class="badge bg-success">Después</span>
+{% endif %}
+</div>
+
+<-- Imagen -->
+<img src="{{ url_for('fotografias_archivo', filename=foto.nombre_archivo) }}"
+class="fotografia-thumbnail w-100"
+alt="{{ foto.descripcion or 'Fotografía de intervención' }}"
+loading="lazy">
+
+<-- Información de la fotografía -->
+<div class="fotografia-info">
+<h6 class="mb-1">{{ foto.equipo_tipo }} ID: {{ foto.equipo_id }}</h6>
+<p class="mb-1 small">{{ foto.descripcion or 'Sin descripción' }}</p>
+<div class="d-flex justify-content-between align-items-center">
+<small>
+<i class="bi bi-person"></i> {{ foto.tecnico.nombre_completo if foto.tecnico else 'Sin asignar' }}
+</small>
+<small>
+<i class="bi bi-calendar"></i> {{ foto.fecha_subida.strftime('%d/%m/%Y') }}
+</small>
+</div>
+</div>
+
+<-- Botón de acciones -->
+<div class="position-absolute top-0 start-0 p-">
+<button class="btn btn-sm btn-outline-light"
+onclick="event.stopPropagation(); verDetalles({{ foto.id }})"
+title="Ver detalles">
+<i class="bi bi-eye"></i>
+</button>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<-- Vista de lista -->
+<div id="vista-lista" style="display: none;">
+<div class="card">
+<div class="card-body">
+<div class="table-responsive">
+<table class="table table-striped table-hover">
+<thead>
+<tr>
+<th>Vista Previa</th>
+<th>Equipo</th>
+<th>Categoría</th>
+<th>Descripción</th>
+<th>Técnico</th>
+<th>Fecha</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="tabla-fotografias">
+{% for foto in fotografias %}
+<tr data-categoria="{{ foto.categoria }}"
+data-equipo="{{ foto.equipo_tipo }}"
+data-fecha="{{ foto.fecha_subida.strftime('%Y-%m-%d') }}"
+data-tecnico="{{ foto.tecnico.nombre_completo if foto.tecnico else '' }}">
+<td>
+<img src="{{ url_for('fotografias_archivo', filename=foto.nombre_archivo) }}"
+class="img-thumbnail"
+style="width: 60px; height: 60px; object-fit: cover;"
+alt="Vista previa">
+</td>
+<td>
+<strong>{{ foto.equipo_tipo }}</strong><br>
+<small class="text-muted">ID: {{ foto.equipo_id }}</small>
+</td>
+<td>
+{% if foto.categoria == 'Antes' %}
+<span class="badge bg-danger">{{ foto.categoria }}</span>
+{% elif foto.categoria == 'Durante' %}
+<span class="badge bg-warning">{{ foto.categoria }}</span>
+{% elif foto.categoria == 'Después' %}
+<span class="badge bg-success">{{ foto.categoria }}</span>
+{% endif %}
+</td>
+<td>{{ foto.descripcion or 'Sin descripción' }}</td>
+<td>{{ foto.tecnico.nombre_completo if foto.tecnico else 'Sin asignar' }}</td>
+<td>{{ foto.fecha_subida.strftime('%d/%m/%Y %H:%M') }}</td>
+<td>
+<div class="btn-group" role="group">
+<a href="{{ url_for('fotografias_ver', foto_id=foto.id) }}"
+class="btn btn-sm btn-outline-primary" title="Ver detalles">
+<i class="bi bi-eye"></i>
+</a>
+<button class="btn btn-sm btn-outline-success"
+onclick="abrirFoto('{{ url_for('fotografias_archivo', filename=foto.nombre_archivo) }}', '{{ foto.descripcion or 'Sin descripción' }}')"
+title="Ver imagen completa">
+<i class="bi bi-zoom-in"></i>
+</button>
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+
+{% else %}
+<div class="empty-state">
+<i class="bi bi-camera display-1"></i>
+<h4 class="mt-3">No hay fotografías registradas</h4>
+<p class="text-muted">
+{% if current_user.rol.upper() == 'TECNICO' %}
+Aún no has subido fotografías de tus intervenciones técnicas.
+{% else %}
+Los técnicos aún no han subido fotografías de sus intervenciones.
+{% endif %}
+</p>
+{% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'TECNICO'] %}
+<a href="{{ url_for('fotografias_subir') }}" class="btn btn-primary mt-3">
+<i class="bi bi-camera-fill"></i> Subir Primera Fotografía
+</a>
+{% endif %}
+</div>
+{% endif %}
+</div>
+</div>
+</div>
+
+<-- Lightbox para ver imágenes -->
+<div id="lightbox" class="lightbox" onclick="cerrarLightbox()">
+<span class="lightbox-close">&times;</span>
+<div class="lightbox-content">
+<img id="lightbox-img" src="" alt="">
+<div class="text-center mt-3">
+<p id="lightbox-description" class="text-light"></p>
+</div>
+</div>
+</div>
+
+<-- Botón flotante para subir -->
+{% if current_user.rol.upper() in ['SUPERADMIN', 'ADMIN', 'TECNICO'] %}
+<div class="quick-upload">
+<a href="{{ url_for('fotografias_subir') }}" class="btn btn-primary btn-lg rounded-circle" title="Nueva Fotografía">
+<i class="bi bi-camera-fill"></i>
+</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let vistaActual = 'galeria';
+
+// Funciones de filtrado
+function aplicarFiltros() {
+const categoria = document.getElementById('filtro-categoria').value;
+const equipo = document.getElementById('filtro-equipo').value;
+const fecha = document.getElementById('filtro-fecha').value;
+const tecnico = document.getElementById('filtro-tecnico') ? document.getElementById('filtro-tecnico').value : '';
+
+const items = vistaActual === 'galeria'
+? document.querySelectorAll('#galeria-fotografias .fotografia-card')
+: document.querySelectorAll('#tabla-fotografias tr');
+
+let contadorVisible = 0;
+
+items.forEach(item => {
+let mostrar = true;
+
+// Filtro por categoría
+if (categoria && item.dataset.categoria == categoria) {
+mostrar = false;
+}
+
+// Filtro por equipo
+if (equipo && item.dataset.equipo == equipo) {
+mostrar = false;
+}
+
+// Filtro por técnico
+if (tecnico && item.dataset.tecnico == tecnico) {
+mostrar = false;
+}
+
+// Filtro por fecha
+if (fecha) {
+const fechaItem = new Date(item.dataset.fecha);
+const hoy = new Date();
+
+switch(fecha) {
+case 'hoy':
+const esHoy = fechaItem.toDateString() === hoy.toDateString();
+if (esHoy) mostrar = false;
+break;
+case 'semana':
+const hace7Dias = new Date(hoy.getTime() - 7 * 4 * 60 * 60 * 1000);
+if (fechaItem < hace7Dias) mostrar = false;
+break;
+case 'mes':
+const hace30Dias = new Date(hoy.getTime() - 30 * 4 * 60 * 60 * 1000);
+if (fechaItem < hace30Dias) mostrar = false;
+break;
+}
+}
+
+item.style.display = mostrar ? '' : 'none';
+if (mostrar) contadorVisible++;
+});
+
+document.getElementById('contador-filtrado').textContent = `${contadorVisible} fotografías`;
+}
+
+function limpiarFiltros() {
+document.getElementById('filtro-categoria').value = '';
+document.getElementById('filtro-equipo').value = '';
+document.getElementById('filtro-fecha').value = '';
+if (document.getElementById('filtro-tecnico')) {
+document.getElementById('filtro-tecnico').value = '';
+}
+aplicarFiltros();
+}
+
+// Funciones de vista
+function toggleVistaGaleria() {
+if (vistaActual === 'galeria') {
+// Cambiar a vista lista
+document.getElementById('vista-galeria').style.display = 'none';
+document.getElementById('vista-lista').style.display = 'block';
+document.getElementById('vista-icon').className = 'bi bi-view-list';
+document.getElementById('vista-text').textContent = 'Vista Galería';
+vistaActual = 'lista';
+} else {
+// Cambiar a vista galería
+document.getElementById('vista-galeria').style.display = 'block';
+document.getElementById('vista-lista').style.display = 'none';
+document.getElementById('vista-icon').className = 'bi bi-grid-3x3';
+document.getElementById('vista-text').textContent = 'Vista Lista';
+vistaActual = 'galeria';
+}
+}
+
+// Funciones del lightbox
+function abrirFoto(src, descripcion) {
+document.getElementById('lightbox-img').src = src;
+document.getElementById('lightbox-description').textContent = descripcion;
+document.getElementById('lightbox').style.display = 'block';
+document.body.style.overflow = 'hidden';
+}
+
+function cerrarLightbox() {
+document.getElementById('lightbox').style.display = 'none';
+document.body.style.overflow = 'auto';
+}
+
+// Cerrar lightbox con ESC
+document.addEventListener('keydown', function(e) {
+if (e.key === 'Escape') {
+cerrarLightbox();
+}
+});
+
+// Funciones de navegación
+function verDetalles(fotoId) {
+window.location.href = `/fotografias/ver/${fotoId}`;
+}
+
+function exportarFotografias() {
+// Crear CSV con lista de fotografías
+let csvContent = "Fecha,Categoría,Equipo,Técnico,Descripción\n";
+
+const filas = document.querySelectorAll('#tabla-fotografias tr');
+filas.forEach(fila => {
+if (fila.style.display == 'none') {
+const celdas = fila.querySelectorAll('td');
+if (celdas.length > 0) {
+const fecha = fila.dataset.fecha;
+const categoria = fila.dataset.categoria;
+const equipo = celdas[1].textContent.trim().replace(/\n/g, ' ');
+const tecnico = fila.dataset.tecnico;
+const descripcion = celdas[3].textContent.trim();
+
+csvContent += `"${fecha}","${categoria}","${equipo}","${tecnico}","${descripcion}"\n`;
+}
+}
+});
+
+// Descargar archivo
+const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+const link = document.createElement("a");
+const url = URL.createObjectURL(blob);
+link.setAttribute("href", url);
+link.setAttribute("download", "fotografias_intervenciones.csv");
+link.style.visibility = 'hidden';
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
+}
+
+// Lazy loading para imágenes
+document.addEventListener('DOMContentLoaded', function() {
+const imageObserver = new IntersectionObserver((entries, observer) => {
+entries.forEach(entry => {
+if (entry.isIntersecting) {
+const img = entry.target;
+img.src = img.dataset.src || img.src;
+img.classList.remove('loading');
+observer.unobserve(img);
+}
+});
+});
+
+document.querySelectorAll('img[loading="lazy"]').forEach(img => {
+imageObserver.observe(img);
+});
+});
+</script>
+{% endblock %}

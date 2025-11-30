@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}UPS {{ ups.codigo }} - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Detalle de UPS - {{ ups.codigo }}</h1>
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white"><h5 class="mb-0">Información del UPS</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4"><strong>Código:</strong> {{ ups.codigo }}</div>
+                <div class="col-md-4"><strong>Modelo:</strong> {{ ups.modelo }}</div>
+                <div class="col-md-4"><strong>Marca:</strong> {{ ups.marca }}</div>
+                <div class="col-md-4 mt-2"><strong>Capacidad:</strong> {{ ups.capacidad_va }} VA</div>
+                <div class="col-md-4 mt-2"><strong>Número de Baterías:</strong> {{ ups.numero_baterias or 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Gabinete:</strong> {{ ups.gabinete_asociado or 'N/A' }}</div>
+                <div class="col-md-12 mt-3"><strong>Ubicación:</strong> 
+                    {% if ups.ubicacion %}
+                    {{ ups.ubicacion.campus }} - {{ ups.ubicacion.edificio }} - {{ ups.ubicacion.piso }}
+                    {% else %}
+                    {{ ups.ubicacion or 'N/A' }}
+                    {% endif %}
+                </div>
+                <div class="col-md-4 mt-2"><strong>Estado:</strong> 
+                    <span class="badge bg-{{ 'success' if ups.estado == 'Operativo' else 'danger' }}">{{ ups.estado }}</span>
+                </div>
+                <div class="col-md-4 mt-2"><strong>Fecha Instalación:</strong> {{ ups.fecha_instalacion.strftime('%d/%m/%Y') if ups.fecha_instalacion else 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Última Mantención:</strong> {{ ups.ultima_mantencion.strftime('%d/%m/%Y') if ups.ultima_mantencion else 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Costo Última Mantención:</strong> ${{ "{:,.0f}".format(ups.costo_ultima_mantencion) if ups.costo_ultima_mantencion else 'N/A' }}</div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12"><strong>Equipos que Alimenta:</strong> {{ ups.equipos_alimenta or 'No especificado' }}</div>
+                <div class="col-12 mt-2"><strong>Observaciones:</strong> {{ ups.observaciones or 'Sin observaciones' }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Equipos Protegidos</h5></div>
+        <div class="card-body">
+            {% if equipos_protegidos %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Equipo</th><th>Tipo</th><th>Ubicación</th><th>Estado</th></tr></thead>
+                    <tbody>
+                        {% for equipo in equipos_protegidos %}
+                        <tr>
+                            <td>{{ equipo.nombre }}</td>
+                            <td>{{ equipo.tipo }}</td>
+                            <td>{{ equipo.ubicacion }}</td>
+                            <td><span class="badge bg-success">Protegido</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No hay equipos protegidos registrados</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h5 class="mb-0">Historial de Mantenciones</h5></div>
+        <div class="card-body">
+            {% if mantenimientos %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Costo</th><th>Técnico</th></tr></thead>
+                    <tbody>
+                        {% for mantenimiento in mantenimientos %}
+                        <tr>
+                            <td>{{ mantenimiento.fecha.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ mantenimiento.tipo }}</td>
+                            <td>{{ mantenimiento.descripcion }}</td>
+                            <td>${{ "{:,.0f}".format(mantenimiento.costo) if mantenimiento.costo else 'N/A' }}</td>
+                            <td>{{ mantenimiento.tecnico }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No hay mantenciones registradas</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

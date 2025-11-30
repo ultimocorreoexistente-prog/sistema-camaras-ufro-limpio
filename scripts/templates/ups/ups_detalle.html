@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}{{ ups.modelo }} - UPS Detail{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1>
+<i class="bi bi-battery-charging"></i>
+Equipo UPS - {{ ups.marca }} {{ ups.modelo }}
+</h1>
+<div>
+<a href="{{ url_for('ups_listar') }}" class="btn btn-outline-secondary">
+<i class="bi bi-arrow-left"></i> Volver a la lista
+</a>
+<a href="{{ url_for('ups_editar', ups_id=ups.id) }}" class="btn btn-warning">
+<i class="bi bi-pencil"></i> Editar
+</a>
+</div>
+</div>
+
+<div class="row">
+<-- Información principal -->
+<div class="col-lg-8">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-info-circle"></i> Información del UPS
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<table class="table table-borderless">
+<tr>
+<td><strong>Marca:</strong></td>
+<td>{{ ups.marca }}</td>
+</tr>
+<tr>
+<td><strong>Modelo:</strong></td>
+<td>{{ ups.modelo }}</td>
+</tr>
+<tr>
+<td><strong>Capacidad:</strong></td>
+<td><i class="bi bi-lightning text-primary"></i> {{ ups.capacidad }} VA</td>
+</tr>
+<tr>
+<td><strong>Estado de batería:</strong></td>
+<td>
+{% if ups.bateria %}
+<div class="progress" style="height: 5px; width: 100px;">
+<div class="progress-bar bg-{{ 'success' if ups.bateria >= 80 else 'warning' if ups.bateria >= 50 else 'danger' }}"
+role="progressbar" style="width: {{ ups.bateria }}%"></div>
+</div>
+<strong>{{ ups.bateria }}%</strong>
+{% else %}
+<span class="text-muted">No especificado</span>
+{% endif %}
+</td>
+</tr>
+</table>
+</div>
+<div class="col-md-6">
+<table class="table table-borderless">
+<tr>
+<td><strong>Ubicación:</strong></td>
+<td><i class="bi bi-geo-alt text-primary"></i> {{ ups.ubicacion }}</td>
+</tr>
+<tr>
+<td><strong>Estado:</strong></td>
+<td>
+{% if ups.estado == 'activo' %}
+<span class="badge bg-success">Activo</span>
+{% elif ups.estado == 'inactivo' %}
+<span class="badge bg-danger">Inactivo</span>
+{% elif ups.estado == 'mantenimiento' %}
+<span class="badge bg-warning">Mantenimiento</span>
+{% elif ups.estado == 'bateria_baja' %}
+<span class="badge bg-warning">Batería baja</span>
+{% elif ups.estado == 'falla' %}
+<span class="badge bg-danger">Con fallas</span>
+{% endif %}
+</td>
+</tr>
+<tr>
+<td><strong>Fecha de registro:</strong></td>
+<td>{{ ups.created_at.strftime('%d/%m/%Y %H:%M') if ups.created_at else 'No disponible' }}</td>
+</tr>
+<tr>
+<td><strong>Última actualización:</strong></td>
+<td>{{ ups.updated_at.strftime('%d/%m/%Y %H:%M') if ups.updated_at else 'No disponible' }}</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+
+<-- Estado de batería detallado -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-battery"></i> Estado Detallado de Batería
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-4">
+<div class="text-center">
+<div class="mb-3">
+<i class="bi bi-battery-full text-success" style="font-size: 3rem;"></i>
+</div>
+<h4>{{ ups.bateria if ups.bateria else 0 }}%</h4>
+<p class="text-muted">Carga restante</p>
+</div>
+</div>
+<div class="col-md-4">
+<div class="text-center">
+<div class="mb-3">
+<i class="bi bi-clock text-primary" style="font-size: 3rem;"></i>
+</div>
+<h4>45 min</h4>
+<p class="text-muted">Tiempo de autonomía</p>
+</div>
+</div>
+<div class="col-md-4">
+<div class="text-center">
+<div class="mb-3">
+<i class="bi bi-thermometer text-warning" style="font-size: 3rem;"></i>
+</div>
+<h4>35°C</h4>
+<p class="text-muted">Temperatura</p>
+</div>
+</div>
+</div>
+
+{% if ups.bateria and ups.bateria < 50 %}
+<div class="alert alert-warning mt-3">
+<i class="bi bi-exclamation-triangle"></i>
+<strong>Alerta:</strong> La batería está por debajo del 50%. Se recomienda revisar el estado de carga.
+</div>
+{% endif %}
+</div>
+</div>
+
+<-- Historial de eventos -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-clock-history"></i> Historial de Eventos
+</h5>
+</div>
+<div class="card-body">
+<div class="timeline">
+<div class="d-flex mb-3">
+<div class="flex-shrink-0">
+<div class="bg-success rounded-circle p-">
+<i class="bi bi-check text-white"></i>
+</div>
+</div>
+<div class="ms-3">
+<h6 class="mb-1">Batería cargada al 100%</h6>
+<p class="text-muted small mb-0">{{ ups.updated_at.strftime('%d/%m/%Y %H:%M') if ups.updated_at else 'Fecha desconocida' }}</p>
+</div>
+</div>
+<div class="d-flex mb-3">
+<div class="flex-shrink-0">
+<div class="bg-primary rounded-circle p-">
+<i class="bi bi-lightning text-white"></i>
+</div>
+</div>
+<div class="ms-3">
+<h6 class="mb-1">UPS conectado a la red eléctrica</h6>
+<p class="text-muted small mb-0">{{ (ups.updated_at or ups.created_at).strftime('%d/%m/%Y %H:%M') if ups.updated_at or ups.created_at else 'Fecha desconocida' }}</p>
+</div>
+</div>
+<div class="d-flex">
+<div class="flex-shrink-0">
+<div class="bg-info rounded-circle p-">
+<i class="bi bi-gear text-white"></i>
+</div>
+</div>
+<div class="ms-3">
+<h6 class="mb-1">Sistema iniciado</h6>
+<p class="text-muted small mb-0">{{ ups.created_at.strftime('%d/%m/%Y %H:%M') if ups.created_at else 'Fecha desconocida' }}</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Panel lateral -->
+<div class="col-lg-4">
+<-- Estado del sistema -->
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-speedometer"></i> Estado del Sistema
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<div class="d-flex justify-content-between">
+<span>Entrada</span>
+<span>0V</span>
+</div>
+<div class="progress">
+<div class="progress-bar bg-success" role="progressbar" style="width: 95%"></div>
+</div>
+</div>
+<div class="mb-3">
+<div class="d-flex justify-content-between">
+<span>Salida</span>
+<span>18V</span>
+</div>
+<div class="progress">
+<div class="progress-bar bg-info" role="progressbar" style="width: 90%"></div>
+</div>
+</div>
+<div class="mb-3">
+<div class="d-flex justify-content-between">
+<span>Frecuencia</span>
+<span>60 Hz</span>
+</div>
+<div class="progress">
+<div class="progress-bar bg-primary" role="progressbar" style="width: 100%"></div>
+</div>
+</div>
+<div>
+<div class="d-flex justify-content-between">
+<span>Carga</span>
+<span>65%</span>
+</div>
+<div class="progress">
+<div class="progress-bar bg-warning" role="progressbar" style="width: 65%"></div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Acciones rápidas -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-lightning"></i> Acciones Rápidas
+</h5>
+</div>
+<div class="card-body">
+<div class="d-grid gap-">
+<button class="btn btn-primary" onclick="autoTest()" {% if ups.bateria and ups.bateria < 0 %}disabled{% endif %}>
+<i class="bi bi-play-circle"></i> Prueba Automática
+</button>
+<button class="btn btn-warning" onclick="calibrarBateria()">
+<i class="bi bi-arrow-repeat"></i> Calibrar Batería
+</button>
+<button class="btn btn-info" onclick="verLogs()">
+<i class="bi bi-file-text"></i> Ver Logs
+</button>
+<button class="btn btn-success" onclick="exportarReporte()">
+<i class="bi bi-download"></i> Exportar Reporte
+</button>
+</div>
+</div>
+</div>
+
+<-- Información de ubicación -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-geo-alt"></i> Ubicación
+</h5>
+</div>
+<div class="card-body">
+<div class="text-center">
+<i class="bi bi-geo-alt text-primary" style="font-size: 3rem;"></i>
+<h5 class="mt-">{{ ups.ubicacion }}</h5>
+<p class="text-muted">Centro de Datos Principal</p>
+<button class="btn btn-outline-primary btn-sm" onclick="verEnMapa()">
+<i class="bi bi-map"></i> Ver en Mapa
+</button>
+</div>
+</div>
+</div>
+
+<-- Alertas -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-bell"></i> Alertas
+</h5>
+</div>
+<div class="card-body">
+{% if ups.bateria and ups.bateria < 30 %}
+<div class="alert alert-danger">
+<i class="bi bi-exclamation-triangle"></i>
+<strong>Batería crítica</strong>
+<p class="mb-0 small">Carga al {{ ups.bateria }}%. Reemplazar batería.</p>
+</div>
+{% elif ups.bateria and ups.bateria < 60 %}
+<div class="alert alert-warning">
+<i class="bi bi-exclamation-circle"></i>
+<strong>Atención requerida</strong>
+<p class="mb-0 small">Batería al {{ ups.bateria }}%. Verificar estado.</p>
+</div>
+{% else %}
+<div class="alert alert-success">
+<i class="bi bi-check-circle"></i>
+<strong>Sistema funcionando correctamente</strong>
+</div>
+{% endif %}
+
+<div class="mt-3">
+<small class="text-muted">
+<i class="bi bi-clock"></i> Última verificación: {{ ups.updated_at.strftime('%d/%m/%Y %H:%M') if ups.updated_at else 'No disponible' }}
+</small>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function autoTest() {
+if (confirm('¿Deseas ejecutar una prueba automática del UPS?')) {
+alert('Iniciando prueba automática. Duración aproximada: 5 minutos.');
+}
+}
+
+function calibrarBateria() {
+if (confirm('¿Deseas calibrar la batería del UPS? Esto puede tardar varios minutos.')) {
+alert('Iniciando calibración de batería...');
+}
+}
+
+function verLogs() {
+alert('Abriendo logs del UPS...');
+}
+
+function exportarReporte() {
+alert('Generando reporte del UPS...');
+}
+
+function verEnMapa() {
+alert('Abriendo ubicación en el mapa...');
+}
+
+// Actualizar estado de la batería cada 30 segundos
+setInterval(function() {
+// En una implementación real, esto haría una llamada AJAX para actualizar los datos
+console.log('Actualizando estado de batería...');
+}, 30000);
+</script>
+{% endblock %}

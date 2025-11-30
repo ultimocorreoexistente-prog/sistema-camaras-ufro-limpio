@@ -1,0 +1,630 @@
+{% extends "base.html" %}
+
+{% block title %}Subir Fotografía - Sistema Cámaras UFRO{% endblock %}
+
+{% block extra_css %}
+<style>
+.upload-zone {
+border: 3px dashed #007bff;
+border-radius: 1px;
+padding: 3rem rem;
+text-align: center;
+background: #f8f9fa;
+transition: all 0.3s ease;
+cursor: pointer;
+position: relative;
+overflow: hidden;
+}
+
+.upload-zone:hover {
+background: #e3ffd;
+border-color: #0056b3;
+transform: translateY(-px);
+}
+
+.upload-zone.dragover {
+background: #e3ffd;
+border-color: #8a745;
+transform: scale(1.0);
+}
+
+.preview-container {
+display: none;
+margin-top: 1rem;
+}
+
+.image-preview {
+max-width: 100%;
+max-height: 300px;
+border-radius: 8px;
+box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.categoria-selector {
+background: white;
+border-radius: 8px;
+padding: 1.5rem;
+margin-bottom: 1.5rem;
+box-shadow: 0 px 4px rgba(0,0,0,0.1);
+}
+
+.categoria-option {
+border: px solid #deee6;
+border-radius: 8px;
+padding: 1rem;
+text-align: center;
+cursor: pointer;
+transition: all 0.3s ease;
+margin-bottom: 1rem;
+}
+
+.categoria-option:hover {
+border-color: #007bff;
+background: #f8f9fa;
+}
+
+.categoria-option.selected {
+border-color: #007bff;
+background: #e3ffd;
+color: #0056b3;
+}
+
+.categoria-antes {
+border-left: 4px solid #dc3545;
+}
+
+.categoria-durante {
+border-left: 4px solid #ffc107;
+}
+
+.categoria-despues {
+border-left: 4px solid #8a745;
+}
+
+.equipo-selector {
+background: white;
+border-radius: 8px;
+padding: 1.5rem;
+margin-bottom: 1.5rem;
+box-shadow: 0 px 4px rgba(0,0,0,0.1);
+}
+
+.form-floating {
+margin-bottom: 1rem;
+}
+
+.file-info {
+background: #e3ffd;
+border-left: 4px solid #196f3;
+padding: 15px;
+border-radius: 8px;
+margin-top: 1rem;
+}
+
+.progress-container {
+display: none;
+margin-top: 1rem;
+}
+
+.metadata-info {
+background: #f8f9fa;
+border-radius: 8px;
+padding: 1rem;
+margin-top: 1rem;
+border: 1px solid #deee6;
+}
+
+.required-notice {
+background: linear-gradient(135deg, #667eea 0%, #764ba 100%);
+color: white;
+border-radius: 8px;
+padding: 1rem;
+margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+.upload-zone {
+padding: rem 1rem;
+}
+
+.categoria-option {
+margin-bottom: 0.5rem;
+}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+<div class="row justify-content-center">
+<div class="col-lg-8">
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<h><i class="bi bi-camera-fill"></i> Subir Nueva Fotografía</h>
+<nav aria-label="breadcrumb">
+<ol class="breadcrumb">
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('fotografias_listar') }}">Fotografías</a></li>
+<li class="breadcrumb-item active">Nueva Fotografía</li>
+</ol>
+</nav>
+</div>
+<a href="{{ url_for('fotografias_listar') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Volver
+</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+{{ message }}
+<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<-- Aviso de requerimiento obligatorio -->
+<div class="required-notice">
+<h6><i class="bi bi-exclamation-circle"></i> Fotografía Obligatoria</h6>
+<p class="mb-0">
+Como técnico, es obligatorio documentar fotográficamente todas las intervenciones realizadas.
+Debe subir fotografías en las tres categorías: <strong>Antes</strong>, <strong>Durante</strong> y <strong>Después</strong> de cada intervención.
+</p>
+</div>
+
+<form method="POST" action="{{ url_for('fotografias_subir') }}" enctype="multipart/form-data" id="form-fotografia">
+
+<-- Selección de categoría -->
+<div class="categoria-selector">
+<h5><i class="bi bi-tag"></i> Categoría de la Fotografía</h5>
+<p class="text-muted mb-3">Seleccione en qué momento de la intervención se tomó la fotografía</p>
+
+<div class="row">
+<div class="col-md-4">
+<div class="categoria-option categoria-antes" data-categoria="Antes">
+<i class="bi bi-camera text-danger display-6 mb-"></i>
+<h6>Antes de la Intervención</h6>
+<p class="small text-muted mb-0">Estado inicial del equipo antes de cualquier manipulación</p>
+</div>
+</div>
+<div class="col-md-4">
+<div class="categoria-option categoria-durante" data-categoria="Durante">
+<i class="bi bi-tools text-warning display-6 mb-"></i>
+<h6>Durante la Intervención</h6>
+<p class="small text-muted mb-0">Proceso de reparación, mantenimiento o instalación</p>
+</div>
+</div>
+<div class="col-md-4">
+<div class="categoria-option categoria-despues" data-categoria="Después">
+<i class="bi bi-check-circle text-success display-6 mb-"></i>
+<h6>Después de la Intervención</h6>
+<p class="small text-muted mb-0">Estado final del equipo tras completar el trabajo</p>
+</div>
+</div>
+</div>
+
+<input type="hidden" name="categoria" id="categoria-selected" required>
+</div>
+
+<-- Selección de equipo -->
+<div class="equipo-selector">
+<h5><i class="bi bi-gear"></i> Información del Equipo</h5>
+<p class="text-muted mb-3">Especifique qué equipo fue intervenido</p>
+
+<div class="row">
+<div class="col-md-6">
+<div class="form-floating">
+<select class="form-select" id="equipo_tipo" name="equipo_tipo" required onchange="cargarEquipos()">
+<option value="">Seleccionar tipo de equipo</option>
+<option value="Camara">Cámara IP</option>
+<option value="Switch">Switch de Red</option>
+<option value="Ups">Sistema UPS</option>
+<option value="Nvr_dvr">NVR/DVR</option>
+</select>
+<label for="equipo_tipo">Tipo de Equipo <span class="text-danger">*</span></label>
+</div>
+</div>
+<div class="col-md-6">
+<div class="form-floating">
+<select class="form-select" id="equipo_id" name="equipo_id" required disabled>
+<option value="">Primero seleccione el tipo</option>
+</select>
+<label for="equipo_id">Equipo Específico <span class="text-danger">*</span></label>
+</div>
+</div>
+</div>
+
+<-- Información adicional del equipo seleccionado -->
+<div id="equipo-info" class="metadata-info" style="display: none;">
+<h6><i class="bi bi-info-circle"></i> Información del Equipo</h6>
+<div id="equipo-detalles"></div>
+</div>
+</div>
+
+<-- Selección de falla (opcional) -->
+<div class="equipo-selector">
+<h5><i class="bi bi-exclamation-triangle"></i> Falla Relacionada (Opcional)</h5>
+<p class="text-muted mb-3">Si esta fotografía está relacionada con una falla específica, selecciónela</p>
+
+<div class="form-floating">
+<select class="form-select" id="falla_id" name="falla_id">
+<option value="">Sin falla específica</option>
+{% for falla in fallas_pendientes %}
+<option value="{{ falla.id }}">
+{{ falla.codigo }} - {{ falla.descripcion[:50] }}{% if falla.descripcion|length > 50 %}...{% endif %}
+</option>
+{% endfor %}
+</select>
+<label for="falla_id">Falla Relacionada</label>
+</div>
+</div>
+
+<-- Zona de subida de archivo -->
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0"><i class="bi bi-cloud-upload"></i> Subir Fotografía</h5>
+</div>
+<div class="card-body">
+<div class="upload-zone" id="upload-zone" onclick="document.getElementById('archivo').click()">
+<i class="bi bi-cloud-upload display-1 text-primary mb-3"></i>
+<h5>Arrastra y suelta tu fotografía aquí</h5>
+<p class="text-muted mb-3">o haz clic para seleccionar archivo</p>
+<p class="small text-muted">
+Formatos soportados: JPG, PNG, GIF (máximo 16MB)
+</p>
+</div>
+
+<input type="file" class="form-control" id="archivo" name="archivo"
+accept="image/*" required style="display: none;" onchange="previewImage(this)">
+
+<-- Preview de la imagen -->
+<div class="preview-container" id="preview-container">
+<div class="text-center">
+<img id="image-preview" class="image-preview" src="" alt="Vista previa">
+<div class="file-info" id="file-info"></div>
+<button type="button" class="btn btn-outline-danger mt-" onclick="removeImage()">
+<i class="bi bi-trash"></i> Cambiar Imagen
+</button>
+</div>
+</div>
+
+<-- Barra de progreso -->
+<div class="progress-container" id="progress-container">
+<div class="progress">
+<div class="progress-bar" id="upload-progress" role="progressbar" style="width: 0%"></div>
+</div>
+<small class="text-muted">Subiendo fotografía...</small>
+</div>
+</div>
+</div>
+
+<-- Descripción -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0"><i class="bi bi-textarea-t"></i> Descripción de la Intervención</h5>
+</div>
+<div class="card-body">
+<div class="form-floating">
+<textarea class="form-control" id="descripcion" name="descripcion"
+placeholder="Describe los detalles de la intervención..."
+style="height: 10px;" required></textarea>
+<label for="descripcion">Descripción Detallada <span class="text-danger">*</span></label>
+</div>
+<div class="form-text">
+Describe qué tipo de intervención se realizó, problemas encontrados, soluciones aplicadas, etc.
+Mínimo 0 caracteres.
+</div>
+
+<div class="metadata-info mt-3">
+<h6><i class="bi bi-info-circle"></i> Metadatos de la Fotografía</h6>
+<div class="row">
+<div class="col-md-4">
+<strong>Técnico:</strong><br>
+{{ current_user.nombre_completo or current_user.nombre or current_user.email }}
+</div>
+<div class="col-md-4">
+<strong>Fecha y Hora:</strong><br>
+<span id="fecha-actual"></span>
+</div>
+<div class="col-md-4">
+<strong>Ubicación:</strong><br>
+<span id="ubicacion-gps">Detectando...</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Botones de acción -->
+<div class="d-flex justify-content-between mt-4">
+<a href="{{ url_for('fotografias_listar') }}" class="btn btn-secondary">
+<i class="bi bi-x-circle"></i> Cancelar
+</a>
+<button type="submit" class="btn btn-primary" id="btn-subir">
+<i class="bi bi-cloud-upload"></i> Subir Fotografía
+</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Variables globales
+let equiposTipos = {
+'Camara': {{ camaras|tojson|safe }},
+'Switch': {{ switches|tojson|safe }},
+'Ups': [],
+'Nvr_dvr': []
+};
+
+// Datos de equipos (simulados para UPS y NVR/DVR)
+equiposTipos['Ups'] = [
+{id: 1, codigo: 'UPS001', nombre: 'UPS Principal Edificio A', ip: '19.168.1.100'},
+{id: , codigo: 'UPS00', nombre: 'UPS Respaldo Edificio B', ip: '19.168.1.101'}
+];
+
+equiposTipos['Nvr_dvr'] = [
+{id: 1, codigo: 'NVR001', nombre: 'NVR Principal Campus', ip: '19.168.1.00'},
+{id: , codigo: 'DVR001', nombre: 'DVR Backup Seguridad', ip: '19.168.1.01'}
+];
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', function() {
+configurarFechaActual();
+configurarGeolocalizacion();
+configurarDragAndDrop();
+configurarSelectoresCategoria();
+});
+
+function configurarFechaActual() {
+const now = new Date();
+document.getElementById('fecha-actual').textContent = now.toLocaleString('es-ES');
+}
+
+function configurarGeolocalizacion() {
+if (navigator.geolocation) {
+navigator.geolocation.getCurrentPosition(
+function(position) {
+const lat = position.coords.latitude.toFixed(6);
+const lng = position.coords.longitude.toFixed(6);
+document.getElementById('ubicacion-gps').innerHTML = ` ${lat}, ${lng}`;
+},
+function(error) {
+document.getElementById('ubicacion-gps').textContent = 'No disponible';
+}
+);
+} else {
+document.getElementById('ubicacion-gps').textContent = 'No soportada';
+}
+}
+
+function configurarSelectoresCategoria() {
+const opciones = document.querySelectorAll('.categoria-option');
+opciones.forEach(opcion => {
+opcion.addEventListener('click', function() {
+// Remover selección anterior
+opciones.forEach(op => op.classList.remove('selected'));
+
+// Seleccionar nueva opción
+this.classList.add('selected');
+document.getElementById('categoria-selected').value = this.dataset.categoria;
+});
+});
+}
+
+function configurarDragAndDrop() {
+const uploadZone = document.getElementById('upload-zone');
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+uploadZone.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+e.preventDefault();
+e.stopPropagation();
+}
+
+['dragenter', 'dragover'].forEach(eventName => {
+uploadZone.addEventListener(eventName, () => uploadZone.classList.add('dragover'), false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+uploadZone.addEventListener(eventName, () => uploadZone.classList.remove('dragover'), false);
+});
+
+uploadZone.addEventListener('drop', function(e) {
+const files = e.dataTransfer.files;
+if (files.length > 0) {
+document.getElementById('archivo').files = files;
+previewImage(document.getElementById('archivo'));
+}
+}, false);
+}
+
+function cargarEquipos() {
+const tipoSeleccionado = document.getElementById('equipo_tipo').value;
+const equipoSelect = document.getElementById('equipo_id');
+
+// Limpiar opciones
+equipoSelect.innerHTML = '<option value="">Seleccionar equipo</option>';
+
+if (tipoSeleccionado && equiposTipos[tipoSeleccionado]) {
+equipoSelect.disabled = false;
+
+equiposTipos[tipoSeleccionado].forEach(equipo => {
+const option = document.createElement('option');
+option.value = equipo.id;
+option.textContent = `${equipo.codigo} - ${equipo.nombre || equipo.descripcion || 'Sin nombre'}`;
+option.dataset.equipoInfo = JSON.stringify(equipo);
+equipoSelect.appendChild(option);
+});
+} else {
+equipoSelect.disabled = true;
+}
+
+// Limpiar información del equipo
+document.getElementById('equipo-info').style.display = 'none';
+}
+
+function mostrarInfoEquipo() {
+const equipoSelect = document.getElementById('equipo_id');
+const selectedOption = equipoSelect.options[equipoSelect.selectedIndex];
+
+if (selectedOption.dataset.equipoInfo) {
+const equipo = JSON.parse(selectedOption.dataset.equipoInfo);
+const infoDiv = document.getElementById('equipo-detalles');
+
+infoDiv.innerHTML = `
+<div class="row">
+<div class="col-md-3">
+<strong>Código:</strong><br>
+${equipo.codigo}
+</div>
+<div class="col-md-6">
+<strong>Nombre/Descripción:</strong><br>
+${equipo.nombre || equipo.descripcion || 'Sin descripción'}
+</div>
+<div class="col-md-3">
+<strong>IP:</strong><br>
+${equipo.ip || 'Sin IP asignada'}
+</div>
+</div>
+`;
+
+document.getElementById('equipo-info').style.display = 'block';
+} else {
+document.getElementById('equipo-info').style.display = 'none';
+}
+}
+
+// Agregar event listener para mostrar info del equipo
+document.getElementById('equipo_id').addEventListener('change', mostrarInfoEquipo);
+
+function previewImage(input) {
+if (input.files && input.files[0]) {
+const file = input.files[0];
+
+// Validar tamaño
+if (file.size > 16 * 104 * 104) {
+alert('El archivo es demasiado grande. Máximo 16MB.');
+return;
+}
+
+// Validar tipo
+if (file.type.startsWith('image/')) {
+alert('Por favor seleccione un archivo de imagen válido.');
+return;
+}
+
+const reader = new FileReader();
+reader.onload = function(e) {
+document.getElementById('image-preview').src = e.target.result;
+document.getElementById('preview-container').style.display = 'block';
+document.querySelector('.upload-zone').style.display = 'none';
+
+// Mostrar información del archivo
+const fileInfo = `
+<strong>Archivo:</strong> ${file.name}<br>
+<strong>Tamaño:</strong> ${(file.size / 104 / 104).toFixed()} MB<br>
+<strong>Tipo:</strong> ${file.type}
+`;
+document.getElementById('file-info').innerHTML = fileInfo;
+};
+reader.readAsDataURL(file);
+}
+}
+
+function removeImage() {
+document.getElementById('archivo').value = '';
+document.getElementById('preview-container').style.display = 'none';
+document.querySelector('.upload-zone').style.display = 'block';
+}
+
+// Validación del formulario
+document.getElementById('form-fotografia').addEventListener('submit', function(e) {
+const categoria = document.getElementById('categoria-selected').value;
+const equipoTipo = document.getElementById('equipo_tipo').value;
+const equipoId = document.getElementById('equipo_id').value;
+const archivo = document.getElementById('archivo').files[0];
+const descripcion = document.getElementById('descripcion').value;
+
+if (categoria) {
+e.preventDefault();
+alert('Por favor seleccione una categoría para la fotografía.');
+return;
+}
+
+if (equipoTipo || equipoId) {
+e.preventDefault();
+alert('Por favor seleccione el equipo intervenido.');
+return;
+}
+
+if (archivo) {
+e.preventDefault();
+alert('Por favor seleccione una fotografía para subir.');
+return;
+}
+
+if (descripcion.length < 0) {
+e.preventDefault();
+alert('La descripción debe tener al menos 0 caracteres.');
+return;
+}
+
+// Mostrar progreso
+document.getElementById('progress-container').style.display = 'block';
+document.getElementById('btn-subir').disabled = true;
+
+// Simular progreso (en una implementación real, esto se haría con AJAX)
+simulateProgress();
+});
+
+function simulateProgress() {
+const progressBar = document.getElementById('upload-progress');
+let progress = 0;
+
+const interval = setInterval(() => {
+progress += Math.random() * 30;
+if (progress > 100) progress = 100;
+
+progressBar.style.width = progress + '%';
+
+if (progress >= 100) {
+clearInterval(interval);
+}
+}, 00);
+}
+
+// Contador de caracteres para la descripción
+document.getElementById('descripcion').addEventListener('input', function() {
+const minLength = 0;
+const currentLength = this.value.length;
+const container = this.parentElement;
+
+// Remover contador anterior si existe
+const existingCounter = container.querySelector('.char-counter');
+if (existingCounter) {
+existingCounter.remove();
+}
+
+// Agregar nuevo contador
+const counter = document.createElement('div');
+counter.className = 'char-counter form-text';
+counter.textContent = `${currentLength}/${minLength} caracteres mínimos`;
+
+if (currentLength >= minLength) {
+counter.classList.add('text-success');
+} else {
+counter.classList.add('text-warning');
+}
+
+container.appendChild(counter);
+});
+</script>
+{% endblock %}

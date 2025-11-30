@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+
+{% block title %}Nueva Falla - Sistema UFRO{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Reportar Nueva Falla</h1>
+        <a href="{{ url_for('fallas_list') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+    
+    <!-- Alerta de validación anti-duplicados -->
+    <div id="alertaDuplicado" class="alert alert-warning alert-dismissible fade d-none" role="alert">
+        <strong>Advertencia:</strong> <span id="mensajeDuplicado"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <form id="formNuevaFalla" method="POST" action="{{ url_for('fallas_nueva') }}">
+                <!-- Tipo de Equipo -->
+                <div class="mb-3">
+                    <label for="equipo_tipo" class="form-label">Tipo de Equipo *</label>
+                    <select class="form-select" id="equipo_tipo" name="equipo_tipo" required>
+                        <option value="">Seleccione...</option>
+                        <option value="Camara">Cámara</option>
+                        <option value="Gabinete">Gabinete</option>
+                        <option value="Switch">Switch</option>
+                        <option value="UPS">UPS</option>
+                        <option value="NVR">NVR/DVR</option>
+                        <option value="Fuente">Fuente de Poder</option>
+                    </select>
+                </div>
+                
+                <!-- Equipo Específico -->
+                <div class="mb-3">
+                    <label for="equipo_id" class="form-label">Equipo Específico *</label>
+                    <select class="form-select" id="equipo_id" name="equipo_id" required>
+                        <option value="">Primero seleccione el tipo de equipo</option>
+                    </select>
+                    <small class="form-text text-muted">Seleccione primero el tipo de equipo</small>
+                </div>
+                
+                <!-- Tipo de Falla -->
+                <div class="mb-3">
+                    <label for="tipo_falla_id" class="form-label">Tipo de Falla *</label>
+                    <select class="form-select" id="tipo_falla_id" name="tipo_falla_id" required>
+                        <option value="">Seleccione...</option>
+                        {% for tipo in tipos_falla %}
+                        <option value="{{ tipo.id }}">{{ tipo.nombre }} ({{ tipo.categoria }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Descripción -->
+                <div class="mb-3">
+                    <label for="descripcion" class="form-label">Descripción del Problema *</label>
+                    <textarea class="form-control" id="descripcion" name="descripcion" rows="4" required 
+                              placeholder="Describa detalladamente el problema observado..."></textarea>
+                </div>
+                
+                <!-- Prioridad -->
+                <div class="mb-3">
+                    <label for="prioridad" class="form-label">Prioridad *</label>
+                    <select class="form-select" id="prioridad" name="prioridad" required>
+                        <option value="Media">Media</option>
+                        <option value="Baja">Baja</option>
+                        <option value="Alta">Alta</option>
+                        <option value="Crítica">Crítica</option>
+                    </select>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" id="btnEnviar" class="btn btn-primary btn-lg">
+                        <i class="bi bi-check-circle"></i> Reportar Falla
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/fallas_validation.js') }}"></script>
+<script>
+    // Datos de equipos para cargar dinámicamente
+    const equiposData = {
+        'Camara': {{ camaras|tojson|safe }},
+        'Gabinete': {{ gabinetes|tojson|safe }},
+        'Switch': {{ switches|tojson|safe }}
+    };
+</script>
+{% endblock %}

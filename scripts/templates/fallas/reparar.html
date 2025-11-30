@@ -1,0 +1,1086 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Reparación - Falla #{{ falla.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.reparacion-wizard {
+background: linear-gradient(135deg, #667eea 0%, #764ba 100%);
+color: white;
+border-radius: 8px;
+padding: rem;
+margin-bottom: rem;
+}
+
+.step-indicator {
+display: flex;
+justify-content: space-between;
+margin-bottom: rem;
+}
+
+.step {
+flex: 1;
+text-align: center;
+padding: 1rem;
+border-radius: 8px;
+margin: 0 0.5rem;
+background: rgba(55, 55, 55, 0.1);
+transition: all 0.3s ease;
+}
+
+.step.active {
+background: rgba(55, 55, 55, 0.);
+transform: translateY(-px);
+}
+
+.step.completed {
+background: rgba(40, 167, 69, 0.3);
+}
+
+.step-icon {
+font-size: rem;
+margin-bottom: 0.5rem;
+display: block;
+}
+
+.form-section {
+border: 1px solid #deee6;
+border-radius: 8px;
+margin-bottom: 1.5rem;
+background: white;
+}
+
+.form-section-header {
+background: #f8f9fa;
+border-bottom: 1px solid #deee6;
+padding: 1rem;
+border-radius: 8px 8px 0 0;
+}
+
+.form-section-body {
+padding: 1.5rem;
+}
+
+.diagnostico-item {
+border-left: 4px solid #007bff;
+background: #f8f9fa;
+padding: 1rem;
+margin-bottom: 1rem;
+border-radius: 0 8px 8px 0;
+}
+
+.material-item {
+border: 1px solid #deee6;
+border-radius: 8px;
+padding: 1rem;
+margin-bottom: 1rem;
+background: #f8f9fa;
+}
+
+.costo-summary {
+background: linear-gradient(135deg, #8a745 0%, #0c997 100%);
+color: white;
+border-radius: 8px;
+padding: 1.5rem;
+text-align: center;
+}
+
+.costo-breakdown {
+background: #f8f9fa;
+border-radius: 8px;
+padding: 1rem;
+margin-top: 1rem;
+}
+
+.costo-breakdown .row {
+margin-bottom: 0.5rem;
+padding-bottom: 0.5rem;
+border-bottom: 1px solid #deee6;
+}
+
+.costo-breakdown .row:last-child {
+border-bottom: none;
+margin-bottom: 0;
+font-weight: bold;
+}
+
+.foto-evidencia {
+border: px dashed #deee6;
+border-radius: 8px;
+padding: 1rem;
+text-align: center;
+cursor: pointer;
+transition: all 0.3s ease;
+}
+
+.foto-evidencia:hover {
+border-color: #007bff;
+background-color: #f8f9ff;
+}
+
+.foto-evidencia.has-photo {
+border-color: #8a745;
+background-color: #d4edda;
+}
+
+.tiempo-trabajo {
+background: #fff3cd;
+border: 1px solid #ffeaa7;
+border-radius: 8px;
+padding: 1rem;
+margin-bottom: 1rem;
+}
+
+.timer-display {
+font-size: rem;
+font-weight: bold;
+color: #856404;
+text-align: center;
+font-family: monospace;
+}
+
+.timer-controls {
+text-align: center;
+margin-top: 1rem;
+}
+
+.verificacion-test {
+background: #d1ecf1;
+border: 1px solid #bee5eb;
+border-radius: 8px;
+padding: 1rem;
+margin-bottom: 1rem;
+}
+
+.upload-zone {
+border: px dashed #007bff;
+border-radius: 8px;
+padding: rem;
+text-align: center;
+background-color: #f8f9fa;
+transition: all 0.3s ease;
+cursor: pointer;
+}
+
+.upload-zone:hover {
+background-color: #e9ecef;
+border-color: #0056b3;
+}
+
+.upload-zone.dragover {
+background-color: #e3ffd;
+border-color: #196f3;
+}
+
+.garantia-info {
+background: #d4edda;
+border: 1px solid #c3e6cb;
+border-radius: 8px;
+padding: 1rem;
+}
+
+.acciones-post-reparacion {
+background: #ee3e5;
+border-radius: 8px;
+padding: 1rem;
+}
+
+.signature-pad {
+border: px solid #deee6;
+border-radius: 8px;
+background: white;
+touch-action: none;
+}
+
+.reparacion-exitosa {
+background: linear-gradient(135deg, #8a745 0%, #0c997 100%);
+color: white;
+border-radius: 8px;
+padding: rem;
+text-align: center;
+margin-bottom: rem;
+}
+
+.reparacion-exitosa .success-icon {
+font-size: 4rem;
+margin-bottom: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+<-- Header de reparación -->
+<div class="reparacion-wizard">
+<div class="d-flex justify-content-between align-items-start mb-3">
+<div>
+<h1 class="h mb-0">
+<i class="bi bi-tools"></i>
+Registrar Reparación
+</h1>
+<p class="mb-0 opacity-75">Falla #{{ falla.id }} - {{ falla.descripcion[:60] }}{% if falla.descripcion|length > 60 %}...{% endif %}</p>
+</div>
+<div class="text-end">
+<div class="badge bg-light text-dark fs-6">
+{{ falla.gravedad.title() }}
+</div>
+<div class="badge bg-light text-dark fs-6 mt-1">
+{{ falla.estado.replace('_', ' ').title() }}
+</div>
+</div>
+</div>
+
+<-- Indicador de pasos -->
+<div class="step-indicator">
+<div class="step active" id="step1">
+<span class="step-icon"></span>
+<div>Diagnóstico</div>
+</div>
+<div class="step" id="step">
+<span class="step-icon"></span>
+<div>Reparación</div>
+</div>
+<div class="step" id="step3">
+<span class="step-icon"></span>
+<div>Verificación</div>
+</div>
+<div class="step" id="step4">
+<span class="step-icon"></span>
+<div>Finalización</div>
+</div>
+</div>
+</div>
+
+<form method="POST" id="formReparacion" enctype="multipart/form-data" novalidate>
+{{ form.hidden_tag() }}
+
+<div class="row">
+<-- Columna principal -->
+<div class="col-lg-8">
+<-- Paso 1: Diagnóstico -->
+<div class="form-section" id="seccion-diagnostico">
+<div class="form-section-header">
+<h5 class="mb-0">
+<i class="bi bi-search"></i> Paso 1: Diagnóstico Inicial
+</h5>
+</div>
+<div class="form-section-body">
+<div class="diagnostico-item">
+<h6>Estado del equipo al momento de la reparación:</h6>
+<div class="row">
+<div class="col-md-6">
+<div class="form-check">
+{{ form.equipo_encendido(class="form-check-input", id="equipo_encendido") }}
+<label class="form-check-label" for="equipo_encendido">
+Equipo encendido y respondiendo
+</label>
+</div>
+<div class="form-check">
+{{ form.indicadores_normales(class="form-check-input", id="indicadores_normales") }}
+<label class="form-check-label" for="indicadores_normales">
+Indicadores LED normales
+</label>
+</div>
+<div class="form-check">
+{{ form.conectividad_red(class="form-check-input", id="conectividad_red") }}
+<label class="form-check-label" for="conectividad_red">
+Conectividad de red disponible
+</label>
+</div>
+</div>
+<div class="col-md-6">
+<div class="form-check">
+{{ form.alimentacion_normal(class="form-check-input", id="alimentacion_normal") }}
+<label class="form-check-label" for="alimentacion_normal">
+Alimentación eléctrica normal
+</label>
+</div>
+<div class="form-check">
+{{ form.temperatura_normal(class="form-check-input", id="temperatura_normal") }}
+<label class="form-check-label" for="temperatura_normal">
+Temperatura dentro de rango
+</label>
+</div>
+<div class="form-check">
+{{ form.ruidos_anormales(class="form-check-input", id="ruidos_anormales") }}
+<label class="form-check-label" for="ruidos_anormales">
+Ruidos anormales detectados
+</label>
+</div>
+</div>
+</div>
+</div>
+
+<div class="mb-3">
+{{ form.diagnostico_inicial.label(class="form-label required-field") }}
+{{ form.diagnostico_inicial(class="form-control", rows="4", placeholder="Describa el diagnóstico inicial del problema...") }}
+<div class="char-counter" id="diagnostico-counter">0/500 caracteres</div>
+<div class="invalid-feedback">Por favor proporcione un diagnóstico inicial.</div>
+</div>
+
+<div class="mb-3">
+{{ form.causa_raiz.label(class="form-label required-field") }}
+{{ form.causa_raiz(class="form-control", rows="3", placeholder="Identifique la causa raíz del problema...") }}
+<div class="char-counter" id="causa-counter">0/300 caracteres</div>
+<div class="invalid-feedback">Por favor identifique la causa raíz.</div>
+</div>
+
+<div class="mb-3">
+{{ form.acciones_diagnostico.label(class="form-label") }}
+{{ form.acciones_diagnostico(class="form-control", rows="3", placeholder="Describa las acciones realizadas durante el diagnóstico...") }}
+<div class="form-text">
+Mencione herramientas utilizadas, mediciones tomadas, etc.
+</div>
+</div>
+</div>
+</div>
+
+<-- Paso : Reparación -->
+<div class="form-section d-none" id="seccion-reparacion">
+<div class="form-section-header">
+<h5 class="mb-0">
+<i class="bi bi-tools"></i> Paso : Proceso de Reparación
+</h5>
+</div>
+<div class="form-section-body">
+<-- Tiempo de trabajo -->
+<div class="tiempo-trabajo">
+<h6><i class="bi bi-clock"></i> Tiempo de Trabajo</h6>
+<div class="timer-display" id="timer-display">00:00:00</div>
+<div class="timer-controls">
+<button type="button" class="btn btn-outline-primary btn-sm" onclick="iniciarTimer()">
+<i class="bi bi-play"></i> Iniciar
+</button>
+<button type="button" class="btn btn-outline-warning btn-sm" onclick="pausarTimer()">
+<i class="bi bi-pause"></i> Pausar
+</button>
+<button type="button" class="btn btn-outline-danger btn-sm" onclick="resetearTimer()">
+<i class="bi bi-stop"></i> Resetear
+</button>
+</div>
+{{ form.tiempo_trabajo(class="form-control", id="tiempo_trabajo_hidden") }}
+</div>
+
+<-- Acciones de reparación -->
+<div class="mb-3">
+{{ form.acciones_reparacion.label(class="form-label required-field") }}
+{{ form.acciones_reparacion(class="form-control", rows="5", placeholder="Describa detalladamente las acciones realizadas para reparar la falla...") }}
+<div class="char-counter" id="acciones-counter">0/1000 caracteres</div>
+<div class="invalid-feedback">Por favor describa las acciones de reparación.</div>
+</div>
+
+<-- Materiales utilizados -->
+<div class="mb-4">
+<h6>Materiales y Repuestos Utilizados</h6>
+<div id="materiales-container">
+<-- Materiales existentes -->
+{% if materiales_usados %}
+{% for material in materiales_usados %}
+<div class="material-item" data-index="{{ loop.index0 }}">
+<div class="row">
+<div class="col-md-4">
+<input type="text" name="material_nombre[]" class="form-control"
+value="{{ material.nombre }}" placeholder="Nombre del material">
+</div>
+<div class="col-md-">
+<input type="number" name="material_cantidad[]" class="form-control"
+value="{{ material.cantidad }}" placeholder="Cant." min="1">
+</div>
+<div class="col-md-3">
+<input type="number" name="material_precio[]" class="form-control"
+value="{{ material.precio_unitario }}" placeholder="Precio unit." step="0.01" min="0">
+</div>
+<div class="col-md-">
+<input type="text" name="material_subtotal[]" class="form-control"
+value="{{ material.subtotal }}" readonly placeholder="Subtotal">
+</div>
+<div class="col-md-1">
+<button type="button" class="btn btn-outline-danger" onclick="eliminarMaterial(this)">
+<i class="bi bi-trash"></i>
+</button>
+</div>
+</div>
+</div>
+{% endfor %}
+{% endif %}
+</div>
+<button type="button" class="btn btn-outline-primary" onclick="agregarMaterial()">
+<i class="bi bi-plus"></i> Agregar Material
+</button>
+</div>
+
+<-- Mano de obra -->
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="form-label">Horas de Trabajo</label>
+<div class="input-group">
+<input type="number" name="horas_trabajo" id="horas_trabajo" class="form-control"
+value="{{ form.horas_trabajo.data or '' }}" step="0.5" min="0" placeholder="0.00">
+<span class="input-group-text">horas</span>
+</div>
+</div>
+<div class="col-md-6 mb-3">
+<label class="form-label">Costo por Hora</label>
+<div class="input-group">
+<span class="input-group-text">$</span>
+<input type="number" name="costo_hora" id="costo_hora" class="form-control"
+value="{{ form.costo_hora.data or '5000' }}" step="100" min="0">
+<span class="input-group-text">CLP</span>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6 mb-3">
+<label class="form-label">Viáticos</label>
+<div class="input-group">
+<span class="input-group-text">$</span>
+{{ form.viaticos(class="form-control", placeholder="0") }}
+</div>
+</div>
+<div class="col-md-6 mb-3">
+<label class="form-label">Otros Gastos</label>
+<div class="input-group">
+<span class="input-group-text">$</span>
+{{ form.otros_gastos(class="form-control", placeholder="0") }}
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Paso 3: Verificación -->
+<div class="form-section d-none" id="seccion-verificacion">
+<div class="form-section-header">
+<h5 class="mb-0">
+<i class="bi bi-check-circle"></i> Paso 3: Verificación y Pruebas
+</h5>
+</div>
+<div class="form-section-body">
+<div class="verificacion-test">
+<h6>Pruebas de Funcionamiento</h6>
+<div class="row">
+<div class="col-md-6">
+<div class="form-check mb-">
+{{ form.funcionamiento_normal(class="form-check-input", id="funcionamiento_normal") }}
+<label class="form-check-label" for="funcionamiento_normal">
+Funcionamiento normal
+</label>
+</div>
+<div class="form-check mb-">
+{{ form.conectividad_verificada(class="form-check-input", id="conectividad_verificada") }}
+<label class="form-check-label" for="conectividad_verificada">
+Conectividad de red verificada
+</label>
+</div>
+<div class="form-check mb-">
+{{ form.indicadores_ok(class="form-check-input", id="indicadores_ok") }}
+<label class="form-check-label" for="indicadores_ok">
+Indicadores LED correctos
+</label>
+</div>
+</div>
+<div class="col-md-6">
+<div class="form-check mb-">
+{{ form.temperatura_estable(class="form-check-input", id="temperatura_estable") }}
+<label class="form-check-label" for="temperatura_estable">
+Temperatura estable
+</label>
+</div>
+<div class="form-check mb-">
+{{ form.sin_errores(class="form-check-input", id="sin_errores") }}
+<label class="form-check-label" for="sin_errores">
+Sin errores en logs
+</label>
+</div>
+<div class="form-check mb-">
+{{ form.pruebas_exitosas(class="form-check-input", id="pruebas_exitosas") }}
+<label class="form-check-label" for="pruebas_exitosas">
+Pruebas adicionales exitosas
+</label>
+</div>
+</div>
+</div>
+</div>
+
+<div class="mb-3">
+{{ form.resultado_verificacion.label(class="form-label required-field") }}
+{{ form.resultado_verificacion(class="form-control", rows="4", placeholder="Describa los resultados de las pruebas y verificación...") }}
+<div class="invalid-feedback">Por favor describa los resultados de la verificación.</div>
+</div>
+
+<div class="mb-3">
+{{ form.recomendaciones.label(class="form-label") }}
+{{ form.recomendaciones(class="form-control", rows="3", placeholder="Recomendaciones para evitar futuros problemas...") }}
+</div>
+
+<-- Evidencias fotográficas -->
+<div class="mb-3">
+<label class="form-label">Evidencias Fotográficas del Proceso</label>
+<div class="upload-zone" id="upload-zone-reparacion">
+<i class="bi bi-camera fs-1 text-muted mb-3"></i>
+<h6>Fotografías antes, durante y después de la reparación</h6>
+<p class="text-muted mb-3">
+Formatos: JPG, PNG (máx. 5MB cada uno)
+</p>
+<input type="file" name="evidencias_reparacion" id="evidencias_reparacion" class="d-none" multiple accept="image/*">
+<button type="button" class="btn btn-outline-primary" onclick="document.getElementById('evidencias_reparacion').click()">
+<i class="bi bi-folder-open"></i> Seleccionar Fotos
+</button>
+</div>
+<div id="preview-evidencias-reparacion" class="row mt-3"></div>
+</div>
+</div>
+</div>
+
+<-- Paso 4: Finalización -->
+<div class="form-section d-none" id="seccion-finalizacion">
+<div class="form-section-header">
+<h5 class="mb-0">
+<i class="bi bi-flag-checkered"></i> Paso 4: Finalización
+</h5>
+</div>
+<div class="form-section-body">
+<div class="mb-3">
+{{ form.solucion_final.label(class="form-label required-field") }}
+{{ form.solucion_final(class="form-control", rows="4", placeholder="Resumen final de la solución aplicada...") }}
+<div class="invalid-feedback">Por favor proporcione un resumen de la solución final.</div>
+</div>
+
+<div class="mb-3">
+{{ form.comentarios_adicionales.label(class="form-label") }}
+{{ form.comentarios_adicionales(class="form-control", rows="3", placeholder="Comentarios adicionales, observaciones...") }}
+</div>
+
+<div class="garantia-info mb-3">
+<h6><i class="bi bi-shield-check"></i> Información de Garantía</h6>
+<div class="row">
+<div class="col-md-6">
+<div class="form-check">
+{{ form.garantia_aplica(class="form-check-input", id="garantia_aplica") }}
+<label class="form-check-label" for="garantia_aplica">
+Reparación con garantía
+</label>
+</div>
+</div>
+<div class="col-md-6">
+<input type="number" name="dias_garantia" class="form-control"
+placeholder="Días de garantía" min="0">
+</div>
+</div>
+</div>
+
+<div class="acciones-post-reparacion">
+<h6>Acciones Post-Reparación</h6>
+<div class="form-check mb-">
+{{ form.actualizar_documentacion(class="form-check-input", id="actualizar_documentacion") }}
+<label class="form-check-label" for="actualizar_documentacion">
+Actualizar documentación técnica
+</label>
+</div>
+<div class="form-check mb-">
+{{ form.notificar_usuarios(class="form-check-input", id="notificar_usuarios") }}
+<label class="form-check-label" for="notificar_usuarios">
+Notificar a usuarios afectados
+</label>
+</div>
+<div class="form-check mb-">
+{{ form.programar_seguimiento(class="form-check-input", id="programar_seguimiento") }}
+<label class="form-check-label" for="programar_seguimiento">
+Programar seguimiento
+</label>
+</div>
+</div>
+
+<-- Firma del técnico -->
+<div class="mt-4">
+<h6>Firma Digital del Técnico</h6>
+<canvas id="signature-pad" class="signature-pad" width="400" height="00"></canvas>
+<div class="mt-">
+<button type="button" class="btn btn-outline-secondary btn-sm" onclick="limpiarFirma()">
+<i class="bi bi-eraser"></i> Limpiar
+</button>
+<small class="text-muted ms-">Firme para confirmar la reparación</small>
+</div>
+<input type="hidden" name="firma_tecnico" id="firma_tecnico">
+</div>
+</div>
+</div>
+
+<-- Navegación del wizard -->
+<div class="d-flex justify-content-between mt-4">
+<button type="button" class="btn btn-outline-secondary" id="btn-anterior" onclick="pasoAnterior()" disabled>
+<i class="bi bi-arrow-left"></i> Anterior
+</button>
+
+<button type="button" class="btn btn-primary" id="btn-siguiente" onclick="pasoSiguiente()">
+Siguiente <i class="bi bi-arrow-right"></i>
+</button>
+
+<button type="submit" class="btn btn-success d-none" id="btn-finalizar">
+<i class="bi bi-check-circle"></i> Finalizar Reparación
+</button>
+</div>
+</div>
+
+<-- Sidebar -->
+<div class="col-lg-4">
+<-- Resumen de costos -->
+<div class="costo-summary mb-4">
+<h5 class="mb-3">Resumen de Costos</h5>
+<div class="costo-breakdown">
+<div class="row">
+<div class="col">Materiales:</div>
+<div class="col text-end">$<span id="costo-materiales">0</span></div>
+</div>
+<div class="row">
+<div class="col">Mano de obra:</div>
+<div class="col text-end">$<span id="costo-mano-obra">0</span></div>
+</div>
+<div class="row">
+<div class="col">Viáticos:</div>
+<div class="col text-end">$<span id="costo-viaticos">0</span></div>
+</div>
+<div class="row">
+<div class="col">Otros gastos:</div>
+<div class="col text-end">$<span id="costo-otros">0</span></div>
+</div>
+<div class="row" style="border-top: px solid rgba(55,55,55,0.3); padding-top: 0.5rem;">
+<div class="col"><strong>TOTAL:</strong></div>
+<div class="col text-end"><strong>$<span id="costo-total">0</span></strong></div>
+</div>
+</div>
+</div>
+
+<-- Información de la falla -->
+<div class="card mb-4">
+<div class="card-header">
+<h6 class="mb-0">
+<i class="bi bi-info-circle"></i> Información de la Falla
+</h6>
+</div>
+<div class="card-body">
+<div class="mb-">
+<small class="text-muted">Fecha reporte:</small><br>
+<strong>{{ falla.fecha_reporte.strftime('%d/%m/%Y %H:%M') if falla.fecha_reporte else 'N/A' }}</strong>
+</div>
+<div class="mb-">
+<small class="text-muted">Equipo afectado:</small><br>
+<strong>{{ falla.equipo.nombre if falla.equipo else 'N/A' }}</strong>
+</div>
+<div class="mb-">
+<small class="text-muted">Gravedad:</small><br>
+<span class="badge bg-{% if falla.gravedad == 'critica' %}danger{% elif falla.gravedad == 'alta' %}warning{% elif falla.gravedad == 'media' %}info{% else %}success{% endif %}">
+{{ falla.gravedad.title() }}
+</span>
+</div>
+<div class="mb-">
+<small class="text-muted">Técnico asignado:</small><br>
+<strong>{{ falla.tecnico_asignado.nombre_completo if falla.tecnico_asignado else 'Sin asignar' }}</strong>
+</div>
+</div>
+</div>
+
+<-- Checklist de reparación -->
+<div class="card">
+<div class="card-header">
+<h6 class="mb-0">
+<i class="bi bi-check-square"></i> Checklist de Reparación
+</h6>
+</div>
+<div class="card-body">
+<div class="form-check mb-">
+<input class="form-check-input" type="checkbox" id="check-diagnostico" disabled>
+<label class="form-check-label" for="check-diagnostico">
+Diagnóstico completo
+</label>
+</div>
+<div class="form-check mb-">
+<input class="form-check-input" type="checkbox" id="check-reparacion" disabled>
+<label class="form-check-label" for="check-reparacion">
+Reparación ejecutada
+</label>
+</div>
+<div class="form-check mb-">
+<input class="form-check-input" type="checkbox" id="check-verificacion" disabled>
+<label class="form-check-label" for="check-verificacion">
+Pruebas de verificación
+</label>
+</div>
+<div class="form-check mb-">
+<input class="form-check-input" type="checkbox" id="check-documentacion" disabled>
+<label class="form-check-label" for="check-documentacion">
+Documentación completa
+</label>
+</div>
+<div class="form-check mb-">
+<input class="form-check-input" type="checkbox" id="check-firma" disabled>
+<label class="form-check-label" for="check-firma">
+Firma digital
+</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+</form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let pasoActual = 1;
+const maxPasos = 4;
+let timerInterval;
+let tiempoTranscurrido = 0;
+let signaturePad;
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', function() {
+// Inicializar signature pad
+const canvas = document.getElementById('signature-pad');
+signaturePad = new SignaturePad(canvas);
+
+// Event listeners para cálculos de costo
+document.getElementById('horas_trabajo')?.addEventListener('input', calcularCostos);
+document.getElementById('costo_hora')?.addEventListener('input', calcularCostos);
+
+// Cargar materiales existentes
+calcularCostos();
+
+// Upload zone para evidencias
+inicializarUploadZone();
+
+// Contadores de caracteres
+inicializarContadores();
+});
+
+function pasoAnterior() {
+if (pasoActual > 1) {
+document.getElementById(`seccion-${getSeccionName(pasoActual)}`).classList.add('d-none');
+pasoActual--;
+document.getElementById(`seccion-${getSeccionName(pasoActual)}`).classList.remove('d-none');
+actualizarNavegacion();
+actualizarIndicadores();
+}
+}
+
+function pasoSiguiente() {
+if (validarPasoActual()) {
+if (pasoActual < maxPasos) {
+document.getElementById(`seccion-${getSeccionName(pasoActual)}`).classList.add('d-none');
+pasoActual++;
+document.getElementById(`seccion-${getSeccionName(pasoActual)}`).classList.remove('d-none');
+actualizarNavegacion();
+actualizarIndicadores();
+actualizarChecklist();
+}
+}
+}
+
+function getSeccionName(paso) {
+const secciones = ['', 'diagnostico', 'reparacion', 'verificacion', 'finalizacion'];
+return secciones[paso];
+}
+
+function actualizarNavegacion() {
+const btnAnterior = document.getElementById('btn-anterior');
+const btnSiguiente = document.getElementById('btn-siguiente');
+const btnFinalizar = document.getElementById('btn-finalizar');
+
+btnAnterior.disabled = pasoActual === 1;
+
+if (pasoActual === maxPasos) {
+btnSiguiente.classList.add('d-none');
+btnFinalizar.classList.remove('d-none');
+} else {
+btnSiguiente.classList.remove('d-none');
+btnFinalizar.classList.add('d-none');
+}
+}
+
+function actualizarIndicadores() {
+for (let i = 1; i <= maxPasos; i++) {
+const step = document.getElementById(`step${i}`);
+step.classList.remove('active', 'completed');
+
+if (i === pasoActual) {
+step.classList.add('active');
+} else if (i < pasoActual) {
+step.classList.add('completed');
+}
+}
+}
+
+function validarPasoActual() {
+const seccion = document.getElementById(`seccion-${getSeccionName(pasoActual)}`);
+const requiredFields = seccion.querySelectorAll('[required]');
+let isValid = true;
+
+requiredFields.forEach(field => {
+if (field.value.trim()) {
+field.classList.add('is-invalid');
+isValid = false;
+} else {
+field.classList.remove('is-invalid');
+}
+});
+
+// Validaciones específicas por paso
+if (pasoActual === 3 && signaturePad.isEmpty()) {
+document.getElementById('firma_tecnico').value = signaturePad.toDataURL();
+}
+
+if (isValid) {
+alert('Por favor complete todos los campos requeridos.');
+}
+
+return isValid;
+}
+
+function actualizarChecklist() {
+const checks = {
+1: document.getElementById('check-diagnostico'),
+: document.getElementById('check-reparacion'),
+3: document.getElementById('check-verificacion'),
+4: document.getElementById('check-documentacion')
+};
+
+if (checks[pasoActual]) {
+checks[pasoActual].checked = true;
+}
+}
+
+// Timer functionality
+function iniciarTimer() {
+if (timerInterval) {
+timerInterval = setInterval(() => {
+tiempoTranscurrido++;
+actualizarDisplayTimer();
+document.getElementById('tiempo_trabajo_hidden').value = tiempoTranscurrido;
+}, 1000);
+}
+}
+
+function pausarTimer() {
+if (timerInterval) {
+clearInterval(timerInterval);
+timerInterval = null;
+}
+}
+
+function resetearTimer() {
+pausarTimer();
+tiempoTranscurrido = 0;
+actualizarDisplayTimer();
+document.getElementById('tiempo_trabajo_hidden').value = 0;
+}
+
+function actualizarDisplayTimer() {
+const horas = Math.floor(tiempoTranscurrido / 3600);
+const minutos = Math.floor((tiempoTranscurrido % 3600) / 60);
+const segundos = tiempoTranscurrido % 60;
+
+const display = document.getElementById('timer-display');
+if (display) {
+display.textContent = `${horas.toString().padStart(, '0')}:${minutos.toString().padStart(, '0')}:${segundos.toString().padStart(, '0')}`;
+}
+}
+
+// Materiales
+function agregarMaterial() {
+const container = document.getElementById('materiales-container');
+const index = container.children.length;
+
+const materialDiv = document.createElement('div');
+materialDiv.className = 'material-item';
+materialDiv.dataset.index = index;
+materialDiv.innerHTML = `
+<div class="row">
+<div class="col-md-4">
+<input type="text" name="material_nombre[]" class="form-control"
+placeholder="Nombre del material" onchange="calcularCostos()">
+</div>
+<div class="col-md-">
+<input type="number" name="material_cantidad[]" class="form-control"
+placeholder="Cant." min="1" value="1" onchange="calcularCostos()">
+</div>
+<div class="col-md-3">
+<input type="number" name="material_precio[]" class="form-control"
+placeholder="Precio unit." step="0.01" min="0" onchange="calcularCostos()">
+</div>
+<div class="col-md-">
+<input type="text" name="material_subtotal[]" class="form-control"
+readonly placeholder="Subtotal">
+</div>
+<div class="col-md-1">
+<button type="button" class="btn btn-outline-danger" onclick="eliminarMaterial(this)">
+<i class="bi bi-trash"></i>
+</button>
+</div>
+</div>
+`;
+
+container.appendChild(materialDiv);
+}
+
+function eliminarMaterial(button) {
+button.closest('.material-item').remove();
+calcularCostos();
+}
+
+// Cálculo de costos
+function calcularCostos() {
+let totalMateriales = 0;
+const materiales = document.querySelectorAll('.material-item');
+
+materiales.forEach(material => {
+const cantidad = parseFloat(material.querySelector('input[name="material_cantidad[]"]').value) || 0;
+const precio = parseFloat(material.querySelector('input[name="material_precio[]"]').value) || 0;
+const subtotal = cantidad * precio;
+
+material.querySelector('input[name="material_subtotal[]"]').value = subtotal.toFixed();
+totalMateriales += subtotal;
+});
+
+const horas = parseFloat(document.getElementById('horas_trabajo')?.value) || 0;
+const costoHora = parseFloat(document.getElementById('costo_hora')?.value) || 0;
+const manoObra = horas * costoHora;
+
+const viaticos = parseFloat(document.querySelector('input[name="viaticos"]')?.value) || 0;
+const otrosGastos = parseFloat(document.querySelector('input[name="otros_gastos"]')?.value) || 0;
+
+const total = totalMateriales + manoObra + viaticos + otrosGastos;
+
+// Actualizar display
+document.getElementById('costo-materiales').textContent = totalMateriales.toFixed(0);
+document.getElementById('costo-mano-obra').textContent = manoObra.toFixed(0);
+document.getElementById('costo-viaticos').textContent = viaticos.toFixed(0);
+document.getElementById('costo-otros').textContent = otrosGastos.toFixed(0);
+document.getElementById('costo-total').textContent = total.toFixed(0);
+
+// Actualizar campo hidden para el formulario
+const totalField = document.querySelector('input[name="costo_total_reparacion"]');
+if (totalField) {
+totalField.value = total;
+}
+}
+
+// Upload zone
+function inicializarUploadZone() {
+const uploadZone = document.getElementById('upload-zone-reparacion');
+const evidenciasInput = document.getElementById('evidencias_reparacion');
+const previewContainer = document.getElementById('preview-evidencias-reparacion');
+
+if (uploadZone) return;
+
+uploadZone.addEventListener('click', () => evidenciasInput && evidenciasInput.click());
+
+uploadZone.addEventListener('dragover', (e) => {
+e.preventDefault();
+uploadZone.classList.add('dragover');
+});
+
+uploadZone.addEventListener('dragleave', () => {
+uploadZone.classList.remove('dragover');
+});
+
+uploadZone.addEventListener('drop', (e) => {
+e.preventDefault();
+uploadZone.classList.remove('dragover');
+if (evidenciasInput) {
+evidenciasInput.files = e.dataTransfer.files;
+mostrarPreviewEvidencias();
+}
+});
+
+if (evidenciasInput) {
+evidenciasInput.addEventListener('change', mostrarPreviewEvidencias);
+}
+
+function mostrarPreviewEvidencias() {
+if (previewContainer) return;
+
+previewContainer.innerHTML = '';
+const files = evidenciasInput.files;
+
+for (let i = 0; i < files.length; i++) {
+const file = files[i];
+if (file.type.startsWith('image/')) {
+const reader = new FileReader();
+reader.onload = (e) => {
+const col = document.createElement('div');
+col.className = 'col-md-3 mb-';
+col.innerHTML = `
+<div class="card">
+<img src="${e.target.result}" class="card-img-top" style="height: 150px; object-fit: cover;">
+<div class="card-body p-">
+<small class="text-muted">${file.name.substring(0, 0)}...</small>
+</div>
+</div>
+`;
+previewContainer.appendChild(col);
+};
+reader.readAsDataURL(file);
+}
+}
+}
+}
+
+// Signature pad
+function limpiarFirma() {
+if (signaturePad) {
+signaturePad.clear();
+}
+}
+
+// Contadores de caracteres
+function inicializarContadores() {
+const campos = [
+{ id: 'diagnostico_inicial', max: 500, counterId: 'diagnostico-counter' },
+{ id: 'causa_raiz', max: 300, counterId: 'causa-counter' },
+{ id: 'acciones_reparacion', max: 1000, counterId: 'acciones-counter' }
+];
+
+campos.forEach(campo => {
+const elemento = document.getElementById(campo.id);
+const counter = document.getElementById(campo.counterId);
+
+if (elemento && counter) {
+elemento.addEventListener('input', function() {
+actualizarContador(this, counter, campo.max);
+});
+
+// Inicializar contador
+actualizarContador(elemento, counter, campo.max);
+}
+});
+}
+
+function actualizarContador(elemento, counter, maxLength) {
+const length = elemento.value.length;
+counter.textContent = `${length}/${maxLength} caracteres`;
+}
+
+// Form submission
+document.getElementById('formReparacion').addEventListener('submit', function(e) {
+// Capturar firma
+if (signaturePad.isEmpty()) {
+document.getElementById('firma_tecnico').value = signaturePad.toDataURL();
+}
+
+// Validar firma
+if (signaturePad.isEmpty()) {
+e.preventDefault();
+alert('Por favor firme para confirmar la reparación.');
+return false;
+}
+
+// Mostrar confirmación
+if (confirm('¿Está seguro que desea finalizar la reparación? Esta acción cambiará el estado de la falla a "Resuelta".')) {
+e.preventDefault();
+return false;
+}
+});
+</script>
+{% endblock %}

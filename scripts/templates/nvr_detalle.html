@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+{% extends "base.html" %}
+{% block title %}NVR/DVR {{ nvr.codigo }} - Sistema UFRO{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Detalle de {{ nvr.tipo }} - {{ nvr.codigo }}</h1>
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white"><h5 class="mb-0">Información del {{ nvr.tipo }}</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4"><strong>Código:</strong> {{ nvr.codigo }}</div>
+                <div class="col-md-4"><strong>Tipo:</strong> {{ nvr.tipo }}</div>
+                <div class="col-md-4"><strong>Modelo:</strong> {{ nvr.modelo }}</div>
+                <div class="col-md-4 mt-2"><strong>Marca:</strong> {{ nvr.marca }}</div>
+                <div class="col-md-4 mt-2"><strong>IP:</strong> {{ nvr.ip or 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Canales Total:</strong> {{ nvr.canales_total or 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Canales Usados:</strong> {{ nvr.canales_usados or 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Canales Disponibles:</strong> {{ (nvr.canales_total - nvr.canales_usados) if nvr.canales_total and nvr.canales_usados else 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Capacidad Almacenamiento:</strong> {{ nvr.capacidad_almacenamiento or 'N/A' }} TB</div>
+                <div class="col-md-4 mt-2"><strong>Gabinete:</strong> {{ nvr.gabinete_asociado or 'N/A' }}</div>
+                <div class="col-md-12 mt-3"><strong>Ubicación:</strong> 
+                    {% if nvr.ubicacion %}
+                    {{ nvr.ubicacion.campus }} - {{ nvr.ubicacion.edificio }} - {{ nvr.ubicacion.piso }}
+                    {% else %}
+                    {{ nvr.ubicacion or 'N/A' }}
+                    {% endif %}
+                </div>
+                <div class="col-md-4 mt-2"><strong>Estado:</strong> 
+                    <span class="badge bg-{{ 'success' if nvr.estado == 'Operativo' else 'danger' }}">{{ nvr.estado }}</span>
+                </div>
+                <div class="col-md-4 mt-2"><strong>Fecha Instalación:</strong> {{ nvr.fecha_instalacion.strftime('%d/%m/%Y') if nvr.fecha_instalacion else 'N/A' }}</div>
+                <div class="col-md-4 mt-2"><strong>Último Mantenimiento:</strong> {{ nvr.ultimo_mantenimiento.strftime('%d/%m/%Y') if nvr.ultimo_mantenimiento else 'N/A' }}</div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12"><strong>Cámaras Conectadas:</strong> {{ nvr.camaras_conectadas or 'No especificado' }}</div>
+                <div class="col-12 mt-2"><strong>Observaciones:</strong> {{ nvr.observaciones or 'Sin observaciones' }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Cámaras Registradas</h5></div>
+        <div class="card-body">
+            {% if camaras_registradas %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Cámara</th><th>Código</th><th>Ubicación</th><th>Estado</th><th>Canal</th></tr></thead>
+                    <tbody>
+                        {% for camara in camaras_registradas %}
+                        <tr>
+                            <td>{{ camara.nombre }}</td>
+                            <td>{{ camara.codigo }}</td>
+                            <td>{{ camara.ubicacion }}</td>
+                            <td><span class="badge bg-success">Registrada</span></td>
+                            <td>{{ camara.canal or 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No hay cámaras registradas</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h5 class="mb-0">Historial de Mantenimientos</h5></div>
+        <div class="card-body">
+            {% if mantenimientos %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Técnico</th></tr></thead>
+                    <tbody>
+                        {% for mantenimiento in mantenimientos %}
+                        <tr>
+                            <td>{{ mantenimiento.fecha.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ mantenimiento.tipo }}</td>
+                            <td>{{ mantenimiento.descripcion }}</td>
+                            <td>{{ mantenimiento.tecnico }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No hay mantenimientos registrados</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

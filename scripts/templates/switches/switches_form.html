@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if switch else 'Crear' }} Switch - Sistema Cámaras UFRO{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<h1>
+<i class="bi bi-hdd-network"></i>
+{{ 'Editar' if switch else 'Nuevo' }} Switch de Red
+</h1>
+<a href="{{ url_for('switches_listar') }}" class="btn btn-outline-secondary">
+<i class="bi bi-arrow-left"></i> Volver a la lista
+</a>
+</div>
+
+<div class="row">
+<div class="col-lg-8">
+<form method="POST" id="switchForm">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-info-circle"></i> Información del Switch
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="marca" class="form-label">Marca *</label>
+<select name="marca" id="marca" class="form-select" required>
+<option value="">Seleccionar marca</option>
+<option value="Cisco" {% if switch and switch.marca == 'Cisco' %}selected{% endif %}>Cisco</option>
+<option value="TP-Link" {% if switch and switch.marca == 'TP-Link' %}selected{% endif %}>TP-Link</option>
+<option value="Ubiquiti" {% if switch and switch.marca == 'Ubiquiti' %}selected{% endif %}>Ubiquiti</option>
+<option value="D-Link" {% if switch and switch.marca == 'D-Link' %}selected{% endif %}>D-Link</option>
+<option value="HP" {% if switch and switch.marca == 'HP' %}selected{% endif %}>HP</option>
+<option value="Netgear" {% if switch and switch.marca == 'Netgear' %}selected{% endif %}>Netgear</option>
+<option value="Otro" {% if switch and switch.marca == 'Otro' %}selected{% endif %}>Otro</option>
+</select>
+<div class="form-text">Marca del fabricante del switch</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="modelo" class="form-label">Modelo *</label>
+<input type="text" name="modelo" id="modelo" class="form-control"
+value="{{ switch.modelo if switch else '' }}" required
+placeholder="Ej: SG350-10">
+<div class="form-text">Modelo específico del switch</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="puertos" class="form-label">Número de Puertos *</label>
+<select name="puertos" id="puertos" class="form-select" required>
+<option value="">Seleccionar puertos</option>
+<option value="8" {% if switch and switch.puertos == 8 %}selected{% endif %}>8 puertos</option>
+<option value="16" {% if switch and switch.puertos == 16 %}selected{% endif %}>16 puertos</option>
+<option value="4" {% if switch and switch.puertos == 4 %}selected{% endif %}>4 puertos</option>
+<option value="48" {% if switch and switch.puertos == 48 %}selected{% endif %}>48 puertos</option>
+<option value="5" {% if switch and switch.puertos == 5 %}selected{% endif %}>5 puertos</option>
+</select>
+<div class="form-text">Cantidad total de puertos disponibles</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="velocidad" class="form-label">Velocidad *</label>
+<select name="velocidad" id="velocidad" class="form-select" required>
+<option value="">Seleccionar velocidad</option>
+<option value="100 Mbps" {% if switch and switch.velocidad == '100 Mbps' %}selected{% endif %}>100 Mbps</option>
+<option value="1 Gbps" {% if switch and switch.velocidad == '1 Gbps' %}selected{% endif %}>1 Gbps</option>
+<option value="10 Gbps" {% if switch and switch.velocidad == '10 Gbps' %}selected{% endif %}>10 Gbps</option>
+<option value="100 Gbps" {% if switch and switch.velocidad == '100 Gbps' %}selected{% endif %}>100 Gbps</option>
+<option value="Mixto" {% if switch and switch.velocidad == 'Mixto' %}selected{% endif %}>Mixto (10/100/1000 Mbps)</option>
+</select>
+<div class="form-text">Velocidad de transmisión máxima</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label for="ubicacion" class="form-label">Ubicación *</label>
+<input type="text" name="ubicacion" id="ubicacion" class="form-control"
+value="{{ switch.ubicacion if switch else '' }}" required
+placeholder="Ej: Planta Baja - Sala de Servidores">
+<div class="form-text">Ubicación física del switch</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label for="estado" class="form-label">Estado *</label>
+<select name="estado" id="estado" class="form-select" required>
+<option value="">Seleccionar estado</option>
+<option value="activo" {% if switch and switch.estado == 'activo' %}selected{% endif %}>Activo</option>
+<option value="inactivo" {% if switch and switch.estado == 'inactivo' %}selected{% endif %}>Inactivo</option>
+<option value="mantenimiento" {% if switch and switch.estado == 'mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+<option value="falla" {% if switch and switch.estado == 'falla' %}selected{% endif %}>Con fallas</option>
+</select>
+<div class="form-text">Estado operativo actual del switch</div>
+</div>
+</div>
+</div>
+
+{% if switch %}
+<div class="row">
+<div class="col-md-6">
+<div class="mb-3">
+<label class="form-label">Fecha de registro</label>
+<input type="text" class="form-control"
+value="{{ switch.created_at.strftime('%d/%m/%Y %H:%M') if switch.created_at else 'No disponible' }}"
+readonly>
+<div class="form-text">Fecha cuando fue registrado el switch</div>
+</div>
+</div>
+<div class="col-md-6">
+<div class="mb-3">
+<label class="form-label">Última actualización</label>
+<input type="text" class="form-control"
+value="{{ switch.updated_at.strftime('%d/%m/%Y %H:%M') if switch.updated_at else 'No disponible' }}"
+readonly>
+<div class="form-text">Fecha de la última modificación</div>
+</div>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+
+<-- Configuración adicional -->
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-gear"></i> Configuración Adicional
+</h5>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-1">
+<div class="mb-3">
+<label for="observaciones" class="form-label">Observaciones</label>
+<textarea name="observaciones" id="observaciones" class="form-control"
+rows="3" placeholder="Notas adicionales sobre el switch...">{{ switch.observaciones if switch else '' }}</textarea>
+<div class="form-text">Información adicional sobre el switch</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<-- Botones de acción -->
+<div class="card mt-4">
+<div class="card-body">
+<div class="d-flex justify-content-between">
+<div>
+{% if switch %}
+<button type="button" class="btn btn-danger"
+onclick="confirmarEliminacion({{ switch.id }})">
+<i class="bi bi-trash"></i> Eliminar Switch
+</button>
+{% endif %}
+</div>
+<div>
+<a href="{{ url_for('switches_listar') }}" class="btn btn-secondary me-">
+<i class="bi bi-x"></i> Cancelar
+</a>
+<button type="submit" class="btn btn-primary">
+<i class="bi bi-{{ 'save' if switch else 'plus-circle' }}"></i>
+{{ 'Actualizar' if switch else 'Crear' }} Switch
+</button>
+</div>
+</div>
+</div>
+</div>
+</form>
+</div>
+
+<-- Panel lateral con información -->
+<div class="col-lg-4">
+<div class="card">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-lightbulb"></i> Consejos
+</h5>
+</div>
+<div class="card-body">
+<div class="mb-3">
+<h6><i class="bi bi-portrait text-primary"></i> Puertos</h6>
+<p class="small text-muted">Considera la cantidad de dispositivos que conectarás. Es recomendable tener puertos de reserva.</p>
+</div>
+<div class="mb-3">
+<h6><i class="bi bi-speedometer text-success"></i> Velocidad</h6>
+<p class="small text-muted">Para cámaras IP se recomienda usar puertos de al menos 1 Gbps para evitar cuellos de botella.</p>
+</div>
+<div>
+<h6><i class="bi bi-geo-alt text-warning"></i> Ubicación</h6>
+<p class="small text-muted">Especifica la ubicación exacta para facilitar el mantenimiento y la resolución de problemas.</p>
+</div>
+</div>
+</div>
+
+{% if switch %}
+<div class="card mt-4">
+<div class="card-header">
+<h5 class="card-title mb-0">
+<i class="bi bi-tools"></i> Herramientas de Diagnóstico
+</h5>
+</div>
+<div class="card-body">
+<div class="d-grid gap-">
+<button class="btn btn-outline-primary" onclick="pingSwitch()">
+<i class="bi bi-arrow-clockwise"></i> Ping Switch
+</button>
+<button class="btn btn-outline-info" onclick="verEstadoPuertos()">
+<i class="bi bi-portrait"></i> Estado de Puertos
+</button>
+<button class="btn btn-outline-success" onclick="escaneoRed()">
+<i class="bi bi-search"></i> Escaneo de Red
+</button>
+</div>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('switchForm').addEventListener('submit', function(e) {
+const submitBtn = document.querySelector('button[type="submit"]');
+submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+submitBtn.disabled = true;
+});
+
+function confirmarEliminacion(switchId) {
+if (confirm('¿Estás seguro de que deseas eliminar este switch? Esta acción no se puede deshacer.')) {
+fetch(`/switches/eliminar/${switchId}`, {
+method: 'DELETE',
+headers: {
+'Content-Type': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+window.location.href = "{{ url_for('switches_listar') }}";
+} else {
+alert('Error al eliminar el switch: ' + data.message);
+}
+})
+.catch(error => {
+console.error('Error:', error);
+alert('Error de conexión al eliminar el switch');
+});
+}
+}
+
+function pingSwitch() {
+const modelo = document.getElementById('modelo').value;
+if (modelo) {
+alert('Por favor, completa la información del switch primero');
+return;
+}
+
+// Simular ping
+alert(`Ejecutando ping al switch ${modelo}...\n\nResultado: Tiempo de respuesta: 1.ms`);
+}
+
+function verEstadoPuertos() {
+const puertos = document.getElementById('puertos').value;
+if (puertos) {
+alert('Por favor, especifica el número de puertos del switch');
+return;
+}
+
+alert(`Mostrando estado de ${puertos} puertos...\n\nPuerto 1-8: Conectados\nPuerto 9-16: Desconectados`);
+}
+
+function escaneoRed() {
+alert('Ejecutando escaneo de red...\n\nSe encontraron 15 dispositivos conectados');
+}
+</script>
+{% endblock %}
