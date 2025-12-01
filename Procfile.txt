@@ -1,9 +1,0 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 4 --timeout 10 --log-level info
-=======
-web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 4 --timeout 120 --log-level info
->>>>>>> 490f0beca4eaa0ced06723ea308d2616d581f5a4
-=======
-web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 4 --timeout 120 --log-level info
->>>>>>> e689c66cd1a8e8cd7d3b1f7c326cf31775409856
