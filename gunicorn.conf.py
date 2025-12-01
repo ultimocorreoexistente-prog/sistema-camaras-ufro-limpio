@@ -1,6 +1,7 @@
 """
 WSGI Configuration for Gunicorn
 Production WSGI server configuration
+Corregido para Railway
 """
 
 import os
@@ -8,8 +9,11 @@ import multiprocessing
 import signal
 import sys
 
+# Puerto dinámico usando variable de entorno
+PORT = os.environ.get('PORT', '8000')
+bind = f"0.0.0.0:{PORT}"
+
 # Configuración base
-bind = "0.0.0.0:8000"
 workers = multiprocessing.cpu_count() * 2 + 1
 
 # Configuración de workers
@@ -41,7 +45,6 @@ if os.environ.get('RAILWAY_ENVIRONMENT'):
     worker_class = "sync"
     timeout = 60
     max_requests = 500
-    bind = "0.0.0.0:8000"
 
 elif os.environ.get('HEROKU'):
     # Heroku - Entorno de producción
