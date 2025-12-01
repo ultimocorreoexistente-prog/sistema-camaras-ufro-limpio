@@ -10,12 +10,14 @@ try:
     _has_werkzeug = True
 except ImportError:
     _has_werkzeug = False
-from enum import Enum
 
 class Usuario(db.Model, UserMixin, TimestampedModel):
     __tablename__ = 'usuarios'
     
-    # ID y timestamps heredados de TimestampedModel
+    # ✅ Clave primaria EXPLÍCITA (obligatoria en SQLAlchemy 2.0+)
+    id = Column(Integer, primary_key=True)
+    
+    # Resto de campos (sin cambios)
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(100), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
@@ -49,8 +51,7 @@ class Usuario(db.Model, UserMixin, TimestampedModel):
             if _has_werkzeug:
                 self.password_hash = generate_password_hash(password)
             else:
-                # Fallback simple si werkzeug no está disponible
-                self.password_hash = password  # Solo para desarrollo/testing
+                self.password_hash = password
             self.password_changed_at = datetime.now(timezone.utc)
             self.must_change_password = False
         except Exception as e:
@@ -62,25 +63,20 @@ class Usuario(db.Model, UserMixin, TimestampedModel):
             if _has_werkzeug:
                 return check_password_hash(self.password_hash, password)
             else:
-                # Fallback simple para desarrollo/testing
                 return self.password_hash == password
         except Exception:
-            # Es importante no revelar el motivo de la falla por seguridad
             return False
 
     def is_locked(self):
-        """Verificar si el usuario está bloqueado"""
         return self.locked_until and self.locked_until > datetime.now(timezone.utc)
 
     def has_role(self, role):
-        """Verificación jerárquica de roles"""
         if self.role == 'superadmin':
             return True
         return self.role == role
 
     @classmethod
     def get_by_email(cls, email):
-        """Obtener usuario por email"""
         return cls.query.filter_by(email=email, is_active=True).first()
 
     def __repr__(self):
